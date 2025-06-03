@@ -496,7 +496,7 @@ router.post('/add-test-credits', protect, async (req, res) => {
 
 // Endpoint sécurisé pour fournir l'adresse de paiement au front
 router.get('/payment/address', (req, res) => {
-  res.json({ paymentAddress: PAYMENT_ADDRESS });
+  res.json({ address: PAYMENT_ADDRESS });
 });
 
 module.exports = router;

@@ -81,31 +81,94 @@ const UploadModal = ({
     return duration === 10 ? 42 : 21;
   };
 
-  // Load user credits
-  const loadUserCredits = async () => {
-    if (!token) return;
+  // Fetch user credits
+  const fetchCredits = async () => {
+    console.log('🔄 [FETCH CREDITS] =================================');
+    console.log('🔄 [FETCH CREDITS] STARTING FETCH CREDITS');
+    console.log('🔄 [FETCH CREDITS] Backend URL:', BACKEND_URL);
     
     try {
-      setLoadingCredits(true);
-      const response = await axios.get(
-        `${BACKEND_URL}/api/users/credits`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          timeout: 10000
-        }
-      );
-      if (response.data && response.data.data) {
-        setCredits(response.data.data.credits || 0);
+      const creditsUrl = `${BACKEND_URL}/api/users/credits`;
+      console.log('🔄 [FETCH CREDITS] 🔗 URL:', creditsUrl);
+      console.log('🔄 [FETCH CREDITS] 🔑 Token (first 20 chars):', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
+      
+      const response = await axios.get(creditsUrl, {
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        timeout: API_TIMEOUT,
+      });
+
+      console.log('🔄 [FETCH CREDITS] 📨 Response status:', response.status);
+      console.log('🔄 [FETCH CREDITS] 📨 Response data:', response.data);
+      
+      setCredits(response.data.credits);
+      console.log('🔄 [FETCH CREDITS] ✅ Credits fetched successfully:', response.data.credits);
+    } catch (error) {
+      console.error('🔄 [FETCH CREDITS] ❌ Error:', error);
+      console.error('🔄 [FETCH CREDITS] ❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.url
+      });
+      setCredits(0);
+    } finally {
+      console.log('🔄 [FETCH CREDITS] 🏁 Fetch credits ended');
+    }
+  };
+
+  // Fetch payment address
+  const fetchPaymentAddress = async () => {
+    console.log('💰 [FETCH PAYMENT ADDRESS] =================================');
+    console.log('💰 [FETCH PAYMENT ADDRESS] STARTING FETCH PAYMENT ADDRESS');
+    console.log('💰 [FETCH PAYMENT ADDRESS] Backend URL:', BACKEND_URL);
+    
+    try {
+      const paymentUrl = `${BACKEND_URL}/api/users/payment/address`;
+      console.log('💰 [FETCH PAYMENT ADDRESS] 🔗 URL:', paymentUrl);
+      console.log('💰 [FETCH PAYMENT ADDRESS] 🔑 Token (first 20 chars):', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
+      
+      const response = await axios.get(paymentUrl, {
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        timeout: API_TIMEOUT,
+      });
+
+      console.log('💰 [FETCH PAYMENT ADDRESS] 📨 Response status:', response.status);
+      console.log('💰 [FETCH PAYMENT ADDRESS] 📨 Response data:', response.data);
+      
+      if (response.data.address) {
+        setPaymentAddress(response.data.address);
+        console.log('💰 [FETCH PAYMENT ADDRESS] ✅ Payment address fetched successfully:', response.data.address);
+      } else {
+        console.error('💰 [FETCH PAYMENT ADDRESS] ❌ No payment address in response');
       }
     } catch (error) {
-      console.error('Failed to load user credits:', error);
+      console.error('💰 [FETCH PAYMENT ADDRESS] ❌ Error:', error);
+      console.error('💰 [FETCH PAYMENT ADDRESS] ❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.url
+      });
     } finally {
-      setLoadingCredits(false);
+      console.log('💰 [FETCH PAYMENT ADDRESS] 🏁 Fetch payment address ended');
     }
   };
 
   // Function to purchase credits
   const handleCreditPurchase = async (creditAmount) => {
+    console.log('🚀 [CREDIT PURCHASE] =================================');
+    console.log('🚀 [CREDIT PURCHASE] STARTING CREDIT PURCHASE FLOW');
+    console.log('🚀 [CREDIT PURCHASE] Timestamp:', new Date().toISOString());
+    console.log('🚀 [CREDIT PURCHASE] Credit amount:', creditAmount);
+    console.log('🚀 [CREDIT PURCHASE] Backend URL:', BACKEND_URL);
+    console.log('🚀 [CREDIT PURCHASE] =================================');
+    
     setCreditPurchaseLoading(true);
     setNotification({ show: true, message: "Initiating credit purchase...", type: "info" });
 
@@ -116,17 +179,23 @@ const UploadModal = ({
         return;
       }
 
+      // NOUVEAU: Vérifier que l'adresse de paiement est disponible
       if (!paymentAddress || paymentAddress.trim() === '') {
-        console.error('[CREDIT PURCHASE] No payment address available:', paymentAddress);
+        console.error('🚀 [CREDIT PURCHASE] ❌ No payment address available:', paymentAddress);
         setNotification({ show: true, message: "Payment address not available. Please try again.", type: "error" });
         setCreditPurchaseLoading(false);
         return;
       }
 
-      console.log('[CREDIT PURCHASE] Initiating purchase...');
+      console.log('🚀 [CREDIT PURCHASE] ✅ Payment address available:', paymentAddress);
+      console.log('🚀 [CREDIT PURCHASE] 📡 Initiating purchase with backend...');
+      
+      const initiateUrl = `${BACKEND_URL}/api/users/initiate-credit-purchase`;
+      console.log('🚀 [CREDIT PURCHASE] 🔗 Initiate URL:', initiateUrl);
+      console.log('🚀 [CREDIT PURCHASE] 🔑 Token (first 20 chars):', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
       
       const initResponse = await axios.post(
-        `${BACKEND_URL}/api/users/initiate-credit-purchase`,
+        initiateUrl,
         { creditAmount: creditAmount },
         {
           withCredentials: true,
@@ -138,12 +207,15 @@ const UploadModal = ({
         }
       );
 
+      console.log('🚀 [CREDIT PURCHASE] 📨 Initiate response status:', initResponse.status);
+      console.log('🚀 [CREDIT PURCHASE] 📨 Initiate response data:', initResponse.data);
+
       if (initResponse.status !== 200 || !initResponse.data?.reference) {
         throw new Error(initResponse.data?.error || 'Failed to initiate purchase');
       }
 
       const { reference, wldPrice } = initResponse.data;
-      console.log('[CREDIT PURCHASE] Purchase initiated:', { reference, wldPrice, creditAmount });
+      console.log('🚀 [CREDIT PURCHASE] ✅ Purchase initiated successfully:', { reference, wldPrice, creditAmount });
 
       const payload = {
         reference: reference,
@@ -157,8 +229,8 @@ const UploadModal = ({
         description: `Purchase ${creditAmount} credits for ${wldPrice} WLD`,
       };
 
-      console.log('[CREDIT PURCHASE] Payment payload:', payload);
-      console.log('[CREDIT PURCHASE] Payment address check:', { 
+      console.log('🚀 [CREDIT PURCHASE] 💰 Payment payload prepared:', payload);
+      console.log('🚀 [CREDIT PURCHASE] 🔍 Payment address check:', { 
         paymentAddress, 
         isEmpty: !paymentAddress || paymentAddress.trim() === '',
         length: paymentAddress?.length 
@@ -166,16 +238,19 @@ const UploadModal = ({
 
       setNotification({ show: true, message: "Confirming payment...", type: "info" });
       
-      console.log('[CREDIT PURCHASE] Sending payment via MiniKit...', payload);
+      console.log('🚀 [CREDIT PURCHASE] 📱 Sending payment via MiniKit...');
       const { finalPayload } = await MiniKit.commandsAsync.pay(payload);
 
-      console.log('[CREDIT PURCHASE] MiniKit response:', finalPayload);
+      console.log('🚀 [CREDIT PURCHASE] 📱 MiniKit response received:', finalPayload);
 
       if (finalPayload.status === 'success') {
-        console.log('[CREDIT PURCHASE] Payment successful:', finalPayload.transaction_id);
+        console.log('🚀 [CREDIT PURCHASE] ✅ Payment successful! Transaction ID:', finalPayload.transaction_id);
+        
+        const confirmUrl = `${BACKEND_URL}/api/users/confirm-credit-purchase`;
+        console.log('🚀 [CREDIT PURCHASE] 🔗 Confirm URL:', confirmUrl);
         
         const confirmResponse = await axios.post(
-          `${BACKEND_URL}/api/users/confirm-credit-purchase`,
+          confirmUrl,
           {
             reference: reference,
             transaction_id: finalPayload.transaction_id
@@ -190,6 +265,9 @@ const UploadModal = ({
           }
         );
 
+        console.log('🚀 [CREDIT PURCHASE] 📨 Confirm response status:', confirmResponse.status);
+        console.log('🚀 [CREDIT PURCHASE] 📨 Confirm response data:', confirmResponse.data);
+
         if (confirmResponse.data.success) {
           setCredits(confirmResponse.data.credits);
           setNotification({ 
@@ -198,11 +276,12 @@ const UploadModal = ({
             type: "success" 
           });
           setShowCreditPurchase(false);
+          console.log('🚀 [CREDIT PURCHASE] ✅ Purchase completed successfully!');
         } else {
           throw new Error('Purchase confirmation failed');
         }
       } else {
-        console.log('[CREDIT PURCHASE] Payment failed or cancelled:', finalPayload);
+        console.log('🚀 [CREDIT PURCHASE] ❌ Payment failed or cancelled:', finalPayload);
         
         let errorMessage = "Payment cancelled or failed";
         if (finalPayload.error_code === 'user_rejected') {
@@ -218,8 +297,15 @@ const UploadModal = ({
         });
       }
     } catch (error) {
-      console.error('[CREDIT PURCHASE] Error:', error);
+      console.error('🚀 [CREDIT PURCHASE] ❌ CRITICAL ERROR:', error);
+      console.error('🚀 [CREDIT PURCHASE] ❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.url
+      });
       
+      // Gestion spéciale pour l'erreur 429 (Too Many Requests)
       if (error.response?.status === 429) {
         setNotification({ 
           show: true, 
@@ -235,12 +321,14 @@ const UploadModal = ({
       }
     } finally {
       setCreditPurchaseLoading(false);
+      console.log('🚀 [CREDIT PURCHASE] 🏁 Purchase flow ended');
     }
   };
 
   useEffect(() => {
     if (isOpen && token) {
-      loadUserCredits();
+      fetchCredits();
+      fetchPaymentAddress();
     }
   }, [isOpen, token]);
 
@@ -252,33 +340,6 @@ const UploadModal = ({
       return () => clearTimeout(timer);
     }
   }, [notification.show]);
-
-  useEffect(() => {
-    async function fetchPaymentAddress() {
-      try {
-        console.log('[PAYMENT ADDRESS] Fetching from:', `${BACKEND_URL}/api/users/payment/address`);
-        const res = await axios.get(`${BACKEND_URL}/api/users/payment/address`);
-        console.log('[PAYMENT ADDRESS] Response:', res.data);
-        setPaymentAddress(res.data.paymentAddress);
-        console.log('[PAYMENT ADDRESS] Set to:', res.data.paymentAddress);
-      } catch (e) {
-        console.error('[PAYMENT ADDRESS] Failed to fetch:', e);
-        
-        // NOUVEAU: Essayer l'endpoint alternatif
-        try {
-          console.log('[PAYMENT ADDRESS] Trying alternative endpoint...');
-          const res2 = await axios.get(`${BACKEND_URL}/payment/address`);
-          console.log('[PAYMENT ADDRESS] Alternative response:', res2.data);
-          setPaymentAddress(res2.data.paymentAddress);
-          console.log('[PAYMENT ADDRESS] Alternative set to:', res2.data.paymentAddress);
-        } catch (e2) {
-          console.error('[PAYMENT ADDRESS] All endpoints failed:', e2);
-          setPaymentAddress('');
-        }
-      }
-    }
-    fetchPaymentAddress();
-  }, []);
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [videoPreview, setVideoPreview] = useState(null);

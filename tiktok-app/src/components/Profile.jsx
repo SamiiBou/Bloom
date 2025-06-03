@@ -146,16 +146,88 @@ const Profile = () => {
   // Récupérer l'adresse de paiement depuis le backend au montage
   useEffect(() => {
     async function fetchPaymentAddress() {
+      console.log('💰 [PROFILE PAYMENT ADDRESS] =================================');
+      console.log('💰 [PROFILE PAYMENT ADDRESS] STARTING FETCH PAYMENT ADDRESS');
+      console.log('💰 [PROFILE PAYMENT ADDRESS] Backend URL:', BACKEND_URL);
+      
       try {
-        const res = await axios.get(`${BACKEND_URL}/payment/address`);
-        setPaymentAddress(res.data.paymentAddress);
+        const paymentUrl = `${BACKEND_URL}/api/users/payment/address`;
+        console.log('💰 [PROFILE PAYMENT ADDRESS] 🔗 URL:', paymentUrl);
+        console.log('💰 [PROFILE PAYMENT ADDRESS] 🔑 Token (first 20 chars):', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
+        
+        const res = await axios.get(paymentUrl, {
+          withCredentials: true,
+          headers: token ? {
+            Authorization: `Bearer ${token}`,
+          } : {},
+          timeout: API_TIMEOUT,
+        });
+
+        console.log('💰 [PROFILE PAYMENT ADDRESS] 📨 Response status:', res.status);
+        console.log('💰 [PROFILE PAYMENT ADDRESS] 📨 Response data:', res.data);
+        
+        if (res.data.address) {
+          setPaymentAddress(res.data.address);
+          console.log('💰 [PROFILE PAYMENT ADDRESS] ✅ Payment address fetched successfully:', res.data.address);
+        } else {
+          console.error('💰 [PROFILE PAYMENT ADDRESS] ❌ No payment address in response');
+          
+          // NOUVEAU: Essayer l'endpoint alternatif comme fallback
+          try {
+            console.log('💰 [PROFILE PAYMENT ADDRESS] 🔄 Trying alternative endpoint...');
+            const alternativeUrl = `${BACKEND_URL}/api/payment/address`;
+            console.log('💰 [PROFILE PAYMENT ADDRESS] 🔗 Alternative URL:', alternativeUrl);
+            
+            const res2 = await axios.get(alternativeUrl);
+            console.log('💰 [PROFILE PAYMENT ADDRESS] 📨 Alternative response:', res2.data);
+            
+            if (res2.data.paymentAddress) {
+              setPaymentAddress(res2.data.paymentAddress);
+              console.log('💰 [PROFILE PAYMENT ADDRESS] ✅ Alternative address fetched:', res2.data.paymentAddress);
+            } else {
+              console.error('💰 [PROFILE PAYMENT ADDRESS] ❌ No payment address in alternative response');
+              setPaymentAddress('');
+            }
+          } catch (e2) {
+            console.error('💰 [PROFILE PAYMENT ADDRESS] ❌ Alternative endpoint failed:', e2);
+            setPaymentAddress('');
+          }
+        }
       } catch (e) {
-        setPaymentAddress('');
-        console.error('Failed to fetch payment address', e);
+        console.error('💰 [PROFILE PAYMENT ADDRESS] ❌ Main endpoint failed:', e);
+        console.error('💰 [PROFILE PAYMENT ADDRESS] ❌ Error details:', {
+          message: e.message,
+          status: e.response?.status,
+          data: e.response?.data,
+          url: e.config?.url
+        });
+        
+        // NOUVEAU: Essayer l'endpoint alternatif comme fallback
+        try {
+          console.log('💰 [PROFILE PAYMENT ADDRESS] 🔄 Trying alternative endpoint after main failure...');
+          const alternativeUrl = `${BACKEND_URL}/api/payment/address`;
+          console.log('💰 [PROFILE PAYMENT ADDRESS] 🔗 Alternative URL:', alternativeUrl);
+          
+          const res2 = await axios.get(alternativeUrl);
+          console.log('💰 [PROFILE PAYMENT ADDRESS] 📨 Alternative response:', res2.data);
+          
+          if (res2.data.paymentAddress) {
+            setPaymentAddress(res2.data.paymentAddress);
+            console.log('💰 [PROFILE PAYMENT ADDRESS] ✅ Alternative address fetched after failure:', res2.data.paymentAddress);
+          } else {
+            console.error('💰 [PROFILE PAYMENT ADDRESS] ❌ No payment address in alternative response');
+            setPaymentAddress('');
+          }
+        } catch (e2) {
+          console.error('💰 [PROFILE PAYMENT ADDRESS] ❌ All endpoints failed:', e2);
+          setPaymentAddress('');
+        }
+      } finally {
+        console.log('💰 [PROFILE PAYMENT ADDRESS] 🏁 Fetch payment address ended');
       }
     }
     fetchPaymentAddress();
-  }, []);
+  }, [token]); // Ajouter token comme dépendance
 
   // Function to claim tokens (from RewardsHub)
   const claimTokens = async () => {
@@ -182,7 +254,7 @@ const Profile = () => {
       let voucherResponse;
       try {
         voucherResponse = await axios.post(
-          `${BACKEND_URL}/airdrop/request`,
+          `${BACKEND_URL}/api/airdrop/request`,
           {},
           {
             withCredentials: true,
@@ -236,7 +308,7 @@ const Profile = () => {
 
       if (transactionResponse.finalPayload?.status === "error") {
         await axios.post(
-          `${BACKEND_URL}/airdrop/cancel`,
+          `${BACKEND_URL}/api/airdrop/cancel`,
           { nonce: voucher.nonce },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -245,7 +317,7 @@ const Profile = () => {
 
       if (!transactionResponse.finalPayload?.transaction_id) {
         await axios.post(
-          `${BACKEND_URL}/airdrop/cancel`,
+          `${BACKEND_URL}/api/airdrop/cancel`,
           { nonce: voucher.nonce },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -265,7 +337,7 @@ const Profile = () => {
         console.log(`[CLAIM] Confirmation attempt ${attempts}/${maxAttempts}`);
         
         const confirmResponse = await axios.post(
-          `${BACKEND_URL}/airdrop/confirm`,
+          `${BACKEND_URL}/api/airdrop/confirm`,
           { nonce: voucher.nonce, transaction_id: txId },
           { 
             headers: { Authorization: `Bearer ${token}` },
@@ -329,23 +401,52 @@ const Profile = () => {
 
   // Function to buy credits
   const buyCredits = async () => {
-    if (creditPurchaseLoading || !creditAmountToBuy || creditAmountToBuy <= 0) return;
+    console.log('🏪 [PROFILE CREDIT PURCHASE] =================================');
+    console.log('🏪 [PROFILE CREDIT PURCHASE] STARTING CREDIT PURCHASE FLOW');
+    console.log('🏪 [PROFILE CREDIT PURCHASE] Timestamp:', new Date().toISOString());
+    console.log('🏪 [PROFILE CREDIT PURCHASE] Credit amount:', creditAmountToBuy);
+    console.log('🏪 [PROFILE CREDIT PURCHASE] Backend URL:', BACKEND_URL);
+    console.log('🏪 [PROFILE CREDIT PURCHASE] API_BASE_URL:', API_BASE_URL);
+    console.log('🏪 [PROFILE CREDIT PURCHASE] Payment address:', paymentAddress);
+    console.log('🏪 [PROFILE CREDIT PURCHASE] Token (first 20 chars):', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
+    console.log('🏪 [PROFILE CREDIT PURCHASE] =================================');
+    
+    if (creditPurchaseLoading || !creditAmountToBuy || creditAmountToBuy <= 0) {
+      console.log('🏪 [PROFILE CREDIT PURCHASE] ❌ Precondition failed:', {
+        creditPurchaseLoading,
+        creditAmountToBuy,
+        isValid: creditAmountToBuy > 0
+      });
+      return;
+    }
     
     setCreditPurchaseLoading(true);
     setNotification({ show: true, message: "Initiating credit purchase...", type: "info" });
 
     try {
       if (!MiniKit.isInstalled()) {
+        console.error('🏪 [PROFILE CREDIT PURCHASE] ❌ MiniKit not installed');
         setNotification({ show: true, message: "World App / MiniKit not detected", type: "error" });
         setCreditPurchaseLoading(false);
         return;
       }
 
-      // Initiate credit purchase
-      console.log('[CREDIT PURCHASE] Initiating purchase...');
+      // NOUVEAU: Vérifier que l'adresse de paiement est disponible
+      if (!paymentAddress || paymentAddress.trim() === '') {
+        console.error('🏪 [PROFILE CREDIT PURCHASE] ❌ No payment address available:', paymentAddress);
+        setNotification({ show: true, message: "Payment address not available. Please try again.", type: "error" });
+        setCreditPurchaseLoading(false);
+        return;
+      }
+
+      console.log('🏪 [PROFILE CREDIT PURCHASE] ✅ Payment address available:', paymentAddress);
+      console.log('🏪 [PROFILE CREDIT PURCHASE] 📡 Initiating purchase with backend...');
+      
+      const initiateUrl = `${BACKEND_URL}/api/users/initiate-credit-purchase`;
+      console.log('🏪 [PROFILE CREDIT PURCHASE] 🔗 Initiate URL:', initiateUrl);
       
       const initResponse = await axios.post(
-        `${BACKEND_URL}/users/initiate-credit-purchase`,
+        initiateUrl,
         { creditAmount: creditAmountToBuy },
         {
           withCredentials: true,
@@ -357,12 +458,15 @@ const Profile = () => {
         }
       );
 
+      console.log('🏪 [PROFILE CREDIT PURCHASE] 📨 Initiate response status:', initResponse.status);
+      console.log('🏪 [PROFILE CREDIT PURCHASE] 📨 Initiate response data:', initResponse.data);
+
       if (initResponse.status !== 200 || !initResponse.data?.reference) {
         throw new Error(initResponse.data?.error || 'Failed to initiate purchase');
       }
 
       const { reference, wldPrice } = initResponse.data;
-      console.log('[CREDIT PURCHASE] Purchase initiated:', { reference, wldPrice, creditAmountToBuy });
+      console.log('🏪 [PROFILE CREDIT PURCHASE] ✅ Purchase initiated successfully:', { reference, wldPrice, creditAmountToBuy });
 
       // Prepare payload for World Pay
       const payload = {
@@ -377,17 +481,29 @@ const Profile = () => {
         description: `Purchase ${creditAmountToBuy} credits for ${wldPrice} WLD`,
       };
 
+      console.log('🏪 [PROFILE CREDIT PURCHASE] 💰 Payment payload prepared:', payload);
+      console.log('🏪 [PROFILE CREDIT PURCHASE] 🔍 Payment address check:', { 
+        paymentAddress, 
+        isEmpty: !paymentAddress || paymentAddress.trim() === '',
+        length: paymentAddress?.length 
+      });
+
       setNotification({ show: true, message: "Confirming payment...", type: "info" });
       
-      console.log('[CREDIT PURCHASE] Sending payment via MiniKit...', payload);
+      console.log('🏪 [PROFILE CREDIT PURCHASE] 📱 Sending payment via MiniKit...');
       const { finalPayload } = await MiniKit.commandsAsync.pay(payload);
 
+      console.log('🏪 [PROFILE CREDIT PURCHASE] 📱 MiniKit response received:', finalPayload);
+
       if (finalPayload.status === 'success') {
-        console.log('[CREDIT PURCHASE] Payment successful:', finalPayload.transaction_id);
+        console.log('🏪 [PROFILE CREDIT PURCHASE] ✅ Payment successful! Transaction ID:', finalPayload.transaction_id);
+        
+        const confirmUrl = `${BACKEND_URL}/api/users/confirm-credit-purchase`;
+        console.log('🏪 [PROFILE CREDIT PURCHASE] 🔗 Confirm URL:', confirmUrl);
         
         // Confirm purchase with backend
         const confirmResponse = await axios.post(
-          `${BACKEND_URL}/users/confirm-credit-purchase`,
+          confirmUrl,
           {
             reference: reference,
             transaction_id: finalPayload.transaction_id
@@ -402,6 +518,9 @@ const Profile = () => {
           }
         );
 
+        console.log('🏪 [PROFILE CREDIT PURCHASE] 📨 Confirm response status:', confirmResponse.status);
+        console.log('🏪 [PROFILE CREDIT PURCHASE] 📨 Confirm response data:', confirmResponse.data);
+
         if (confirmResponse.data.success) {
           setCredits(confirmResponse.data.credits);
           setNotification({ 
@@ -411,19 +530,34 @@ const Profile = () => {
           });
           setCreditAmountToBuy(35); // Reset to default
           setShowQuickPurchase(false); // Close quick purchase interface
+          console.log('🏪 [PROFILE CREDIT PURCHASE] ✅ Purchase completed successfully!');
         } else {
           throw new Error('Purchase confirmation failed');
         }
       } else {
-        console.log('[CREDIT PURCHASE] Payment failed or cancelled:', finalPayload);
+        console.log('🏪 [PROFILE CREDIT PURCHASE] ❌ Payment failed or cancelled:', finalPayload);
+        
+        let errorMessage = "Payment cancelled or failed";
+        if (finalPayload.error_code === 'user_rejected') {
+          errorMessage = "Payment cancelled by user";
+        } else if (finalPayload.error_code === 'transaction_failed') {
+          errorMessage = "Transaction failed. Please check your wallet balance and try again.";
+        }
+        
         setNotification({ 
           show: true, 
-          message: "Payment cancelled or failed", 
+          message: errorMessage, 
           type: "error" 
         });
       }
     } catch (error) {
-      console.error('[CREDIT PURCHASE] Error:', error);
+      console.error('🏪 [PROFILE CREDIT PURCHASE] ❌ CRITICAL ERROR:', error);
+      console.error('🏪 [PROFILE CREDIT PURCHASE] ❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.url
+      });
       
       // Gestion spéciale pour l'erreur 429 (Too Many Requests)
       if (error.response?.status === 429) {
@@ -441,6 +575,7 @@ const Profile = () => {
       }
     } finally {
       setCreditPurchaseLoading(false);
+      console.log('🏪 [PROFILE CREDIT PURCHASE] 🏁 Purchase flow ended');
     }
   };
 
@@ -452,7 +587,7 @@ const Profile = () => {
       try {
         console.log('🎯 [Profile] Making request to /airdrop/status...');
         const statusResponse = await axios.get(
-          `${BACKEND_URL}/airdrop/status`,
+          `${BACKEND_URL}/api/airdrop/status`,
           {
             headers: { Authorization: `Bearer ${token}` },
             timeout: 10000
@@ -1103,22 +1238,54 @@ const Profile = () => {
 
   // Fonction pour charger les crédits de l'utilisateur
   const loadUserCredits = async () => {
+    console.log('🔄 [PROFILE FETCH CREDITS] =================================');
+    console.log('🔄 [PROFILE FETCH CREDITS] STARTING FETCH CREDITS');
+    console.log('🔄 [PROFILE FETCH CREDITS] Backend URL:', BACKEND_URL);
+    console.log('🔄 [PROFILE FETCH CREDITS] Token available:', !!token);
+    
     try {
-      if (!token) return;
+      if (!token) {
+        console.log('🔄 [PROFILE FETCH CREDITS] ❌ No token available');
+        return;
+      }
+      
+      const creditsUrl = `${BACKEND_URL}/api/users/credits`;
+      console.log('🔄 [PROFILE FETCH CREDITS] 🔗 URL:', creditsUrl);
+      console.log('🔄 [PROFILE FETCH CREDITS] 🔑 Token (first 20 chars):', token.substring(0, 20) + '...');
       
       const response = await axios.get(
-        `${BACKEND_URL}/users/credits`, // Changed endpoint
+        creditsUrl,
         {
           headers: { Authorization: `Bearer ${token}` },
           timeout: 10000
         }
       );
 
+      console.log('🔄 [PROFILE FETCH CREDITS] 📨 Response status:', response.status);
+      console.log('🔄 [PROFILE FETCH CREDITS] 📨 Response data:', response.data);
+
       if (response.data && response.data.data) {
-        setCredits(response.data.data.credits || 0); // Adjusted data access
+        const creditsValue = response.data.data.credits || 0;
+        setCredits(creditsValue);
+        console.log('🔄 [PROFILE FETCH CREDITS] ✅ Credits loaded successfully:', creditsValue);
+      } else if (response.data && typeof response.data.credits !== 'undefined') {
+        // Nouveau format de réponse
+        const creditsValue = response.data.credits || 0;
+        setCredits(creditsValue);
+        console.log('🔄 [PROFILE FETCH CREDITS] ✅ Credits loaded (new format):', creditsValue);
+      } else {
+        console.error('🔄 [PROFILE FETCH CREDITS] ❌ Unexpected response format:', response.data);
       }
     } catch (error) {
-      console.error('Failed to load user credits:', error);
+      console.error('🔄 [PROFILE FETCH CREDITS] ❌ Error:', error);
+      console.error('🔄 [PROFILE FETCH CREDITS] ❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.url
+      });
+    } finally {
+      console.log('🔄 [PROFILE FETCH CREDITS] 🏁 Fetch credits ended');
     }
   };
 
