@@ -7,8 +7,16 @@ import { MiniKit } from '@worldcoin/minikit-js';
 import CreditPurchaseCard from './CreditPurchaseCard';
 import './UploadModal.css';
 
-const BACKEND_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://bloom-m284.onrender.com';
+const BACKEND_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'https://bloom-m284.onrender.com';
 const API_TIMEOUT = 30000;
+
+// DEBUGGING: Log the backend URL being used
+console.log('[UploadModal] Backend URL configuration:', {
+  VITE_API_URL: import.meta.env.VITE_API_URL,
+  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  BACKEND_URL,
+  actualBackendUrl: BACKEND_URL
+});
 
 const UploadModal = ({ 
   isOpen, 
@@ -248,21 +256,21 @@ const UploadModal = ({
   useEffect(() => {
     async function fetchPaymentAddress() {
       try {
-        console.log('[PAYMENT ADDRESS] Fetching from:', `${BACKEND_URL}/payment/address`);
-        const res = await axios.get(`${BACKEND_URL}/payment/address`);
+        console.log('[PAYMENT ADDRESS] Fetching from:', `${BACKEND_URL}/api/users/payment/address`);
+        const res = await axios.get(`${BACKEND_URL}/api/users/payment/address`);
         console.log('[PAYMENT ADDRESS] Response:', res.data);
         setPaymentAddress(res.data.paymentAddress);
         console.log('[PAYMENT ADDRESS] Set to:', res.data.paymentAddress);
       } catch (e) {
         console.error('[PAYMENT ADDRESS] Failed to fetch:', e);
         
-        // NOUVEAU: Essayer aussi l'endpoint via l'API users
+        // NOUVEAU: Essayer l'endpoint alternatif
         try {
-          console.log('[PAYMENT ADDRESS] Trying via users endpoint...');
-          const res2 = await axios.get(`${BACKEND_URL}/api/users/payment/address`);
-          console.log('[PAYMENT ADDRESS] Fallback response:', res2.data);
+          console.log('[PAYMENT ADDRESS] Trying alternative endpoint...');
+          const res2 = await axios.get(`${BACKEND_URL}/payment/address`);
+          console.log('[PAYMENT ADDRESS] Alternative response:', res2.data);
           setPaymentAddress(res2.data.paymentAddress);
-          console.log('[PAYMENT ADDRESS] Fallback set to:', res2.data.paymentAddress);
+          console.log('[PAYMENT ADDRESS] Alternative set to:', res2.data.paymentAddress);
         } catch (e2) {
           console.error('[PAYMENT ADDRESS] All endpoints failed:', e2);
           setPaymentAddress('');
