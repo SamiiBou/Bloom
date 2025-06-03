@@ -201,7 +201,9 @@ router.get('/:username/videos', optionalAuth, async (req, res, next) => {
     const videos = await Video.find({
       user: user._id,
       isPublic: true,
-      isActive: true
+      isActive: true,
+      // Filtre de modération: uniquement les vidéos approuvées
+      moderationStatus: 'approved'
     })
     .populate('user', 'username displayName avatar verified')
     .sort({ createdAt: -1 })
