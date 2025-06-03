@@ -13,7 +13,8 @@ import {
   MoreHorizontal,
   Plus,
   Upload,
-  Camera
+  Camera,
+  RefreshCw
 } from 'lucide-react';
 import apiService from '../services/api';
 import FluxImageGenerator from './FluxImageGenerator';
@@ -456,14 +457,6 @@ const ImageFeed = () => {
                       className="post-image" 
                       loading="lazy"
                     />
-                    
-                    {/* AI Badge */}
-                    {image.metadata?.aiGenerated && (
-                      <div className="ai-badge">
-                        <Sparkles size={12} />
-                        <span>AI</span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Post Info */}

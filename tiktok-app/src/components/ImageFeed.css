@@ -1316,16 +1316,14 @@
 /* Mode clair (pour overrider le mode sombre si nécessaire) */
 @media (prefers-color-scheme: light) {
   .fab-button-dark {
-    background: rgba(0, 0, 0, 0.95);
-    color: #ffffff;
+    background: linear-gradient(135deg, #1d1d1f 0%, #333333 100%);
   }
-
+  
   .fab-button-dark:hover {
-    background: rgba(20, 20, 20, 0.98);
+    background: linear-gradient(135deg, #333333 0%, #1d1d1f 100%);
   }
-
+  
   .fab-label-dark {
-    background: rgba(255, 255, 255, 0.95);
-    color: #1d1d1f;
+    background: #1d1d1f;
   }
 }
