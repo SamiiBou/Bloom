@@ -1102,23 +1102,10 @@ const FluxImageGenerator = () => {
                 <div className="preview-info">
                   <div className="info-grid">
                     <div className="info-item">
-                      <span>Model:</span>
-                      <span>{generatedImage.model}</span>
-                    </div>
-                    <div className="info-item">
-                      <span>Cost:</span>
-                      <span>${generatedImage.costInDollars}</span>
-                    </div>
-                    <div className="info-item">
-                      <span>Time:</span>
-                      <span>{generatedImage.processingTime}s</span>
-                    </div>
-                    <div className="info-item">
                       <span>Dimensions:</span>
                       <span>{generatedImage.dimensions?.width}×{generatedImage.dimensions?.height}</span>
                     </div>
                   </div>
-                  
                   <div className="preview-prompt">
                     <strong>Prompt:</strong> "{activeTab === 'generate' ? prompt : editPrompt}"
                   </div>
@@ -1182,12 +1169,6 @@ const FluxImageGenerator = () => {
               </motion.div>
               <h3>Generating...</h3>
               <p>This can take 10 to 30 seconds</p>
-              {currentTask && (
-                <div className="task-info">
-                  <p>Model: {currentTask.model}</p>
-                  <p>Type: {currentTask.type}</p>
-                </div>
-              )}
             </div>
           </motion.div>
         )}

@@ -83,15 +83,14 @@ const UploadModal = ({
 
   // Fetch user credits
   const fetchCredits = async () => {
+    setLoadingCredits(true);
     console.log('🔄 [FETCH CREDITS] =================================');
     console.log('🔄 [FETCH CREDITS] STARTING FETCH CREDITS');
     console.log('🔄 [FETCH CREDITS] Backend URL:', BACKEND_URL);
-    
     try {
       const creditsUrl = `${BACKEND_URL}/api/users/credits`;
       console.log('🔄 [FETCH CREDITS] 🔗 URL:', creditsUrl);
       console.log('🔄 [FETCH CREDITS] 🔑 Token (first 20 chars):', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
-      
       const response = await axios.get(creditsUrl, {
         withCredentials: true,
         headers: {
@@ -99,22 +98,22 @@ const UploadModal = ({
         },
         timeout: API_TIMEOUT,
       });
-
       console.log('🔄 [FETCH CREDITS] 📨 Response status:', response.status);
       console.log('🔄 [FETCH CREDITS] 📨 Response data:', response.data);
-      
-      setCredits(response.data.credits);
-      console.log('🔄 [FETCH CREDITS] ✅ Credits fetched successfully:', response.data.credits);
+      // Support both { credits: ... } and { data: { credits: ... } }
+      let creditsValue = 0;
+      if (typeof response.data.credits !== 'undefined') {
+        creditsValue = response.data.credits;
+      } else if (response.data.data && typeof response.data.data.credits !== 'undefined') {
+        creditsValue = response.data.data.credits;
+      }
+      setCredits(creditsValue);
+      console.log('🔄 [FETCH CREDITS] ✅ Credits fetched successfully:', creditsValue);
     } catch (error) {
       console.error('🔄 [FETCH CREDITS] ❌ Error:', error);
-      console.error('🔄 [FETCH CREDITS] ❌ Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-        url: error.config?.url
-      });
       setCredits(0);
     } finally {
+      setLoadingCredits(false);
       console.log('🔄 [FETCH CREDITS] 🏁 Fetch credits ended');
     }
   };
@@ -355,12 +354,18 @@ const UploadModal = ({
     if (file) {
       console.log('[UPLOADMODAL] File selected:', file.name, file.size, file.type);
     }
-    if (file && file.type.startsWith('video/')) {
+    if (file && file.type === 'video/mp4') {
       setSelectedFile(file);
       setVideoPreview(URL.createObjectURL(file));
       console.log('[UPLOADMODAL] Video preview URL created:', videoPreview);
     } else if (file) {
-      console.warn('[UPLOADMODAL] File is not a video:', file.type);
+      setNotification({
+        show: true,
+        message: 'Only MP4 videos are accepted.',
+        type: 'error'
+      });
+      setSelectedFile(null);
+      setVideoPreview(null);
     }
   };
 
@@ -650,11 +655,11 @@ const UploadModal = ({
                         <Upload size={32} />
                       </div>
                       <h3>Select a video</h3>
-                      <p>MP4, AVI, MOV • Max 50MB • 3 min max</p>
+                      <p>MP4 only • Max 50MB • 3 min max</p>
                     </div>
                     <input
                       type="file"
-                      accept="video/*"
+                      accept="video/mp4"
                       style={{ display: 'none' }}
                       ref={fileInputRef}
                       onChange={handleFileChange}
@@ -669,28 +674,21 @@ const UploadModal = ({
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3 }}
                 >
-                  {/* Credits section - Apple minimalist design */}
-                  <div className="ai-credits-section">
-                    <div className="credits-balance-display">
-                      <div className="balance-row">
-                        <span className="balance-label">Balance</span>
-                        <div className="balance-value-group">
-                          <Sparkles size={16} className="credits-icon-subtle" />
-                          <span className="balance-number">{loadingCredits ? '...' : credits}</span>
-                          <span className="balance-unit">credits</span>
-                        </div>
-                      </div>
-                      
-                      {credits < getGenerationCost(selectedDuration) && (
-                        <motion.button 
-                          className="get-credits-button"
-                          onClick={() => setShowCreditPurchase(true)}
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                        >
-                          Get credits
-                        </motion.button>
-                      )}
+                  {/* Credits section - Profile style */}
+                  <div className="ai-credits-section" style={{ marginBottom: 16 }}>
+                    <div className="detail-item-new" style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 16, fontWeight: 500, color: '#1d1d1f' }}>
+                      <span>Available credits :</span>
+                      <span style={{ fontWeight: 700, fontSize: 18 }}>{loadingCredits ? '...' : (credits ?? 0)}</span>
+                      <span>credits</span>
+                      <button
+                        className={`refresh-credits-btn${loadingCredits ? ' spinning' : ''}`}
+                        onClick={fetchCredits}
+                        disabled={loadingCredits}
+                        title="Refresh credits"
+                        style={{ marginLeft: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                      >
+                        <RefreshCw size={16} />
+                      </button>
                     </div>
                   </div>
 
