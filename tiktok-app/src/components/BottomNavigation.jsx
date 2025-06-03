@@ -10,23 +10,23 @@ import UploadTracker from './UploadTracker';
 const BottomNavigation = ({ currentPage, onPageChange, onVideoUploadSuccess }) => {
   const navItems = [
     { 
-      id: 'home', 
-      icon: Home, 
-      label: 'Home',
-      color: '#007AFF'
-    },
-    { 
-      id: 'videos', 
-      icon: PlayCircle, 
-      label: 'Videos',
-      color: '#AF52DE'
-    },
-    { 
       id: 'images', 
       icon: ImageIcon, 
       label: 'Images',
       color: '#32D74B'
     },
+    { 
+      id: 'home', 
+      icon: Home, 
+      label: 'Home',
+      color: '#007AFF'
+    },
+    // { 
+    //   id: 'videos', 
+    //   icon: PlayCircle, 
+    //   label: 'Videos',
+    //   color: '#AF52DE'
+    // },
     { 
       id: 'profile', 
       icon: User, 
