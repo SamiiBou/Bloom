@@ -7,7 +7,7 @@ import { MiniKit } from '@worldcoin/minikit-js';
 import CreditPurchaseCard from './CreditPurchaseCard';
 import './UploadModal.css';
 
-const BACKEND_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001';
+const BACKEND_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://bloom-m284.onrender.com';
 const API_TIMEOUT = 30000;
 
 const UploadModal = ({ 
@@ -34,6 +34,39 @@ const UploadModal = ({
   const [notification, setNotification] = useState({ show: false, message: '', type: 'info' });
   const token = localStorage.getItem('authToken');
   const [paymentAddress, setPaymentAddress] = useState('');
+
+  // NOUVEAU: Setup MiniKit event handlers
+  useEffect(() => {
+    if (!MiniKit.isInstalled()) return;
+
+    const unsubscribe = MiniKit.subscribe(
+      'miniapp-payment',
+      async (payload) => {
+        console.log('[MiniKit Event] Payment response:', payload);
+        
+        if (payload.status === "success") {
+          console.log('[MiniKit Event] Payment successful:', payload.transaction_id);
+          setNotification({ 
+            show: true, 
+            message: "Payment successful! Processing...", 
+            type: "success" 
+          });
+        } else {
+          console.log('[MiniKit Event] Payment failed or rejected:', payload);
+          setNotification({ 
+            show: true, 
+            message: "Payment cancelled or failed", 
+            type: "error" 
+          });
+          setCreditPurchaseLoading(false);
+        }
+      }
+    );
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   // Generation costs
   const getGenerationCost = (duration) => {
@@ -75,6 +108,13 @@ const UploadModal = ({
         return;
       }
 
+      if (!paymentAddress || paymentAddress.trim() === '') {
+        console.error('[CREDIT PURCHASE] No payment address available:', paymentAddress);
+        setNotification({ show: true, message: "Payment address not available. Please try again.", type: "error" });
+        setCreditPurchaseLoading(false);
+        return;
+      }
+
       console.log('[CREDIT PURCHASE] Initiating purchase...');
       
       const initResponse = await axios.post(
@@ -109,10 +149,19 @@ const UploadModal = ({
         description: `Purchase ${creditAmount} credits for ${wldPrice} WLD`,
       };
 
+      console.log('[CREDIT PURCHASE] Payment payload:', payload);
+      console.log('[CREDIT PURCHASE] Payment address check:', { 
+        paymentAddress, 
+        isEmpty: !paymentAddress || paymentAddress.trim() === '',
+        length: paymentAddress?.length 
+      });
+
       setNotification({ show: true, message: "Confirming payment...", type: "info" });
       
       console.log('[CREDIT PURCHASE] Sending payment via MiniKit...', payload);
       const { finalPayload } = await MiniKit.commandsAsync.pay(payload);
+
+      console.log('[CREDIT PURCHASE] MiniKit response:', finalPayload);
 
       if (finalPayload.status === 'success') {
         console.log('[CREDIT PURCHASE] Payment successful:', finalPayload.transaction_id);
@@ -146,19 +195,36 @@ const UploadModal = ({
         }
       } else {
         console.log('[CREDIT PURCHASE] Payment failed or cancelled:', finalPayload);
+        
+        let errorMessage = "Payment cancelled or failed";
+        if (finalPayload.error_code === 'user_rejected') {
+          errorMessage = "Payment cancelled by user";
+        } else if (finalPayload.error_code === 'transaction_failed') {
+          errorMessage = "Transaction failed. Please check your wallet balance and try again.";
+        }
+        
         setNotification({ 
           show: true, 
-          message: "Payment cancelled or failed", 
+          message: errorMessage, 
           type: "error" 
         });
       }
     } catch (error) {
       console.error('[CREDIT PURCHASE] Error:', error);
-      setNotification({ 
-        show: true, 
-        message: error.response?.data?.error || error.message || "Credit purchase failed", 
-        type: "error" 
-      });
+      
+      if (error.response?.status === 429) {
+        setNotification({ 
+          show: true, 
+          message: "⏰ Too many attempts. Please wait 2-3 minutes before trying again to avoid rate limiting.", 
+          type: "error" 
+        });
+      } else {
+        setNotification({ 
+          show: true, 
+          message: error.response?.data?.error || error.message || "Credit purchase failed", 
+          type: "error" 
+        });
+      }
     } finally {
       setCreditPurchaseLoading(false);
     }
@@ -182,11 +248,25 @@ const UploadModal = ({
   useEffect(() => {
     async function fetchPaymentAddress() {
       try {
+        console.log('[PAYMENT ADDRESS] Fetching from:', `${BACKEND_URL}/payment/address`);
         const res = await axios.get(`${BACKEND_URL}/payment/address`);
+        console.log('[PAYMENT ADDRESS] Response:', res.data);
         setPaymentAddress(res.data.paymentAddress);
+        console.log('[PAYMENT ADDRESS] Set to:', res.data.paymentAddress);
       } catch (e) {
-        setPaymentAddress('');
-        console.error('Failed to fetch payment address', e);
+        console.error('[PAYMENT ADDRESS] Failed to fetch:', e);
+        
+        // NOUVEAU: Essayer aussi l'endpoint via l'API users
+        try {
+          console.log('[PAYMENT ADDRESS] Trying via users endpoint...');
+          const res2 = await axios.get(`${BACKEND_URL}/api/users/payment/address`);
+          console.log('[PAYMENT ADDRESS] Fallback response:', res2.data);
+          setPaymentAddress(res2.data.paymentAddress);
+          console.log('[PAYMENT ADDRESS] Fallback set to:', res2.data.paymentAddress);
+        } catch (e2) {
+          console.error('[PAYMENT ADDRESS] All endpoints failed:', e2);
+          setPaymentAddress('');
+        }
       }
     }
     fetchPaymentAddress();
