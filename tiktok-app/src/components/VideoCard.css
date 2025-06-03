@@ -1,0 +1,548 @@
+/* VideoCard.css */
+
+.video-card {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  background: #000;
+  overflow: hidden;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  border: none;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* STYLES PLEIN ÉCRAN SEULEMENT POUR LES PAGES VIDÉO */
+.app.video-page .video-card {
+  width: 100vw !important;
+  min-height: 100vh !important;
+  max-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.video-container {
+  flex: 1;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  overflow: hidden;
+  border: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* STYLES PLEIN ÉCRAN POUR LE CONTAINER VIDÉO */
+.app.video-page .video-container {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+}
+
+.video-player {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+  max-width: none;
+  max-height: none;
+  min-width: 100%;
+  min-height: 100%;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: auto;
+}
+
+/* 🎯 SMART VIDEO ORIENTATION HANDLING */
+/* Portrait videos (taller than wide) - full screen like TikTok */
+.video-player:where([style*="aspect-ratio"]) {
+  object-fit: cover;
+}
+
+/* Landscape videos that are very wide - contain to avoid excessive cropping */
+@media (orientation: portrait) {
+  .video-player {
+    object-fit: cover; /* Portrait device: always fill screen */
+  }
+}
+
+@media (orientation: landscape) {
+  .video-player {
+    object-fit: contain; /* Landscape device: preserve video content */
+  }
+}
+
+/* Alternative styling for videos that need aspect ratio preservation */
+.video-player.contain-mode {
+  object-fit: contain;
+}
+
+/* Force cover mode for specific cases */
+.video-player.cover-mode {
+  object-fit: cover;
+}
+
+/* STYLES PLEIN ÉCRAN POUR LE PLAYER VIDÉO */
+.app.video-page .video-player {
+  min-height: 100vh !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  object-fit: cover !important; /* TikTok-style full screen */
+}
+
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.play-button-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.play-button {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.play-button:hover {
+  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.mute-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  pointer-events: all;
+  z-index: 10;
+}
+
+.mute-button:hover {
+  background: rgba(0, 0, 0, 0.9);
+  transform: scale(1.05);
+}
+
+/* Nouveau style pour le bouton mute moderne */
+.mute-button-modern:hover {
+  background: rgba(0, 0, 0, 0.8) !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+.mute-button-modern:active {
+  transform: scale(0.95) !important;
+}
+
+.video-sidebar {
+  position: absolute;
+  right: 12px;
+  bottom: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  z-index: 100;
+}
+
+.user-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.user-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: none;
+  background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 20px;
+}
+
+.follow-button {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.follow-button:hover {
+  transform: translateX(-50%) scale(1.1);
+}
+
+.follow-button.following {
+  background: #4ecdc4;
+}
+
+.video-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+}
+
+.action-button {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: none !important;
+  background-color: transparent !important;
+  border: none !important;
+  color: white !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  transition: transform 0.2s !important;
+  min-width: auto !important;
+  width: auto !important;
+  height: auto !important;
+  box-shadow: none !important;
+  outline: none !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+.action-button:hover {
+  transform: scale(1.1);
+}
+
+.action-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.action-icon {
+  font-size: 30px;
+  margin-bottom: 2px;
+}
+
+.action-count {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1;
+}
+
+.like-button.liked .action-icon {
+  animation: likeAnimation 0.3s ease;
+}
+
+@keyframes likeAnimation {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.comment-button:hover .action-icon {
+  animation: bounce 0.6s ease;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-8px); }
+  60% { transform: translateY(-4px); }
+}
+
+.share-button:hover .action-icon {
+  animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.video-info {
+  position: absolute;
+  left: 16px;
+  right: 80px;
+  bottom: 20px;
+  color: white;
+  z-index: 100;
+}
+
+.user-info {
+  margin-bottom: 8px;
+}
+
+.username {
+  font-weight: 600;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.verified-badge {
+  color: #1da1f2;
+  font-size: 14px;
+}
+
+.video-description {
+  margin: 8px 0;
+  line-height: 1.4;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.video-music {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.music-note {
+  font-size: 14px;
+}
+
+.music-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .video-sidebar {
+    right: 8px;
+    bottom: 200px;
+    gap: 12px;
+  }
+  
+  .user-avatar {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .avatar-placeholder {
+    font-size: 16px;
+  }
+  
+  .follow-button {
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    bottom: -6px;
+  }
+  
+  .action-button {
+    padding: 0;
+    min-width: auto;
+    gap: 4px;
+    width: auto;
+  }
+  
+  .action-icon {
+    font-size: 28px;
+  }
+  
+  .action-count {
+    font-size: 12px;
+  }
+  
+  .video-info {
+    left: 12px;
+    right: 70px;
+    bottom: 140px;
+  }
+  
+  .username {
+    font-size: 15px;
+  }
+  
+  .video-description {
+    font-size: 13px;
+  }
+  
+  .video-music {
+    font-size: 12px;
+  }
+  
+  .mute-button {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+    top: 16px;
+    right: 16px;
+  }
+  
+  .play-button {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+/* Animation d'entrée */
+.video-card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* États de chargement */
+.video-player[data-loading="true"] {
+  background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+  background-size: 400% 400%;
+  animation: loadingGradient 2s ease infinite;
+}
+
+@keyframes loadingGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .play-button,
+  .mute-button,
+  .action-button,
+  .follow-button {
+    transition: none;
+  }
+  
+  .play-button:hover,
+  .mute-button:hover,
+  .action-button:hover,
+  .follow-button:hover {
+    transform: none;
+  }
+  
+  .likeAnimation,
+  .bounce,
+  .shake,
+  .loadingGradient {
+    animation: none;
+  }
+}
+
+/* Focus states for accessibility */
+.play-button:focus,
+.mute-button:focus,
+.action-button:focus,
+.follow-button:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .play-button {
+    background: rgba(255, 255, 255, 0.95);
+    color: #000;
+  }
+  
+  .play-button:hover {
+    background: rgba(255, 255, 255, 1);
+  }
+}

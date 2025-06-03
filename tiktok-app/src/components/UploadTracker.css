@@ -1,0 +1,303 @@
+/* Upload Tracker - Design Apple moderne */
+
+.upload-tracker {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  z-index: 1000;
+  min-width: 300px;
+  max-width: 400px;
+  background: rgba(28, 28, 30, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 8px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Variantes pour différents états */
+.upload-tracker.uploading .tracker-icon {
+  background: linear-gradient(135deg, #007AFF, #5AC8FA);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+}
+
+.upload-tracker.success .tracker-icon {
+  background: linear-gradient(135deg, #34C759, #30D158);
+  box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+}
+
+.upload-tracker.error .tracker-icon {
+  background: linear-gradient(135deg, #FF453A, #FF6961);
+  box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3);
+}
+
+.tracker-content {
+  padding: 16px;
+}
+
+.tracker-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tracker-header:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  margin: -4px;
+  padding: 4px;
+}
+
+.tracker-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.tracker-icon .spinning {
+  animation: spin 1s linear infinite;
+}
+
+.tracker-icon .success-icon {
+  color: white;
+}
+
+.tracker-icon .error-icon {
+  color: white;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.tracker-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tracker-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 2px;
+  line-height: 1.2;
+}
+
+.tracker-status {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tracker-close {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tracker-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.tracker-close:active {
+  transform: scale(0.95);
+}
+
+/* Progress Bar */
+.tracker-progress {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.upload-tracker.uploading .progress-fill {
+  background: linear-gradient(90deg, #007AFF, #5AC8FA);
+  box-shadow: 0 0 8px rgba(0, 122, 255, 0.5);
+}
+
+.upload-tracker.success .progress-fill {
+  background: linear-gradient(90deg, #34C759, #30D158);
+  box-shadow: 0 0 8px rgba(52, 199, 89, 0.5);
+}
+
+.upload-tracker.error .progress-fill {
+  background: linear-gradient(90deg, #FF453A, #FF6961);
+  box-shadow: 0 0 8px rgba(255, 69, 58, 0.5);
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.progress-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* Actions */
+.tracker-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.action-btn:hover::before {
+  left: 100%;
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.action-btn:active {
+  transform: translateY(0);
+}
+
+.preview-btn:hover {
+  background: rgba(0, 122, 255, 0.2);
+  color: #5AC8FA;
+}
+
+/* Error Actions */
+.error-actions {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.error-message {
+  padding: 8px 12px;
+  background: rgba(255, 69, 58, 0.1);
+  border: 1px solid rgba(255, 69, 58, 0.2);
+  border-radius: 8px;
+  color: #FF6961;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .upload-tracker {
+    left: 10px;
+    right: 10px;
+    bottom: 90px;
+    min-width: auto;
+    max-width: none;
+  }
+  
+  .tracker-actions {
+    flex-direction: column;
+  }
+  
+  .action-btn {
+    justify-content: center;
+  }
+}
+
+/* Animation d'entrée */
+.upload-tracker {
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+} 

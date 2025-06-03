@@ -1,0 +1,396 @@
+/* Human Verification Modal - Apple-inspired Design */
+
+.human-verification-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.human-verification-modal {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-radius: 24px;
+  border: 0.5px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.04),
+    0 8px 16px rgba(0, 0, 0, 0.04),
+    0 16px 32px rgba(0, 0, 0, 0.04),
+    0 32px 64px rgba(0, 0, 0, 0.04);
+  max-width: 400px;
+  width: 100%;
+  position: relative;
+  animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  position: relative;
+  padding: 16px 20px 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.close-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #666666;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.close-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.08);
+  color: #000000;
+  transform: scale(1.05);
+}
+
+.close-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modal-content {
+  padding: 0 32px 32px;
+}
+
+.verification-card {
+  text-align: center;
+}
+
+/* Image centrale du token - plus grande */
+.token-image-container {
+  margin: 20px 0 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.bloom-token-image {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.12));
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bloom-token-image:hover {
+  transform: scale(1.05) rotate(5deg);
+}
+
+/* Nouveau style de texte */
+.verification-text {
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.verify-humanity-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 4px 0;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.unlock-text {
+  font-size: 14px;
+  color: #666666;
+  margin: 0;
+  font-weight: 400;
+}
+
+/* Suppression des anciens styles titre */
+.verification-title {
+  display: none;
+}
+
+.verification-subtitle {
+  display: none;
+}
+
+/* Récompenses minimalistes */
+.rewards-simple {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 32px;
+  font-size: 13px;
+  color: #666666;
+  text-align: center;
+}
+
+.reward-simple {
+  font-weight: 500;
+}
+
+.reward-separator {
+  color: #FFD700;
+  font-weight: 600;
+  margin: 0 4px;
+}
+
+/* Suppression de l'ancien container de récompenses */
+.rewards-container {
+  display: none;
+}
+
+.reward-item {
+  display: none;
+}
+
+.reward-number,
+.reward-multiplier {
+  display: none;
+}
+
+.reward-text {
+  display: none;
+}
+
+.reward-plus {
+  display: none;
+}
+
+/* Message d'erreur */
+.error-message {
+  background: rgba(255, 59, 48, 0.08);
+  border: 0.5px solid rgba(255, 59, 48, 0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #D70015;
+  text-align: center;
+}
+
+/* Bouton principal avec fond noir */
+.verify-btn {
+  width: 100%;
+  background: #000000;
+  color: white;
+  border: none;
+  border-radius: 16px;
+  padding: 16px 24px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  letter-spacing: -0.3px;
+}
+
+.verify-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  background: #1a1a1a;
+}
+
+.verify-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.verify-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loading-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.worldcoin-icon {
+  font-size: 20px;
+}
+
+.powered-by {
+  font-size: 12px;
+  color: #999999;
+  text-align: center;
+  font-weight: 400;
+}
+
+/* États de vérification et succès */
+.modal-content.verifying,
+.modal-content.success {
+  text-align: center;
+  padding: 40px 32px;
+}
+
+.verification-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.progress-animation {
+  margin-bottom: 24px;
+}
+
+.spinner-large {
+  width: 64px;
+  height: 64px;
+  border: 3px solid rgba(0, 122, 255, 0.1);
+  border-top: 3px solid #007AFF;
+  border-radius: 50%;
+  animation: spin 1.5s linear infinite;
+}
+
+.verification-progress h3,
+.modal-content.success h3 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #000000;
+  letter-spacing: -0.4px;
+}
+
+.verification-progress p,
+.modal-content.success p {
+  margin: 0 0 24px 0;
+  color: #666666;
+  font-size: 16px;
+}
+
+/* Animation de succès */
+.success-animation {
+  margin-bottom: 24px;
+}
+
+.checkmark {
+  font-size: 64px;
+  animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.success-rewards {
+  background: linear-gradient(135deg, rgba(52, 199, 89, 0.08) 0%, rgba(52, 199, 89, 0.04) 100%);
+  border: 0.5px solid rgba(52, 199, 89, 0.2);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.success-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  color: #34C759;
+  font-weight: 600;
+}
+
+.success-token-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .human-verification-overlay {
+    padding: 16px;
+  }
+
+  .human-verification-modal {
+    border-radius: 20px;
+    max-width: 100%;
+  }
+
+  .modal-content {
+    padding: 0 24px 24px;
+  }
+
+  .bloom-token-image {
+    width: 100px;
+    height: 100px;
+  }
+
+  .verify-humanity-text {
+    font-size: 13px;
+  }
+
+  .unlock-text {
+    font-size: 13px;
+  }
+
+  .rewards-simple {
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  .verify-btn {
+    font-size: 16px;
+    padding: 14px 20px;
+  }
+} 

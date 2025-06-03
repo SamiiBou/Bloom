@@ -1,0 +1,496 @@
+/* VeoGenerator Modal Styles */
+.veo-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.veo-modal-content {
+  background: #1a1a1a;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  border: 1px solid #333;
+}
+
+.veo-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #333;
+}
+
+.veo-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.veo-title h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.veo-icon {
+  color: #ff6b6b;
+}
+
+.veo-close-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.veo-close-btn:hover {
+  color: #fff;
+  background: #333;
+}
+
+.veo-modal-body {
+  padding: 24px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* Tabs */
+.veo-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  background: #2a2a2a;
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.veo-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: #aaa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.veo-tab:hover {
+  color: #fff;
+  background: #333;
+}
+
+.veo-tab.active {
+  color: #fff;
+  background: #ff6b6b;
+}
+
+/* Form Sections */
+.veo-form-section {
+  margin-bottom: 20px;
+}
+
+.veo-form-label {
+  display: block;
+  color: #fff;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.veo-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.9rem;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+
+.veo-textarea:focus {
+  outline: none;
+  border-color: #ff6b6b;
+}
+
+.veo-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease;
+}
+
+.veo-input:focus {
+  outline: none;
+  border-color: #ff6b6b;
+}
+
+.veo-select {
+  width: 100%;
+  padding: 12px 16px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.veo-char-count {
+  text-align: right;
+  font-size: 0.8rem;
+  color: #aaa;
+  margin-top: 4px;
+}
+
+/* Image Upload */
+.veo-image-upload {
+  width: 100%;
+}
+
+.veo-image-drop-zone {
+  border: 2px dashed #444;
+  border-radius: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #2a2a2a;
+}
+
+.veo-image-drop-zone:hover {
+  border-color: #ff6b6b;
+  background: #333;
+}
+
+.veo-image-drop-zone svg {
+  color: #aaa;
+  margin-bottom: 12px;
+}
+
+.veo-image-drop-zone p {
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.veo-image-drop-zone small {
+  color: #aaa;
+}
+
+.veo-image-preview {
+  position: relative;
+  display: inline-block;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.veo-image-preview img {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  display: block;
+}
+
+.veo-remove-image {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  color: #fff;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.veo-remove-image:hover {
+  background: rgba(255, 0, 0, 0.8);
+}
+
+/* Example Prompts */
+.veo-examples {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #2a2a2a;
+  border-radius: 12px;
+}
+
+.veo-examples-title {
+  color: #fff;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.veo-example-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.veo-example-prompt {
+  background: #333;
+  border: none;
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.veo-example-prompt:hover {
+  background: #ff6b6b;
+  transform: translateY(-1px);
+}
+
+/* Advanced Options */
+.veo-advanced-section {
+  margin-top: 24px;
+}
+
+.veo-advanced-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.veo-advanced-toggle:hover {
+  background: #333;
+}
+
+.veo-advanced-options {
+  margin-top: 16px;
+  padding: 20px;
+  background: #222;
+  border-radius: 12px;
+  border: 1px solid #333;
+}
+
+.veo-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.veo-form-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.veo-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.veo-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.veo-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #ff6b6b;
+}
+
+/* Status */
+.veo-status {
+  padding: 16px;
+  border-radius: 12px;
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.veo-status.generating {
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  color: #ffc107;
+}
+
+.veo-status.complete {
+  background: rgba(40, 167, 69, 0.1);
+  border: 1px solid rgba(40, 167, 69, 0.3);
+  color: #28a745;
+}
+
+.veo-status p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.veo-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Footer */
+.veo-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid #333;
+}
+
+.veo-btn-secondary {
+  padding: 12px 24px;
+  background: #333;
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.veo-btn-secondary:hover:not(:disabled) {
+  background: #444;
+}
+
+.veo-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.veo-btn-primary {
+  padding: 12px 24px;
+  background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.veo-btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.veo-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.veo-btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .veo-modal {
+    padding: 10px;
+  }
+  
+  .veo-modal-content {
+    max-height: 95vh;
+  }
+  
+  .veo-modal-header {
+    padding: 16px 20px;
+  }
+  
+  .veo-title h2 {
+    font-size: 1.1rem;
+  }
+  
+  .veo-modal-body {
+    padding: 20px;
+  }
+  
+  .veo-form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .veo-modal-footer {
+    padding: 16px 20px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .veo-btn-secondary,
+  .veo-btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+} 
