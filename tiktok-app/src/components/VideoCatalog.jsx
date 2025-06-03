@@ -760,10 +760,24 @@ const VideoCatalog = () => {
   return (
     <div className="video-catalog">
       <div className="catalog-inner">  
-        {/* Header avec seulement le logo */}
+        {/* Header avec logo et bouton upload */}
         <div className="catalog-header">
           <div className="header-left">
             <img src={BloomLogo} alt="Bloom Logo" style={{ height: 50, maxWidth: 140, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          </div>
+          <div className="header-buttons">
+            <button 
+              className="upload-icon-btn"
+              onClick={handleUploadClick}
+              disabled={isUploading}
+              title="Upload long video"
+            >
+              {isUploading ? (
+                <div className="upload-spinner-small"></div>
+              ) : (
+                <Upload size={20} strokeWidth={2} />
+              )}
+            </button>
           </div>
         </div>
 

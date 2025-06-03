@@ -424,11 +424,21 @@ const Profile = () => {
       }
     } catch (error) {
       console.error('[CREDIT PURCHASE] Error:', error);
-      setNotification({ 
-        show: true, 
-        message: error.response?.data?.error || error.message || "Credit purchase failed", 
-        type: "error" 
-      });
+      
+      // Gestion spéciale pour l'erreur 429 (Too Many Requests)
+      if (error.response?.status === 429) {
+        setNotification({ 
+          show: true, 
+          message: "⏰ Too many attempts. Please wait 2-3 minutes before trying again to avoid rate limiting.", 
+          type: "error" 
+        });
+      } else {
+        setNotification({ 
+          show: true, 
+          message: error.response?.data?.error || error.message || "Credit purchase failed", 
+          type: "error" 
+        });
+      }
     } finally {
       setCreditPurchaseLoading(false);
     }

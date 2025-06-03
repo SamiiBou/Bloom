@@ -657,6 +657,66 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
             Create my first video
           </button>
         </div>
+        
+        {/* Floating create button - Also visible when empty */}
+        <div className="create-video-fab">
+          <button 
+            className="fab-button"
+            onClick={() => setShowUploadModal(true)}
+            aria-label="Create a video"
+          >
+            <Plus size={28} strokeWidth={2} />
+            <div className="fab-shine"></div>
+          </button>
+          <div className="fab-label">New short</div>
+        </div>
+
+        {/* Upload Modal */}
+        <UploadModal
+          isOpen={showUploadModal}
+          onClose={() => setShowUploadModal(false)}
+          onFileUpload={handleFileUpload}
+          onAIGenerate={handleAIGenerate}
+          isUploading={isUploading}
+          uploadStatus={uploadStatus}
+          uploadProgress={uploadProgress}
+        />
+
+        {/* Generation Tracker */}
+        <GenerationTracker
+          isGenerating={isGenerating}
+          progress={generationProgress}
+          status={generationStatus}
+          taskId={currentTaskId}
+          onClose={handleCloseTracker}
+          onPreview={handlePreview}
+          onPublish={handlePublish}
+          onReject={handleReject}
+          generatedVideo={generatedVideo}
+        />
+
+        {/* Upload Tracker */}
+        <UploadTracker
+          isUploading={isUploading}
+          progress={uploadProgress}
+          status={uploadStatus}
+          uploadId={currentUploadId}
+          onClose={handleCloseUploadTracker}
+          onPreview={handlePreviewUploaded}
+          uploadedVideo={uploadedVideo}
+          error={uploadError}
+        />
+
+        {/* Video Preview */}
+        <VideoPreview
+          isOpen={showPreview}
+          onClose={() => setShowPreview(false)}
+          videoData={generatedVideo}
+          onPublish={handlePublish}
+          onReject={handleReject}
+          isPublishing={isPublishing}
+          isRejecting={isRejecting}
+        />
       </div>
     );
   }
@@ -675,19 +735,6 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
           </span>
         </div>
       )}
-
-      {/* Floating create button - Apple Minimalist Design */}
-      <div className="create-video-fab">
-        <button 
-          className="fab-button"
-          onClick={() => setShowUploadModal(true)}
-          aria-label="Create a video"
-        >
-          <Plus size={28} strokeWidth={2} />
-          <div className="fab-shine"></div>
-        </button>
-        <div className="fab-label">New short</div>
-      </div>
 
       {videos.map((video, index) => (
         <VideoCard
@@ -756,6 +803,19 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
         isPublishing={isPublishing}
         isRejecting={isRejecting}
       />
+
+      {/* Floating create button - Always visible */}
+      <div className="create-video-fab">
+        <button 
+          className="fab-button"
+          onClick={() => setShowUploadModal(true)}
+          aria-label="Create a video"
+        >
+          <Plus size={28} strokeWidth={2} />
+          <div className="fab-shine"></div>
+        </button>
+        <div className="fab-label">New short</div>
+      </div>
     </div>
   );
 };
