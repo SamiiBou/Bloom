@@ -280,7 +280,7 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
   // Upload modal handlers
   const handleFileUpload = async (file) => {
     try {
-      console.log('File upload initiated:', file.name);
+      console.log('[UPLOAD] File upload initiated:', file);
       setIsUploading(true);
       setUploadStatus('🔍 Validating file...');
       setUploadProgress(0);
@@ -289,7 +289,6 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
 
       const formData = new FormData();
       formData.append('video', file);
-      
       const description = `New video uploaded on ${new Date().toLocaleDateString('en-US', {
         day: 'numeric',
         month: 'long',
@@ -301,59 +300,48 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
 
       const token = localStorage.getItem('authToken');
       if (token && token !== apiService.token) {
+        console.log('[UPLOAD] Setting API token from localStorage');
         apiService.setToken(token);
       }
 
       if (!apiService.token) {
+        console.error('[UPLOAD] No API token found');
         throw new Error('Authentication required. Please log in again.');
       }
 
       setUploadStatus('📤 Starting upload...');
       setUploadProgress(10);
-
-      // Start upload and get upload ID
+      console.log('[UPLOAD] Sending video to apiService.uploadVideo...');
       const uploadResponse = await apiService.uploadVideo(formData);
-      
+      console.log('[UPLOAD] uploadResponse:', uploadResponse);
       if (uploadResponse.status === 'accepted' && uploadResponse.data.uploadId) {
         const uploadId = uploadResponse.data.uploadId;
         setCurrentUploadId(uploadId);
         setUploadStatus('⚙️ Processing video...');
         setUploadProgress(20);
-
-        // Close upload modal but keep tracking visible
         setShowUploadModal(false);
-        
-        // Start polling for upload progress
+        console.log('[UPLOAD] Starting polling for upload progress, uploadId:', uploadId);
         uploadPollIntervalRef.current = setInterval(async () => {
           try {
             const statusResponse = await apiService.checkUploadTaskStatus(uploadId);
-            
+            console.log('[UPLOAD] Polling statusResponse:', statusResponse);
             if (statusResponse.status === 'success') {
               const task = statusResponse.data;
-              
-              // Update progress and status
               setUploadProgress(task.progress || 0);
               setUploadStatus(task.displayStatus || task.status);
-              
-              // Check if upload is complete
               if (task.status === 'SUCCEEDED') {
                 clearInterval(uploadPollIntervalRef.current);
                 setIsUploading(false);
                 setUploadedVideo(task.video);
                 setUploadStatus('✅ Video uploaded successfully!');
                 setUploadProgress(100);
-                
-                // Refresh videos to show the new upload
                 loadVideos(1, false);
-                
-                // Auto-hide after some time
                 setTimeout(() => {
                   setCurrentUploadId(null);
                   setUploadedVideo(null);
                   setUploadStatus('');
                   setUploadProgress(0);
                 }, 5000);
-                
               } else if (task.status === 'FAILED') {
                 clearInterval(uploadPollIntervalRef.current);
                 setIsUploading(false);
@@ -362,32 +350,23 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
               }
             }
           } catch (pollError) {
-            // Gestion spéciale pour le rate limiting (429)
             if (pollError.message?.includes('429')) {
-              console.log('⏳ Rate limited, will retry on next poll...');
-              // Ne pas arrêter le polling, juste ignorer cette itération
+              console.log('[UPLOAD] Rate limited during polling, will retry:', pollError);
               return;
             }
-            
-            console.error('Error polling upload status:', pollError);
-            // Continue polling pour les autres erreurs aussi - ne pas casser le polling pour une erreur ponctuelle
+            console.error('[UPLOAD] Error polling upload status:', pollError);
           }
-        }, 3000); // Réduit à 3 secondes maintenant que le backend a un rate limiting plus permissif pour upload progress
-        
+        }, 3000);
       } else {
+        console.error('[UPLOAD] Upload response not accepted:', uploadResponse);
         throw new Error(uploadResponse.message || 'Upload failed');
       }
-      
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('[UPLOAD] Upload error:', error);
       setIsUploading(false);
       setUploadError(error.message);
       setUploadStatus(`❌ ${error.message}`);
-      
-      // Clear upload ID on error
       setCurrentUploadId(null);
-      
-      // Auto-hide error after some time
       setTimeout(() => {
         setUploadError(null);
         setUploadStatus('');

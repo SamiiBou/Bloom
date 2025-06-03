@@ -570,19 +570,6 @@ const VideoCatalog = () => {
     }
   };
 
-  // Test function for debugging
-  const handleTestUpload = async () => {
-    console.log('[TEST] Testing upload health...');
-    try {
-      const response = await apiService.request('/upload/health');
-      console.log('[TEST] Upload health check response:', response);
-      alert('Upload health check successful! Check console for details.');
-    } catch (error) {
-      console.error('[TEST] Upload health check failed:', error);
-      alert('Upload health check failed! Check console for details.');
-    }
-  };
-
   const handleFileSelectInModal = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -647,7 +634,6 @@ const VideoCatalog = () => {
       setIsUploading(true);
       setUploadStatus('⏳ Upload in progress...');
       console.log('[UPLOAD] Preparing to get video duration...');
-      
       // Get video duration
       const duration = await getVideoDuration(uploadFormData.file);
       console.log(`[UPLOAD] Detected duration: ${duration}s`);
@@ -674,92 +660,37 @@ const VideoCatalog = () => {
       const response = await apiService.uploadVideo(formData);
       console.log('[UPLOAD] API response:', response);
 
-      // Nouveau système de polling
-      if (response.status === 'accepted' && response.data.uploadId) {
-        const uploadId = response.data.uploadId;
-        console.log('[UPLOAD] Upload accepted, starting polling with uploadId:', uploadId);
-        setUploadStatus('⚙️ Processing video...');
-        
-        // Commencer le polling
-        const pollInterval = setInterval(async () => {
-          try {
-            console.log('[UPLOAD] Polling status for uploadId:', uploadId);
-            const statusResponse = await apiService.checkUploadTaskStatus(uploadId);
-            console.log('[UPLOAD] Status response:', statusResponse);
-            
-            if (statusResponse.status === 'success') {
-              const task = statusResponse.data;
-              console.log('[UPLOAD] Task data:', task);
-              
-              // Mettre à jour le statut
-              setUploadStatus(task.displayStatus || task.currentStep || 'Processing...');
-              
-              // Vérifier si terminé
-              if (task.status === 'SUCCEEDED') {
-                clearInterval(pollInterval);
-                setIsUploading(false);
-                setUploadStatus('✅ Video uploaded successfully!');
-                setShowUploadModal(false);
-                console.log('[UPLOAD] Upload success, resetting form and reloading videos');
-                
-                // Reset form
-                setUploadFormData({
-                  title: '',
-                  description: '',
-                  category: 'other',
-                  file: null,
-                  videoPreview: null,
-                  thumbnail: null,
-                  thumbnailPreview: null
-                });
-                
-                // Reload videos
-                setTimeout(() => {
-                  loadVideos(1, false);
-                  setUploadStatus('');
-                }, 2000);
-                
-              } else if (task.status === 'FAILED') {
-                clearInterval(pollInterval);
-                setIsUploading(false);
-                const errorMessage = task.error?.message || 'Upload failed';
-                console.error('[UPLOAD] Upload failed:', errorMessage);
-                setUploadStatus(`❌ ${errorMessage}`);
-                setTimeout(() => setUploadStatus(''), 4000);
-              }
-            } else {
-              console.error('[UPLOAD] Status check failed:', statusResponse);
-            }
-          } catch (pollError) {
-            console.error('[UPLOAD] Polling error:', pollError);
-            clearInterval(pollInterval);
-            setIsUploading(false);
-            setUploadStatus('❌ Upload monitoring failed');
-            setTimeout(() => setUploadStatus(''), 4000);
-          }
-        }, 2000); // Poll every 2 seconds
-        
-        // Timeout de sécurité après 5 minutes
+      if (response.status === 'success') {
+        setUploadStatus('✅ Video uploaded successfully!');
+        setShowUploadModal(false);
+        console.log('[UPLOAD] Upload success, resetting form and reloading videos');
+        // Reset form
+        setUploadFormData({
+          title: '',
+          description: '',
+          category: 'other',
+          file: null,
+          videoPreview: null,
+          thumbnail: null,
+          thumbnailPreview: null
+        });
+        // Reload videos
         setTimeout(() => {
-          clearInterval(pollInterval);
-          if (isUploading) {
-            setIsUploading(false);
-            setUploadStatus('❌ Upload timeout');
-            setTimeout(() => setUploadStatus(''), 4000);
-          }
-        }, 5 * 60 * 1000);
-        
+          loadVideos(1, false);
+          setUploadStatus('');
+        }, 2000);
       } else {
-        console.error('[UPLOAD] Upload response does not contain uploadId:', response);
-        throw new Error(response.message || 'Upload failed - no upload ID received');
+        console.error('[UPLOAD] Upload failed:', response);
+        throw new Error(response.message || 'Upload failed');
       }
-      
     } catch (error) {
       console.error('[UPLOAD] Upload error:', error);
       setUploadStatus(`❌ ${error.message}`);
       setTimeout(() => setUploadStatus(''), 4000);
       alert('Upload error: ' + (error.message || error));
+    } finally {
       setIsUploading(false);
+      console.log('[UPLOAD] handleUploadSubmit finished, isUploading:', false);
     }
   };
 

@@ -16,74 +16,6 @@ const imageModerationService = require('../services/imageModerationService');
 
 const router = express.Router();
 
-// Route de test de santé pour l'upload
-router.get('/health', protect, async (req, res) => {
-  try {
-    console.log('[UPLOAD] Health check requested by user:', req.user._id);
-    
-    const healthData = {
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      user: req.user._id,
-      environment: {
-        AWS_S3_BUCKET_NAME: process.env.AWS_S3_BUCKET_NAME ? 'Set' : 'Missing',
-        AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID ? 'Set' : 'Missing',
-        AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY ? 'Set' : 'Missing',
-        AWS_REGION: process.env.AWS_REGION || 'Missing',
-        TEMP_UPLOAD_DIR: process.env.TEMP_UPLOAD_DIR || './temp',
-        NODE_ENV: process.env.NODE_ENV
-      },
-      mongoConnection: 'Connected', // Si on arrive ici, mongo fonctionne
-      tempDirectory: process.env.TEMP_UPLOAD_DIR || './temp'
-    };
-    
-    // Test de création d'un répertoire temporaire
-    const tempDir = process.env.TEMP_UPLOAD_DIR || './temp';
-    try {
-      await fs.access(tempDir);
-      healthData.tempDirectoryExists = true;
-    } catch (error) {
-      try {
-        await fs.mkdir(tempDir, { recursive: true });
-        healthData.tempDirectoryExists = true;
-        healthData.tempDirectoryCreated = true;
-      } catch (mkdirError) {
-        healthData.tempDirectoryExists = false;
-        healthData.tempDirectoryError = mkdirError.message;
-      }
-    }
-    
-    // Test basique AWS S3
-    if (process.env.AWS_S3_BUCKET_NAME && process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
-      try {
-        const s3TestParams = {
-          Bucket: process.env.AWS_S3_BUCKET_NAME
-        };
-        await s3.headBucket(s3TestParams).promise();
-        healthData.s3Connection = 'Connected';
-      } catch (s3Error) {
-        healthData.s3Connection = 'Failed';
-        healthData.s3Error = s3Error.message;
-      }
-    } else {
-      healthData.s3Connection = 'Not configured';
-    }
-    
-    res.status(200).json({
-      status: 'success',
-      data: healthData
-    });
-    
-  } catch (error) {
-    console.error('[UPLOAD] Health check error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Health check failed',
-      error: error.message
-    });
-  }
-});
-
 // Rate limiting plus permissif pour les routes d'upload progress
 const uploadProgressLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -309,204 +241,127 @@ async function performImageContentModeration(image, imagePath = null, imageUrl =
 }
 
 // Upload video avec conversion automatique et suivi de progression
-router.post('/video', protect, (req, res, next) => {
-  console.log('[UPLOAD] 🎬 Video upload route hit');
+router.post('/video', protect, tempUpload.fields([
+  { name: 'video', maxCount: 1 },
+  { name: 'thumbnail', maxCount: 1 }
+]), async (req, res) => {
+  console.log('[UPLOAD] POST /upload/video hit');
   console.log('[UPLOAD] User:', req.user ? req.user._id : 'No user');
   console.log('[UPLOAD] Headers:', req.headers);
-  console.log('[UPLOAD] Content-Type:', req.headers['content-type']);
-  
-  // Vérifications de configuration
-  console.log('[UPLOAD] Environment checks:');
-  console.log('[UPLOAD] - AWS_S3_BUCKET_NAME:', process.env.AWS_S3_BUCKET_NAME ? 'Set' : 'Missing');
-  console.log('[UPLOAD] - AWS_ACCESS_KEY_ID:', process.env.AWS_ACCESS_KEY_ID ? 'Set' : 'Missing');
-  console.log('[UPLOAD] - AWS_SECRET_ACCESS_KEY:', process.env.AWS_SECRET_ACCESS_KEY ? 'Set' : 'Missing');
-  console.log('[UPLOAD] - AWS_REGION:', process.env.AWS_REGION ? 'Set' : 'Missing');
-  console.log('[UPLOAD] - TEMP_UPLOAD_DIR:', process.env.TEMP_UPLOAD_DIR || './temp');
-  
-  const upload = tempUpload.fields([
-    { name: 'video', maxCount: 1 },
-    { name: 'thumbnail', maxCount: 1 }
-  ]);
-
-  upload(req, res, async (err) => {
-    if (err) {
-      console.error('[UPLOAD] ❌ Multer error:', err);
-      console.error('[UPLOAD] Error type:', err.constructor.name);
-      console.error('[UPLOAD] Error message:', err.message);
-      console.error('[UPLOAD] Error code:', err.code);
-      console.error('[UPLOAD] Error field:', err.field);
-      console.error('[UPLOAD] Error stack:', err.stack);
-      
-      // Gestion spécifique des erreurs multer
-      if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({
-          status: 'error',
-          message: 'File too large. Maximum size is 300MB.',
-        });
-      }
-      
-      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Too many files or unexpected field name.',
-        });
-      }
-      
-      return res.status(400).json({
-        status: 'error',
-        message: err.message,
+  console.log('[UPLOAD] Body keys:', Object.keys(req.body));
+  console.log('[UPLOAD] Files:', req.files);
+  try {
+    const originalVideoFile = req.files?.video?.[0];
+    const originalThumbnailFile = req.files?.thumbnail?.[0];
+    if (!originalVideoFile) {
+      console.error('[UPLOAD] No video file provided');
+      return res.status(400).json({ status: 'error', message: 'Video file is required' });
+    }
+    // Log file details
+    console.log('[UPLOAD] Video file details:', {
+      fieldname: originalVideoFile.fieldname,
+      originalname: originalVideoFile.originalname,
+      encoding: originalVideoFile.encoding,
+      mimetype: originalVideoFile.mimetype,
+      size: originalVideoFile.size,
+      destination: originalVideoFile.destination,
+      filename: originalVideoFile.filename,
+      path: originalVideoFile.path
+    });
+    if (originalThumbnailFile) {
+      console.log('[UPLOAD] Thumbnail file details:', {
+        fieldname: originalThumbnailFile.fieldname,
+        originalname: originalThumbnailFile.originalname,
+        encoding: originalThumbnailFile.encoding,
+        mimetype: originalThumbnailFile.mimetype,
+        size: originalThumbnailFile.size,
+        destination: originalThumbnailFile.destination,
+        filename: originalThumbnailFile.filename,
+        path: originalThumbnailFile.path
       });
     }
-
-    try {
-      console.log('[UPLOAD] ✅ Multer processing completed successfully');
-      const { description, music, title, category } = req.body;
-      console.log('[UPLOAD] Fields received:', { description, music, title, category });
-      console.log('[UPLOAD] Request files:', req.files ? Object.keys(req.files) : 'No files');
-      
-      if (!req.files || !req.files.video) {
-        console.error('[UPLOAD] ❌ No video file received');
-        console.error('[UPLOAD] req.files:', req.files);
-        return res.status(400).json({
-          status: 'error',
-          message: 'Video file is required',
-        });
+    // Log request body
+    console.log('[UPLOAD] Request body:', req.body);
+    const { description, music, title, category } = req.body;
+    console.log('[UPLOAD] Fields received:', { description, music, title, category });
+    const uploadId = `upload_${Date.now()}_${Math.round(Math.random() * 1E9)}`;
+    console.log(`[UPLOAD] 📤 Processing video upload: ${originalVideoFile.originalname} (size: ${originalVideoFile.size} bytes)`);
+    if (originalThumbnailFile) {
+      console.log(`[UPLOAD] Thumbnail received: ${originalThumbnailFile.originalname} (size: ${originalThumbnailFile.size} bytes)`);
+    }
+    const uploadTask = new UploadTask({
+      user: req.user._id,
+      uploadId: uploadId,
+      filename: originalVideoFile.filename,
+      originalFilename: originalVideoFile.originalname,
+      description: description,
+      status: 'UPLOADED',
+      progress: 5,
+      currentStep: '📤 File received...',
+      tempFiles: [originalVideoFile.path],
+      metadata: {
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
       }
-      if (!description) {
-        console.error('[UPLOAD] ❌ No description received');
-        console.error('[UPLOAD] req.body:', req.body);
-        return res.status(400).json({
-          status: 'error',
-          message: 'Description is required',
-        });
-      }
-      
-      const originalVideoFile = req.files.video[0];
-      const originalThumbnailFile = req.files.thumbnail ? req.files.thumbnail[0] : null;
-      const uploadId = `upload_${Date.now()}_${Math.round(Math.random() * 1E9)}`;
-      
-      console.log(`[UPLOAD] 📤 Processing video upload: ${originalVideoFile.originalname} (size: ${originalVideoFile.size} bytes)`);
-      console.log(`[UPLOAD] Video file path: ${originalVideoFile.path}`);
-      console.log(`[UPLOAD] Video file mimetype: ${originalVideoFile.mimetype}`);
-      console.log(`[UPLOAD] Video file fieldname: ${originalVideoFile.fieldname}`);
-      
-      if (originalThumbnailFile) {
-        console.log(`[UPLOAD] Thumbnail received: ${originalThumbnailFile.originalname} (size: ${originalThumbnailFile.size} bytes)`);
-        console.log(`[UPLOAD] Thumbnail file path: ${originalThumbnailFile.path}`);
-      }
-      
-      console.log(`[UPLOAD] Generated upload ID: ${uploadId}`);
-      
-      const uploadTask = new UploadTask({
-        user: req.user._id,
+    });
+    if (originalThumbnailFile) {
+      uploadTask.tempFiles.push(originalThumbnailFile.path);
+    }
+    await uploadTask.save();
+    console.log(`[UPLOAD] UploadTask created: ${uploadId}`);
+    res.status(202).json({
+      status: 'accepted',
+      message: 'Upload started - use polling to track progress',
+      data: {
         uploadId: uploadId,
-        filename: originalVideoFile.filename,
-        originalFilename: originalVideoFile.originalname,
-        description: description,
-        status: 'UPLOADED',
-        progress: 5,
-        currentStep: '📤 File received...',
-        tempFiles: [originalVideoFile.path],
-        metadata: {
-          ipAddress: req.ip,
-          userAgent: req.get('User-Agent'),
-        }
-      });
-      
-      if (originalThumbnailFile) {
-        uploadTask.tempFiles.push(originalThumbnailFile.path);
+        initialProgress: 5,
+        initialStatus: 'File received, starting processing...'
       }
-      
-      console.log('[UPLOAD] 💾 Saving UploadTask to database...');
-      await uploadTask.save();
-      console.log(`[UPLOAD] ✅ UploadTask created: ${uploadId}`);
-      
-      console.log('[UPLOAD] 📡 Sending response to client...');
-      res.status(202).json({
-        status: 'accepted',
-        message: 'Upload started - use polling to track progress',
-        data: {
-          uploadId: uploadId,
-          initialProgress: 5,
-          initialStatus: 'File received, starting processing...'
-        }
+    });
+    console.log('[UPLOAD] Launching async video processing...');
+    processVideoAsync(uploadTask, originalVideoFile, originalThumbnailFile, req.body)
+      .catch(error => {
+        console.error('[UPLOAD] ❌ Async video processing error:', error);
+        uploadTask.setError(error, 'async_processing').catch(console.error);
       });
-      console.log('[UPLOAD] ✅ Response sent to client');
-      
-      console.log('[UPLOAD] 🚀 Launching async video processing...');
-      processVideoAsync(uploadTask, originalVideoFile, originalThumbnailFile, req.body)
-        .catch(error => {
-          console.error('[UPLOAD] ❌ Async video processing error:', error);
-          uploadTask.setError(error, 'async_processing').catch(console.error);
-        });
-        
-    } catch (error) {
-      console.error('[UPLOAD] ❌ Video upload error:', error);
-      console.error('[UPLOAD] Error stack:', error.stack);
-      res.status(500).json({
-        status: 'error',
-        message: 'Video upload failed',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
-    }
-  });
+  } catch (error) {
+    console.error('[UPLOAD] ❌ Video upload error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Video upload failed',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 });
 
 // Fonction asynchrone pour traiter la vidéo
 async function processVideoAsync(uploadTask, originalVideoFile, originalThumbnailFile, requestBody) {
-  console.log(`[UPLOAD] 🚀 processVideoAsync started for upload ID: ${uploadTask.uploadId}`);
-  console.log(`[UPLOAD] Original video file: ${originalVideoFile.originalname} (${originalVideoFile.size} bytes)`);
-  console.log(`[UPLOAD] Original video path: ${originalVideoFile.path}`);
-  console.log(`[UPLOAD] User ID: ${uploadTask.user}`);
-  console.log(`[UPLOAD] Request body keys: ${Object.keys(requestBody)}`);
-  
   let tempFiles = uploadTask.tempFiles || [];
-  console.log(`[UPLOAD] Initial temp files: ${tempFiles}`);
-  
   try {
-    console.log(`[UPLOAD] ⏱️  Step 1: Starting validation phase`);
+    console.log(`[UPLOAD] Step 1: Validation`);
     await uploadTask.updateProgress('VALIDATING', 10, '🔍 Validating file...');
-    console.log(`[UPLOAD] ✅ Step 1: Progress updated to VALIDATING`);
-    
-    console.log(`[UPLOAD] 🔍 Checking if video needs conversion...`);
     const needsConversion = await videoConverter.needsConversion(originalVideoFile.path);
-    console.log(`[UPLOAD] Conversion needed: ${needsConversion}`);
-    
     let finalVideoPath = originalVideoFile.path;
     let videoMetadata;
-    
     if (needsConversion) {
-      console.log(`[UPLOAD] ⏱️  Step 2: Starting conversion phase`);
       console.log(`[UPLOAD] Step 2: Conversion needed, converting to MP4...`);
       await uploadTask.updateProgress('CONVERTING', 20, '🔄 Converting video to MP4...');
-      console.log(`[UPLOAD] ✅ Step 2: Progress updated to CONVERTING`);
-      
       uploadTask.processing.conversionNeeded = true;
       await uploadTask.save();
-      console.log(`[UPLOAD] Processing flag updated in database`);
-      
       const convertedFileName = videoConverter.generateTempFilename(originalVideoFile.originalname, '_converted');
       const convertedVideoPath = path.join(path.dirname(originalVideoFile.path), convertedFileName);
       console.log(`[UPLOAD] Step 2: Starting conversion: ${originalVideoFile.path} -> ${convertedVideoPath}`);
-      
       finalVideoPath = await videoConverter.convertToMP4(originalVideoFile.path, convertedVideoPath);
-      console.log(`[UPLOAD] ✅ Step 2: Conversion completed successfully: ${finalVideoPath}`);
-      
       tempFiles.push(finalVideoPath);
       uploadTask.tempFiles = tempFiles;
       await uploadTask.save();
-      console.log(`[UPLOAD] Updated temp files in database: ${tempFiles}`);
-      
       await uploadTask.updateProgress('CONVERTING', 50, '🔄 Video conversion completed...');
-      console.log(`[UPLOAD] ✅ Step 2: Conversion progress updated`);
+      console.log(`[UPLOAD] Step 2: Conversion completed: ${finalVideoPath}`);
     } else {
       console.log('[UPLOAD] Step 2: No conversion needed, using original file');
     }
-    
-    console.log(`[UPLOAD] ⏱️  Step 3: Extracting video metadata from: ${finalVideoPath}`);
     videoMetadata = await videoConverter.getVideoMetadata(finalVideoPath);
-    console.log(`[UPLOAD] ✅ Step 3: Video metadata extracted:`, videoMetadata);
-    
+    console.log(`[UPLOAD] Step 3: Video metadata:`, videoMetadata);
     uploadTask.fileInfo = {
       originalSize: (await fs.stat(originalVideoFile.path)).size,
       convertedSize: (await fs.stat(finalVideoPath)).size,
@@ -519,14 +374,9 @@ async function processVideoAsync(uploadTask, originalVideoFile, originalThumbnai
       bitrate: videoMetadata.bitrate
     };
     await uploadTask.save();
-    console.log(`[UPLOAD] ✅ Step 3: File info saved to database`);
-    
-    console.log(`[UPLOAD] ⏱️  Step 4: Starting thumbnail generation phase`);
+    console.log(`[UPLOAD] Step 4: Thumbnail generation`);
     await uploadTask.updateProgress('GENERATING_THUMBNAIL', 60, '🖼️ Generating thumbnail...');
-    console.log(`[UPLOAD] ✅ Step 4: Progress updated to GENERATING_THUMBNAIL`);
-    
     let thumbnailPath = originalThumbnailFile ? originalThumbnailFile.path : null;
-    
     if (!thumbnailPath) {
       const baseName = path.basename(originalVideoFile.originalname, path.extname(originalVideoFile.originalname));
       const timestamp = Date.now();
@@ -534,22 +384,15 @@ async function processVideoAsync(uploadTask, originalVideoFile, originalThumbnai
       const thumbnailFileName = `${baseName}_${timestamp}_${random}_thumb.jpg`;
       const initialThumbnailPath = path.join(path.dirname(originalVideoFile.path), thumbnailFileName);
       console.log(`[UPLOAD] Step 4: Generating thumbnail at ${initialThumbnailPath}`);
-      
       thumbnailPath = await videoConverter.generateThumbnail(finalVideoPath, initialThumbnailPath);
-      console.log(`[UPLOAD] ✅ Step 4: Thumbnail generated successfully at ${thumbnailPath}`);
-      
       tempFiles.push(thumbnailPath);
       uploadTask.tempFiles = tempFiles;
       await uploadTask.save();
-      console.log(`[UPLOAD] Updated temp files with thumbnail: ${tempFiles}`);
+      console.log(`[UPLOAD] Step 4: Thumbnail generated at ${thumbnailPath}`);
     } else {
       console.log(`[UPLOAD] Step 4: Using provided thumbnail: ${thumbnailPath}`);
     }
-    
-    console.log(`[UPLOAD] ⏱️  Step 5: Starting S3 upload phase`);
     await uploadTask.updateProgress('UPLOADING_TO_S3', 75, '☁️ Uploading to cloud...');
-    console.log(`[UPLOAD] ✅ Step 5: Progress updated to UPLOADING_TO_S3`);
-    
     console.log(`[UPLOAD] Step 5: Uploading to S3...`);
     const videoS3Key = generateS3Key(originalVideoFile.originalname, 'videos');
     const thumbnailS3Key = generateS3Key(path.basename(thumbnailPath), 'thumbnails', '.jpg');
@@ -774,20 +617,26 @@ router.post('/thumbnail/:videoId', protect, (req, res, next) => {
 router.get('/progress/:uploadId', protect, async (req, res) => {
   try {
     const { uploadId } = req.params;
-    
+    console.log('[UPLOAD] GET /upload/progress/:uploadId hit', uploadId);
     // Rechercher la tâche d'upload
     const uploadTask = await UploadTask.findOne({ 
       uploadId: uploadId,
       user: req.user._id // Sécurité: s'assurer que l'utilisateur peut seulement voir ses propres uploads
     }).populate('video', 'title description videoUrl thumbnailUrl');
-    
     if (!uploadTask) {
+      console.error('[UPLOAD] Upload task not found for', uploadId);
       return res.status(404).json({
         status: 'error',
         message: 'Upload task not found',
       });
     }
-    
+    console.log('[UPLOAD] UploadTask found:', {
+      uploadId: uploadTask.uploadId,
+      status: uploadTask.status,
+      progress: uploadTask.progress,
+      currentStep: uploadTask.currentStep,
+      updatedAt: uploadTask.updatedAt
+    });
     // Mapper le statut interne vers un statut plus lisible
     const statusMap = {
       'UPLOADED': '📤 File received',
@@ -845,7 +694,7 @@ router.get('/progress/:uploadId', protect, async (req, res) => {
     res.status(200).json(response);
     
   } catch (error) {
-    console.error('❌ Error fetching upload progress:', error);
+    console.error('[UPLOAD] ❌ Error fetching upload progress:', error);
     res.status(500).json({
       status: 'error',
       message: 'Failed to fetch upload progress',
