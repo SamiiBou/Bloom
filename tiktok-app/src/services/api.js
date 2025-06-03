@@ -238,56 +238,19 @@ class ApiService {
 
   // Upload methods
   async uploadVideo(formData) {
-    console.log('🎬 [API] uploadVideo called');
-    console.log('🎬 [API] FormData entries:');
-    for (let [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        console.log(`🎬 [API]   ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
-      } else {
-        console.log(`🎬 [API]   ${key}: ${value}`);
-      }
-    }
-    console.log('🎬 [API] Base URL:', this.baseURL);
-    console.log('🎬 [API] Has auth token:', !!this.token);
-    
-    try {
-      console.log('🎬 [API] Making request to /upload/video...');
-      // The upload now returns a task ID for tracking instead of waiting for completion
-      const response = await this.request('/upload/video', {
-        method: 'POST',
-        body: formData,
-      });
-      console.log('🎬 [API] uploadVideo response:', response);
-      console.log('🎬 [API] Response type:', typeof response);
-      console.log('🎬 [API] Response status:', response?.status);
-      console.log('🎬 [API] Response success:', response?.success);
-      console.log('🎬 [API] Response data exists:', !!response?.data);
-      console.log('🎬 [API] Upload ID:', response?.data?.uploadId);
-      return response;
-    } catch (error) {
-      console.error('🎬 [API] uploadVideo error:', error);
-      console.error('🎬 [API] Error type:', typeof error);
-      console.error('🎬 [API] Error message:', error.message);
-      console.error('🎬 [API] Error stack:', error.stack);
-      if (error.response) {
-        console.error('🎬 [API] Error response:', error.response);
-        console.error('🎬 [API] Error response status:', error.response.status);
-        console.error('🎬 [API] Error response data:', error.response.data);
-      }
-      throw error;
-    }
+    // The upload now returns a task ID for tracking instead of waiting for completion
+    return await this.request('/upload/video', {
+      method: 'POST',
+      body: formData,
+    });
   }
 
+  // Check upload task status (similar to AI task status)
   async checkUploadTaskStatus(uploadId) {
-    console.log('📊 [API] checkUploadTaskStatus called with uploadId:', uploadId);
-    try {
-      const response = await this.request(`/upload/progress/${uploadId}`);
-      console.log('📊 [API] checkUploadTaskStatus response:', response);
-      return response;
-    } catch (error) {
-      console.error('📊 [API] checkUploadTaskStatus error:', error);
-      throw error;
-    }
+    const response = await this.request(`/upload/progress/${uploadId}`, {
+      method: 'GET'
+    });
+    return response;
   }
 
   // AI Video Generation
