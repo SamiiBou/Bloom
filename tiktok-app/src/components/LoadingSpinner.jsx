@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import './LoadingSpinner.css';
 
-const LoadingSpinner = ({ text = "Chargement...", size = "medium", variant = "minimal" }) => {
+const LoadingSpinner = ({ text = "Loading...", size = "medium", variant = "minimal" }) => {
   const sizeClasses = {
     small: 'spinner-small',
     medium: 'spinner-medium',

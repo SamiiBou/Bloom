@@ -71,11 +71,11 @@ const ImageFeed = () => {
         setHasMore(newImages.length === 12);
         setPage(pageNum);
       } else {
-        throw new Error(response.message || 'Erreur lors du chargement des images');
+        throw new Error(response.message || 'Error loading images');
       }
     } catch (error) {
       console.error('Error loading images:', error);
-      setError(error.message || 'Erreur lors du chargement des images');
+      setError(error.message || 'Error loading images');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -147,7 +147,7 @@ const ImageFeed = () => {
       }
     } catch (error) {
       console.error('Error loading comments:', error);
-      setCommentsError('Erreur lors du chargement des commentaires');
+      setCommentsError('Error loading comments');
     } finally {
       setCommentsLoading(false);
     }
@@ -174,7 +174,7 @@ const ImageFeed = () => {
       }
     } catch (error) {
       console.error('Error adding comment:', error);
-      setCommentsError('Erreur lors de l\'ajout du commentaire');
+      setCommentsError('Error adding comment');
     } finally {
       setAddingComment(false);
     }
@@ -221,7 +221,7 @@ const ImageFeed = () => {
     
     if (!file.type.startsWith('image/')) {
       console.log('📁 [COMPONENT] Invalid file type:', file.type);
-      setUploadError('Veuillez sélectionner un fichier image valide');
+      setUploadError('Please select a valid image file');
       return;
     }
 
@@ -408,10 +408,10 @@ const ImageFeed = () => {
       <div className="image-feed">
         <div className="error-container">
           <ImageIcon size={64} />
-          <h3>Erreur de chargement</h3>
+          <h3>Error loading</h3>
           <p>{error}</p>
           <button onClick={handleRefresh} className="retry-button">
-            Réessayer
+            Retry
           </button>
         </div>
       </div>
@@ -571,10 +571,10 @@ const ImageFeed = () => {
                     >
                       <Sparkles size={20} />
                     </motion.div>
-                    Chargement...
+                    Loading...
                   </>
                 ) : (
-                  'Charger plus'
+                  'Load more'
                 )}
               </button>
             </div>

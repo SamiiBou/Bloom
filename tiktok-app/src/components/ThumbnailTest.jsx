@@ -8,16 +8,16 @@ const ThumbnailTest = () => {
   useEffect(() => {
     const loadVideos = async () => {
       try {
-        console.log('🚀 Test: Chargement des vidéos...');
+        console.log('🚀 Test: Loading videos...');
         const response = await apiService.getLongVideos(1, 5);
-        console.log('🚀 Test: Réponse API:', response);
+        console.log('🚀 Test: API response:', response);
         
         if (response.status === 'success') {
           setVideos(response.data.videos);
-          console.log('🚀 Test: Vidéos chargées:', response.data.videos);
+          console.log('🚀 Test: Videos loaded:', response.data.videos);
         }
       } catch (error) {
-        console.error('🚀 Test: Erreur:', error);
+        console.error('🚀 Test: Error:', error);
       } finally {
         setLoading(false);
       }
@@ -27,7 +27,7 @@ const ThumbnailTest = () => {
   }, []);
 
   if (loading) {
-    return <div style={{ padding: '20px' }}>🔄 Chargement du test...</div>;
+    return <div style={{ padding: '20px' }}>🔄 Loading test...</div>;
   }
 
   return (
@@ -41,12 +41,12 @@ const ThumbnailTest = () => {
           padding: '20px',
           backgroundColor: 'white'
         }}>
-          <h3 style={{ color: 'black' }}>Vidéo {index + 1}: {video.title}</h3>
-          <p style={{ color: 'black' }}>URL de miniature: {video.thumbnailUrl}</p>
+          <h3 style={{ color: 'black' }}>Video {index + 1}: {video.title}</h3>
+          <p style={{ color: 'black' }}>Thumbnail URL: {video.thumbnailUrl}</p>
           
           {/* Test 1: Direct img tag */}
           <div style={{ margin: '10px 0' }}>
-            <p style={{ color: 'blue', fontWeight: 'bold' }}>Test 1: Balise IMG directe</p>
+            <p style={{ color: 'blue', fontWeight: 'bold' }}>Test 1: Direct IMG tag</p>
             <img 
               src={video.thumbnailUrl} 
               alt="Test direct"
@@ -56,14 +56,14 @@ const ThumbnailTest = () => {
                 border: '5px solid blue',
                 backgroundColor: 'yellow'
               }}
-              onLoad={() => console.log('✅ Img directe chargée:', video.thumbnailUrl)}
-              onError={(e) => console.log('❌ Erreur img directe:', e, video.thumbnailUrl)}
+              onLoad={() => console.log('✅ Direct img loaded:', video.thumbnailUrl)}
+              onError={(e) => console.log('❌ Direct img error:', e, video.thumbnailUrl)}
             />
           </div>
 
           {/* Test 2: With crossOrigin */}
           <div style={{ margin: '10px 0' }}>
-            <p style={{ color: 'green', fontWeight: 'bold' }}>Test 2: IMG avec crossOrigin</p>
+            <p style={{ color: 'green', fontWeight: 'bold' }}>Test 2: IMG with crossOrigin</p>
             <img 
               src={video.thumbnailUrl} 
               alt="Test CrossOrigin"
@@ -74,8 +74,8 @@ const ThumbnailTest = () => {
                 border: '5px solid green',
                 backgroundColor: 'orange'
               }}
-              onLoad={() => console.log('✅ Img CrossOrigin chargée:', video.thumbnailUrl)}
-              onError={(e) => console.log('❌ Erreur img CrossOrigin:', e, video.thumbnailUrl)}
+              onLoad={() => console.log('✅ CrossOrigin img loaded:', video.thumbnailUrl)}
+              onError={(e) => console.log('❌ CrossOrigin img error:', e, video.thumbnailUrl)}
             />
           </div>
 
