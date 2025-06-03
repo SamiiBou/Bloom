@@ -1,0 +1,451 @@
+/* Credit Purchase Card - Design Apple minimaliste */
+
+.credit-purchase-card {
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 20px;
+  padding: 32px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.08),
+    0 2px 10px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
+  color-scheme: light;
+}
+
+.credit-purchase-card.compact {
+  padding: 24px;
+  max-width: 360px;
+}
+
+/* Header */
+.purchase-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.purchase-card-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.purchase-card-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  color: #86868b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.purchase-card-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #1d1d1f;
+  transform: scale(1.05);
+}
+
+/* Balance actuelle */
+.current-balance {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.balance-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.balance-label {
+  font-size: 13px;
+  color: #86868b;
+  font-weight: 500;
+  letter-spacing: -0.1px;
+}
+
+.balance-amount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.balance-icon {
+  color: #ffcc00;
+  filter: drop-shadow(0 2px 4px rgba(255, 204, 0, 0.2));
+}
+
+.balance-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1d1d1f;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.balance-unit {
+  font-size: 16px;
+  color: #86868b;
+  font-weight: 500;
+}
+
+/* Credit Packs */
+.credit-packs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.pack-option {
+  position: relative;
+  background: #ffffff;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 20px 24px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+}
+
+.pack-option:hover {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.01);
+}
+
+.pack-option.selected {
+  border-color: #1d1d1f;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.pack-option.popular {
+  position: relative;
+  overflow: visible;
+}
+
+.popular-badge {
+  position: absolute;
+  top: -8px;
+  right: 20px;
+  background: #1d1d1f;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 10px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.pack-content {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pack-credits {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.pack-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1d1d1f;
+  letter-spacing: -0.5px;
+}
+
+.pack-unit {
+  font-size: 14px;
+  color: #86868b;
+  font-weight: 500;
+}
+
+.pack-pricing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.pack-price {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1d1d1f;
+  letter-spacing: -0.3px;
+}
+
+.pack-savings {
+  font-size: 12px;
+  color: #34c759;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+}
+
+/* Selection Indicator */
+.selection-indicator {
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 16px;
+  transition: all 0.2s ease;
+}
+
+.pack-option.selected .selection-indicator {
+  border-color: #1d1d1f;
+  background: #1d1d1f;
+}
+
+.indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: #ffffff;
+  opacity: 0;
+  transform: scale(0);
+  transition: all 0.2s ease;
+}
+
+.selection-indicator.visible .indicator-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Pricing Info */
+.pricing-info {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.info-text {
+  font-size: 12px;
+  color: #86868b;
+  font-weight: 500;
+  letter-spacing: -0.1px;
+}
+
+/* Purchase Button */
+.purchase-button {
+  width: 100%;
+  background: #1d1d1f;
+  color: #ffffff;
+  border: none;
+  border-radius: 16px;
+  padding: 18px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.purchase-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.6s ease;
+}
+
+.purchase-button:hover::before {
+  left: 100%;
+}
+
+.purchase-button:hover:not(:disabled) {
+  background: #000000;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.purchase-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.purchase-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.button-text {
+  font-size: 16px;
+  letter-spacing: -0.2px;
+}
+
+.button-price {
+  font-size: 14px;
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+/* Loading state */
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Footer */
+.purchase-footer {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.footer-text {
+  font-size: 12px;
+  color: #86868b;
+  margin: 0;
+  letter-spacing: -0.1px;
+}
+
+/* Dark mode pour UploadModal */
+@media (prefers-color-scheme: dark) {
+  .credit-purchase-card {
+    background: rgba(28, 28, 30, 0.98);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .purchase-card-title,
+  .balance-value,
+  .pack-number,
+  .pack-price {
+    color: #f5f5f7;
+  }
+
+  .balance-label,
+  .pack-unit,
+  .info-text,
+  .footer-text {
+    color: #86868b;
+  }
+
+  .purchase-card-close,
+  .current-balance {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .pack-option {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .pack-option:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .pack-option.selected {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: #f5f5f7;
+  }
+
+  .popular-badge {
+    background: #f5f5f7;
+    color: #1d1d1f;
+  }
+
+  .selection-indicator {
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .pack-option.selected .selection-indicator {
+    background: #f5f5f7;
+    border-color: #f5f5f7;
+  }
+
+  .indicator-dot {
+    background: #1d1d1f;
+  }
+
+  .purchase-button {
+    background: #f5f5f7;
+    color: #1d1d1f;
+  }
+
+  .purchase-button:hover:not(:disabled) {
+    background: #ffffff;
+  }
+
+  .spinner {
+    border-color: rgba(0, 0, 0, 0.3);
+    border-top-color: #1d1d1f;
+  }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .credit-purchase-card {
+    padding: 24px 20px;
+  }
+
+  .credit-purchase-card.compact {
+    padding: 20px 16px;
+  }
+
+  .purchase-card-title {
+    font-size: 20px;
+  }
+
+  .balance-value {
+    font-size: 24px;
+  }
+
+  .pack-option {
+    padding: 16px 20px;
+  }
+
+  .pack-number {
+    font-size: 20px;
+  }
+
+  .pack-price {
+    font-size: 16px;
+  }
+
+  .purchase-button {
+    padding: 16px 20px;
+  }
+} 

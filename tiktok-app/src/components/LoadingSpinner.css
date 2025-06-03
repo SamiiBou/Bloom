@@ -1,0 +1,268 @@
+/* LoadingSpinner.css */
+
+.minimal-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 40px 20px;
+  min-height: 200px;
+}
+
+/* Spinner avec des points animés - Style très minimaliste */
+.minimal-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.spinner-dot {
+  width: 8px;
+  height: 8px;
+  background: #1d1d1f;
+  border-radius: 50%;
+  opacity: 0.7;
+}
+
+/* Spinner pulse - Alternative élégante */
+.pulse-spinner {
+  width: 20px;
+  height: 20px;
+  background: #1d1d1f;
+  border-radius: 50%;
+  opacity: 0.6;
+}
+
+/* Spinner circle moderne - Version améliorée du spinner classique */
+.circle-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid transparent;
+  border-top: 2px solid #1d1d1f;
+  border-radius: 50%;
+  opacity: 0.8;
+}
+
+/* Tailles */
+.spinner-small .spinner-dot {
+  width: 6px;
+  height: 6px;
+}
+
+.spinner-small.pulse-spinner {
+  width: 16px;
+  height: 16px;
+}
+
+.spinner-small.circle-spinner {
+  width: 20px;
+  height: 20px;
+  border-width: 1.5px;
+}
+
+.spinner-medium .spinner-dot {
+  width: 8px;
+  height: 8px;
+}
+
+.spinner-medium.pulse-spinner {
+  width: 20px;
+  height: 20px;
+}
+
+.spinner-medium.circle-spinner {
+  width: 24px;
+  height: 24px;
+  border-width: 2px;
+}
+
+.spinner-large .spinner-dot {
+  width: 10px;
+  height: 10px;
+}
+
+.spinner-large.pulse-spinner {
+  width: 28px;
+  height: 28px;
+}
+
+.spinner-large.circle-spinner {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+}
+
+/* Texte de chargement */
+.loading-text {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 400;
+  color: #86868b;
+  text-align: center;
+  letter-spacing: -0.01em;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+}
+
+/* Variants pour différents contextes */
+
+/* Pour VideoFeed (fond sombre) */
+.video-feed-loading .spinner-dot,
+.video-feed-loading .pulse-spinner,
+.video-feed-loading .circle-spinner {
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
+.video-feed-loading .circle-spinner {
+  border-top-color: #ffffff;
+  border-left-color: transparent;
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+}
+
+.video-feed-loading .loading-text {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Pour VideoCatalog (fond clair) */
+.video-catalog-loading .spinner-dot,
+.video-catalog-loading .pulse-spinner {
+  background: #1d1d1f;
+}
+
+.video-catalog-loading .circle-spinner {
+  border-top-color: #1d1d1f;
+  border-left-color: transparent;
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+}
+
+.video-catalog-loading .loading-text {
+  color: #86868b;
+}
+
+/* États focus et hover pour l'accessibilité */
+.minimal-loading-container:focus-within {
+  outline: 2px solid #007AFF;
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .minimal-loading-container {
+    gap: 20px;
+    padding: 32px 16px;
+    min-height: 160px;
+  }
+  
+  .loading-text {
+    font-size: 14px;
+  }
+  
+  /* Réduire les tailles sur mobile */
+  .spinner-small .spinner-dot {
+    width: 5px;
+    height: 5px;
+  }
+  
+  .spinner-medium .spinner-dot {
+    width: 7px;
+    height: 7px;
+  }
+  
+  .spinner-large .spinner-dot {
+    width: 9px;
+    height: 9px;
+  }
+}
+
+@media (max-width: 480px) {
+  .minimal-loading-container {
+    gap: 16px;
+    padding: 24px 12px;
+    min-height: 120px;
+  }
+  
+  .loading-text {
+    font-size: 13px;
+  }
+}
+
+/* Animation pour l'apparition du loader */
+.minimal-loading-container {
+  animation: fadeInLoader 0.3s ease-out;
+}
+
+@keyframes fadeInLoader {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .loading-text {
+    color: #a1a1a6;
+  }
+  
+  .spinner-dot,
+  .pulse-spinner {
+    background: #ffffff;
+  }
+  
+  .circle-spinner {
+    border-top-color: #ffffff;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .spinner-dot,
+  .pulse-spinner {
+    background: currentColor;
+  }
+  
+  .circle-spinner {
+    border-top-color: currentColor;
+  }
+  
+  .loading-text {
+    color: currentColor;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .minimal-spinner,
+  .pulse-spinner,
+  .circle-spinner {
+    animation: none !important;
+  }
+  
+  .spinner-dot {
+    animation: none !important;
+  }
+  
+  /* Fallback: simple opacity pulse */
+  .minimal-loading-container::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: currentColor;
+    border-radius: 50%;
+    animation: reducedMotionPulse 2s ease-in-out infinite;
+  }
+}
+
+@keyframes reducedMotionPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+} 

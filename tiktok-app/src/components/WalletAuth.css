@@ -1,0 +1,228 @@
+/* Wallet Auth - Design Minimaliste Apple */
+
+.wallet-auth {
+  width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.wallet-auth-content {
+  text-align: center;
+}
+
+/* Message d'erreur minimaliste */
+.error-message {
+  background: rgba(255, 59, 48, 0.08);
+  border: 0.5px solid rgba(255, 59, 48, 0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  color: #D70015;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Bouton principal - style Apple minimaliste */
+.wallet-connect-btn {
+  width: 100%;
+  background: #000000;
+  color: white;
+  border: none;
+  border-radius: 16px;
+  padding: 18px 32px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  letter-spacing: -0.3px;
+  font-family: inherit;
+}
+
+.wallet-connect-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  background: #1a1a1a;
+}
+
+.wallet-connect-btn:active:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.wallet-connect-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Spinner de chargement */
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Boutons de debug - style discret */
+.debug-btn {
+  background: rgba(0, 0, 0, 0.05);
+  color: #666;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.debug-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #000;
+}
+
+/* Debug info - style minimaliste */
+.debug-info {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+  font-size: 12px;
+  color: #666;
+  text-align: left;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+}
+
+.debug-info h4 {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.debug-info p {
+  margin: 4px 0;
+  line-height: 1.4;
+}
+
+.debug-info strong {
+  font-weight: 600;
+  color: #333;
+}
+
+/* État connecté - design épuré */
+.wallet-auth-success {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  border: 0.5px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.wallet-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #000 0%, #333 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.wallet-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.user-details {
+  flex: 1;
+  text-align: left;
+}
+
+.username {
+  margin: 0 0 4px 0;
+  font-weight: 600;
+  font-size: 16px;
+  color: #000;
+}
+
+.wallet-address {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+}
+
+.verified-badge {
+  display: inline-block;
+  background: #34C759;
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  margin-top: 4px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.sign-out-btn {
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.05);
+  color: #666;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  font-family: inherit;
+}
+
+.sign-out-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #000;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .wallet-connect-btn {
+    font-size: 17px;
+    padding: 16px 24px;
+  }
+  
+  .wallet-auth-success {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+    padding: 16px;
+  }
+  
+  .user-details {
+    text-align: center;
+  }
+}

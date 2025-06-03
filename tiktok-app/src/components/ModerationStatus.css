@@ -1,0 +1,265 @@
+/* Moderation Status Component Styles */
+
+.moderation-status-card {
+  border-radius: 12px;
+  padding: 16px;
+  margin: 12px 0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.moderation-status-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.status-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.status-icon-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  height: 48px;
+}
+
+.shield-icon {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: white;
+  border-radius: 50%;
+  padding: 2px;
+}
+
+.status-icon {
+  z-index: 1;
+}
+
+.status-info {
+  flex: 1;
+}
+
+.status-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+}
+
+.status-message {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Confidence Section */
+.confidence-section {
+  margin: 12px 0;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+}
+
+.confidence-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6B7280;
+  margin-bottom: 6px;
+}
+
+.confidence-bar {
+  height: 6px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.confidence-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* Detected Issues */
+.detected-issues {
+  margin: 12px 0;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+}
+
+.detected-issues h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px 0;
+}
+
+.issues-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.issue-tag {
+  display: inline-block;
+  padding: 4px 8px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #DC2626;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Review Notice */
+.review-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 8px;
+  margin: 12px 0;
+  font-size: 13px;
+  color: #7C3AED;
+}
+
+/* Moderation Message */
+.moderation-message {
+  margin: 12px 0 0 0;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  border-left: 3px solid #E5E7EB;
+}
+
+.moderation-message p {
+  margin: 0;
+  font-size: 13px;
+  color: #4B5563;
+  line-height: 1.4;
+}
+
+/* Compact Version */
+.moderation-status-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid;
+  transition: all 0.2s ease;
+}
+
+.moderation-status-compact.approved {
+  background: #ECFDF5;
+  color: #059669;
+  border-color: #A7F3D0;
+}
+
+.moderation-status-compact.rejected {
+  background: #FEF2F2;
+  color: #DC2626;
+  border-color: #FECACA;
+}
+
+.moderation-status-compact.pending {
+  background: #FFFBEB;
+  color: #D97706;
+  border-color: #FDE68A;
+}
+
+.moderation-status-compact.review {
+  background: #F3F4F6;
+  color: #7C3AED;
+  border-color: #D1D5DB;
+}
+
+.moderation-status-compact.unknown {
+  background: #F9FAFB;
+  color: #6B7280;
+  border-color: #E5E7EB;
+}
+
+.status-text {
+  white-space: nowrap;
+}
+
+/* Status-specific card styles */
+.moderation-status-card.approved {
+  border-color: #A7F3D0;
+}
+
+.moderation-status-card.rejected {
+  border-color: #FECACA;
+}
+
+.moderation-status-card.pending {
+  border-color: #FDE68A;
+}
+
+.moderation-status-card.review {
+  border-color: #D1D5DB;
+}
+
+.moderation-status-card.unknown {
+  border-color: #E5E7EB;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .moderation-status-card {
+    padding: 12px;
+    margin: 8px 0;
+  }
+  
+  .status-header {
+    gap: 10px;
+  }
+  
+  .status-icon-container {
+    min-width: 40px;
+    height: 40px;
+  }
+  
+  .status-title {
+    font-size: 15px;
+  }
+  
+  .status-message {
+    font-size: 13px;
+  }
+  
+  .confidence-section,
+  .detected-issues,
+  .moderation-message {
+    padding: 10px;
+  }
+}
+
+/* Animation for pending status */
+.moderation-status-card.pending .status-icon,
+.moderation-status-compact.pending svg {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+} 

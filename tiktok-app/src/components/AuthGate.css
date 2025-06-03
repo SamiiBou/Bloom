@@ -1,0 +1,111 @@
+/* Auth Gate - Design Minimaliste Apple */
+
+.auth-gate-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #f8f9f4;
+  color: #666;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.loading-spinner-large {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-top: 3px solid #000;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Page de connexion minimaliste */
+.auth-gate-minimal {
+  min-height: 100vh;
+  background: #f8f9f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.auth-gate-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+}
+
+/* Logo central - ÉNORME */
+.logo-container {
+  margin-bottom: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.bloom-logo {
+  width: 420px !important;
+  height: 420px !important;
+  object-fit: contain;
+  /* filter: drop-shadow(0 16px 60px rgba(0, 0, 0, 0.15)); */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 24px;
+}
+
+.bloom-logo:hover {
+  transform: scale(1.03);
+  filter: drop-shadow(0 20px 80px rgba(0, 0, 0, 0.2));
+}
+
+/* Composant d'authentification */
+.auth-component {
+  width: 100%;
+  max-width: 320px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .auth-gate-minimal {
+    padding: 16px;
+  }
+
+  .auth-gate-container {
+    max-width: 100%;
+  }
+
+  .logo-container {
+    margin-bottom: 60px;
+  }
+
+  .bloom-logo {
+    width: 220px;
+    height: 220px;
+  }
+
+  .auth-component {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .bloom-logo {
+    width: 180px;
+    height: 180px;
+  }
+
+  .logo-container {
+    margin-bottom: 50px;
+  }
+}

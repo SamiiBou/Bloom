@@ -1,0 +1,579 @@
+/* AFFICHAGE NORMAL PAR DÉFAUT */
+.video-feed {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  position: relative;
+  background-color: #000;
+  scroll-snap-type: y mandatory;
+  scroll-snap-stop: always;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* AFFICHAGE PLEIN ÉCRAN SEULEMENT POUR LES PAGES VIDÉO */
+.app.video-page .video-feed {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 1 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  touch-action: pan-y !important;
+}
+
+/* Hide scrollbar but keep functionality */
+.video-feed::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+}
+
+.video-feed {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Assurer que le container peut recevoir le focus pour les événements clavier */
+.video-feed:focus {
+  outline: none !important;
+}
+
+/* Supprimer tous les contours/bordures blancs des vidéos */
+.video-feed video,
+.video-feed video *,
+.video-feed .video-container,
+.video-feed .video-container *,
+.video-feed .video-card,
+.video-feed .video-card * {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Loading states */
+.video-feed.loading,
+.video-feed.error,
+.video-feed.empty {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 100vh !important;
+  width: 100vw !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+
+.loading-spinner,
+.error-message,
+.empty-message {
+  text-align: center;
+  color: #fff;
+  z-index: 10;
+}
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.loading-spinner p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error-message {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 300px;
+  padding: 20px;
+}
+
+.error-message p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 16px;
+}
+
+.retry-button {
+  background: #ff0050;
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.retry-button:hover {
+  background: #e6004a;
+}
+
+.empty-message {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 320px;
+  padding: 20px;
+  align-items: center;
+}
+
+.empty-message p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  text-align: center;
+}
+
+/* Bouton "Créer ma première vidéo" dans l'état vide */
+.create-first-video-btn {
+  background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+  color: white;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  box-shadow: 
+    0 4px 16px rgba(0, 122, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  letter-spacing: -0.2px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+}
+
+.create-first-video-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 8px 24px rgba(0, 122, 255, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #0051D5 0%, #4A44BC 100%);
+}
+
+.create-first-video-btn:active {
+  transform: translateY(0) scale(1);
+}
+
+/* FAB (Floating Action Button) - Design Apple Minimaliste */
+.create-video-fab {
+  position: fixed;
+  bottom: 120px; /* Repositionné plus bas maintenant qu'il y a de la place */
+  right: 24px;
+  z-index: 2500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Bouton principal */
+.fab-button {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1d1d1f;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    0 0 0 0.5px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  overflow: hidden;
+}
+
+/* Effet de brillance subtile */
+.fab-shine {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 70%
+  );
+  transform: rotate(45deg) translate(-100%, -100%);
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.fab-button:hover .fab-shine {
+  transform: rotate(45deg) translate(100%, 100%);
+}
+
+/* États du bouton */
+.fab-button:hover {
+  transform: scale(1.08);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    0 0 0 0.5px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.fab-button:active {
+  transform: scale(1.04);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Effet de respiration subtile */
+.fab-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(0, 122, 255, 0.1) 0%, transparent 70%);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  animation: breathe 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes breathe {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0;
+  }
+}
+
+/* Label élégant */
+.fab-label {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  opacity: 0;
+  transform: translateY(-50%) translateX(8px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  position: absolute;
+  right: 48px;
+  top: 50%;
+}
+
+.create-video-fab:hover .fab-label {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Icône Plus avec rotation */
+.fab-button svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 2;
+}
+
+.fab-button:hover svg {
+  transform: rotate(90deg) scale(1.1);
+}
+
+/* État spécial pour feed vide */
+.video-feed.empty .create-video-fab {
+  bottom: 50%;
+  right: 50%;
+  transform: translate(50%, 50%);
+}
+
+.video-feed.empty .fab-button {
+  width: 96px;
+  height: 96px;
+  animation: pulse-empty 2s ease-in-out infinite;
+}
+
+@keyframes pulse-empty {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.08),
+      0 2px 8px rgba(0, 0, 0, 0.04),
+      0 0 0 0.5px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 
+      0 12px 40px rgba(0, 0, 0, 0.12),
+      0 4px 12px rgba(0, 0, 0, 0.06),
+      0 0 0 0.5px rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+}
+
+.video-feed.empty .fab-label {
+  opacity: 1;
+  position: relative;
+  right: auto;
+  top: auto;
+  transform: translateY(0);
+  font-size: 16px;
+  padding: 10px 20px;
+}
+
+.video-feed.empty .fab-button svg {
+  width: 36px;
+  height: 36px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .create-video-fab {
+    bottom: 110px; /* Ajusté pour mobile */
+    right: 20px;
+  }
+
+  .fab-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .fab-button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .fab-label {
+    font-size: 11px;
+    padding: 4px 10px;
+    right: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .create-video-fab {
+    bottom: 100px; /* Plus bas sur petit mobile */
+    right: 16px;
+  }
+
+  .fab-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .fab-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .fab-label {
+    font-size: 10px;
+    padding: 3px 8px;
+    right: 40px;
+  }
+}
+
+/* Mode sombre */
+@media (prefers-color-scheme: dark) {
+  .fab-button {
+    background: rgba(44, 44, 46, 0.95);
+    color: #f2f2f7;
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      0 2px 8px rgba(0, 0, 0, 0.2),
+      0 0 0 0.5px rgba(255, 255, 255, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  .fab-button:hover {
+    background: rgba(58, 58, 60, 0.98);
+    box-shadow: 
+      0 12px 40px rgba(0, 0, 0, 0.4),
+      0 4px 12px rgba(0, 0, 0, 0.3),
+      0 0 0 0.5px rgba(255, 255, 255, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Loading more indicator */
+.loading-more {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  width: 100%;
+}
+
+.loading-more .spinner {
+  width: 30px;
+  height: 30px;
+  border-width: 2px;
+}
+
+/* Responsive design pour le FAB */
+@media (max-width: 768px) {
+  .video-feed {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+  }
+
+  .create-video-fab {
+    bottom: 155px !important;
+    right: 10px !important;
+  }
+
+  .loading-spinner p,
+  .error-message p,
+  .empty-message p {
+    font-size: 14px;
+  }
+  
+  .retry-button,
+  .create-first-video-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .create-video-fab {
+    bottom: 140px;
+    right: 16px;
+  }
+
+  .create-first-video-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+    gap: 8px;
+  }
+
+  .empty-message {
+    padding: 16px;
+    gap: 12px;
+  }
+}
+
+/* Rewards info banner */
+.rewards-info-banner {
+  position: fixed;
+  bottom: 90px; /* Just above the bottom navigation (typically 80px height) */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 8px 16px;
+  max-width: 90%;
+  animation: fadeInUp 0.6s ease-out;
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+
+.rewards-text {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.1px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  text-align: center;
+  line-height: 1.3;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Hide rewards banner in empty state */
+.video-feed.empty .rewards-info-banner {
+  display: none;
+}
+
+/* Responsive adjustments for rewards banner */
+@media (max-width: 768px) {
+  .rewards-info-banner {
+    bottom: 85px; /* Adjust for mobile bottom nav */
+    padding: 6px 12px;
+  }
+  
+  .rewards-text {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .rewards-info-banner {
+    bottom: 80px; /* Adjust for smaller mobile bottom nav */
+    padding: 5px 10px;
+    border-radius: 20px;
+  }
+  
+  .rewards-text {
+    font-size: 11px;
+  }
+}
