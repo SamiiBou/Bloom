@@ -1,4 +1,3 @@
-*.js
 *.env
 *.md
 node_modules/
