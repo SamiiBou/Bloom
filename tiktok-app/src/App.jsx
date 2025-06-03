@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import VideoFeed from './components/VideoFeed';
 import VideoCatalog from './components/VideoCatalog';
 import ImageFeed from './components/ImageFeed';
@@ -14,9 +14,10 @@ import RewardsHub from './components/RewardsHub';
 import FluxImageGenerator from './components/FluxImageGenerator';
 import './App.css';
 
-function App() {
+function AppContent() {
   const [currentPage, setCurrentPage] = useState('home'); // Start on home page
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isAuthenticated, isLoading } = useAuth();
   
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -69,53 +70,65 @@ function App() {
   );
   
   return (
-    <AuthProvider>
-      <div className={`app ${isVideoPage ? 'video-page' : ''}`}>
-        {isVideoPage ? (
-          // Structure spéciale pour les pages vidéo - plein écran
-          <>
-            <AuthGate>
-              {renderMainContent()}
-            </AuthGate>
-            {/* Navigation en overlay pour les vidéos */}
+    <div className={`app ${isVideoPage ? 'video-page' : ''}`}>
+      {isVideoPage ? (
+        // Structure spéciale pour les pages vidéo - plein écran
+        <>
+          <AuthGate>
+            {renderMainContent()}
+          </AuthGate>
+          {/* Navigation en overlay pour les vidéos */}
+          <Header
+            onMenuClick={() => setIsSidebarOpen(true)}
+            currentPage={currentPage}
+            onPageChange={handlePageChange}
+          />
+          {/* Afficher la BottomNavigation seulement si l'utilisateur est authentifié */}
+          {isAuthenticated && (
+            <BottomNavigation
+              currentPage={currentPage}
+              onPageChange={handlePageChange}
+            />
+          )}
+        </>
+      ) : (
+        // Structure normale pour les autres pages
+        <>
+          {showHeader && (
             <Header
               onMenuClick={() => setIsSidebarOpen(true)}
               currentPage={currentPage}
               onPageChange={handlePageChange}
             />
+          )}
+          <main className="app-main">
+            <AuthGate>
+              {renderMainContent()}
+            </AuthGate>
+          </main>
+          {/* Afficher la BottomNavigation seulement si l'utilisateur est authentifié */}
+          {isAuthenticated && (
             <BottomNavigation
               currentPage={currentPage}
               onPageChange={handlePageChange}
             />
-          </>
-        ) : (
-          // Structure normale pour les autres pages
-          <>
-            {showHeader && (
-              <Header
-                onMenuClick={() => setIsSidebarOpen(true)}
-                currentPage={currentPage}
-                onPageChange={handlePageChange}
-              />
-            )}
-            <main className="app-main">
-              <AuthGate>
-                {renderMainContent()}
-              </AuthGate>
-            </main>
-            <BottomNavigation
-              currentPage={currentPage}
-              onPageChange={handlePageChange}
-            />
-          </>
-        )}
-        <Sidebar
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-          currentPage={currentPage}
-          onPageChange={handlePageChange}
-        />
-      </div>
+          )}
+        </>
+      )}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        currentPage={currentPage}
+        onPageChange={handlePageChange}
+      />
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
     </AuthProvider>
   );
 }
