@@ -60,7 +60,7 @@ const tempStorage = multer.diskStorage({
 const tempUpload = multer({
   storage: tempStorage,
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 100 * 1024 * 1024, // 100MB
+    fileSize: 300 * 1024 * 1024, // 300MB
   },
   fileFilter: (req, file, cb) => {
     console.log('--- File Filter Debug ---');
@@ -249,6 +249,7 @@ router.post('/video', protect, (req, res, next) => {
 
   upload(req, res, async (err) => {
     if (err) {
+      console.error('[UPLOAD] Multer error:', err);
       return res.status(400).json({
         status: 'error',
         message: err.message,
@@ -259,6 +260,7 @@ router.post('/video', protect, (req, res, next) => {
       const { description, music, title, category } = req.body;
 
       if (!req.files || !req.files.video) {
+        console.error('[UPLOAD] No video file received');
         return res.status(400).json({
           status: 'error',
           message: 'Video file is required',
@@ -266,6 +268,7 @@ router.post('/video', protect, (req, res, next) => {
       }
 
       if (!description) {
+        console.error('[UPLOAD] No description received');
         return res.status(400).json({
           status: 'error',
           message: 'Description is required',
@@ -278,7 +281,7 @@ router.post('/video', protect, (req, res, next) => {
       // Générer un ID unique pour cette tâche d'upload
       const uploadId = `upload_${Date.now()}_${Math.round(Math.random() * 1E9)}`;
       
-      console.log(`📤 Processing video upload: ${originalVideoFile.originalname}`);
+      console.log(`[UPLOAD] 📤 Processing video upload: ${originalVideoFile.originalname} (size: ${originalVideoFile.size} bytes)`);
 
       // Créer la tâche d'upload avec statut initial
       const uploadTask = new UploadTask({
@@ -317,12 +320,12 @@ router.post('/video', protect, (req, res, next) => {
       // Traiter la vidéo de manière asynchrone
       processVideoAsync(uploadTask, originalVideoFile, originalThumbnailFile, req.body)
         .catch(error => {
-          console.error('❌ Async video processing error:', error);
+          console.error('[UPLOAD] ❌ Async video processing error:', error);
           uploadTask.setError(error, 'async_processing').catch(console.error);
         });
 
     } catch (error) {
-      console.error('❌ Video upload error:', error);
+      console.error('[UPLOAD] ❌ Video upload error:', error);
       res.status(500).json({
         status: 'error',
         message: 'Video upload failed',
@@ -337,7 +340,7 @@ async function processVideoAsync(uploadTask, originalVideoFile, originalThumbnai
   let tempFiles = uploadTask.tempFiles || [];
 
   try {
-    // Étape 1: Validation
+    console.log(`[UPLOAD] Step 1: Validation`);
     await uploadTask.updateProgress('VALIDATING', 10, '🔍 Validating file...');
     
     // Étape 2: Vérifier si la conversion est nécessaire
@@ -347,7 +350,7 @@ async function processVideoAsync(uploadTask, originalVideoFile, originalThumbnai
     let videoMetadata;
 
     if (needsConversion) {
-      // Étape 3: Conversion
+      console.log(`[UPLOAD] Step 2: Conversion needed, converting to MP4...`);
       await uploadTask.updateProgress('CONVERTING', 20, '🔄 Converting video to MP4...');
       
       uploadTask.processing.conversionNeeded = true;
@@ -363,6 +366,7 @@ async function processVideoAsync(uploadTask, originalVideoFile, originalThumbnai
       await uploadTask.save();
 
       await uploadTask.updateProgress('CONVERTING', 50, '🔄 Video conversion completed...');
+      console.log(`[UPLOAD] Step 2: Conversion completed`);
     }
 
     // Étape 4: Obtenir les métadonnées
@@ -400,6 +404,7 @@ async function processVideoAsync(uploadTask, originalVideoFile, originalThumbnai
       tempFiles.push(thumbnailPath);
       uploadTask.tempFiles = tempFiles;
       await uploadTask.save();
+      console.log(`[UPLOAD] Step 4: Thumbnail generated at ${thumbnailPath}`);
     }
 
     // Étape 6: Upload vers S3
