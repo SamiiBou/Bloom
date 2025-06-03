@@ -345,14 +345,22 @@ const UploadModal = ({
   const [videoPreview, setVideoPreview] = useState(null);
 
   const handleFileSelect = () => {
+    console.log('[UPLOADMODAL] handleFileSelect called');
     fileInputRef.current?.click();
   };
 
   const handleFileChange = (event) => {
+    console.log('[UPLOADMODAL] handleFileChange called');
     const file = event.target.files[0];
+    if (file) {
+      console.log('[UPLOADMODAL] File selected:', file.name, file.size, file.type);
+    }
     if (file && file.type.startsWith('video/')) {
       setSelectedFile(file);
       setVideoPreview(URL.createObjectURL(file));
+      console.log('[UPLOADMODAL] Video preview URL created:', videoPreview);
+    } else if (file) {
+      console.warn('[UPLOADMODAL] File is not a video:', file.type);
     }
   };
 
@@ -363,12 +371,19 @@ const UploadModal = ({
   };
 
   const handlePublishPreview = () => {
+    console.log('[UPLOADMODAL] handlePublishPreview called');
     if (selectedFile) {
+      console.log('[UPLOADMODAL] Publishing file:', selectedFile.name, selectedFile.size, selectedFile.type);
       onFileUpload(selectedFile);
       setSelectedFile(null);
-      if (videoPreview) URL.revokeObjectURL(videoPreview);
+      if (videoPreview) {
+        URL.revokeObjectURL(videoPreview);
+        console.log('[UPLOADMODAL] Video preview URL revoked');
+      }
       setVideoPreview(null);
       onClose();
+    } else {
+      console.warn('[UPLOADMODAL] No file selected for publishing');
     }
   };
 
