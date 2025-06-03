@@ -148,6 +148,9 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  lastPeriodicTokenAt: {
+    type: Date
+  },
   watchedVideos: [{
     videoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Video' },
     section: { type: String, enum: ['home', 'videos'], required: true },

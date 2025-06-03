@@ -157,9 +157,21 @@ const resumePendingTransactions = async () => {
 router.post('/request', protect, async (req, res) => {
   console.log('[AIRDROP/request] ➡️ Entry', { userId: req.user._id });
   try {
-    const user = await User.findById(req.user._id)
-      .select('walletAddress claimPending lastClaimTime grabBalance');
+    let user = await User.findById(req.user._id)
+      .select('walletAddress claimPending lastClaimTime grabBalance lastPeriodicTokenAt createdAt');
     console.log('[AIRDROP/request] User DB fetch:', user);
+
+    // --- AJOUT: Crédit périodique automatique ---
+    const now = new Date();
+    let last = user.lastPeriodicTokenAt || user.createdAt;
+    let periods = Math.floor((now - last) / (3 * 60 * 60 * 1000));
+    if (periods > 0) {
+      user.grabBalance += periods;
+      user.lastPeriodicTokenAt = new Date(last.getTime() + periods * 3 * 60 * 60 * 1000);
+      await user.save();
+      console.log(`[AIRDROP/request] +${periods} tokens périodiques crédités (3h/période)`);
+    }
+    // --- FIN AJOUT ---
 
     if (!user) {
       console.warn('[AIRDROP/request] User not found');

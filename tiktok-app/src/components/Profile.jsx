@@ -1407,6 +1407,12 @@ const Profile = () => {
             )}
           </button>
 
+          {/* Reward reminder message */}
+          <div className="reward-reminder-message">
+            <Coins size={14} className="reminder-icon" />
+            <span>Come back after every 3 hours to receive 1 Bloom</span>
+          </div>
+
           {/* Quick credit purchase section */}
           <div className="quick-purchase-section">
             <button 
@@ -1586,7 +1592,7 @@ const Profile = () => {
             <div className="images-section-new">
               {/* Temporary debug button */}
               <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                <button 
+                {/* <button 
                   onClick={() => {
                     console.log('🔍 DEBUG - Current user:', user);
                     console.log('🔍 DEBUG - User ID:', user?._id);
@@ -1605,7 +1611,7 @@ const Profile = () => {
                   }}
                 >
                   🔍 Debug Images
-                </button>
+                </button> */}
               </div>
               {imagesLoading && (
                 <div className="loading-new">
