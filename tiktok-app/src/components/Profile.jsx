@@ -616,10 +616,10 @@ const Profile = () => {
         const images = response.data.images || [];
         setUserImages(images);
         
-        console.log('=== IMAGES CHARGÉES ===');
-        console.log(`Nombre d'images: ${images.length}`);
+        console.log('=== IMAGES LOADED ===');
+        console.log(`Number of images: ${images.length}`);
         if (images.length === 0) {
-          console.log('ℹ️ Aucune image trouvée pour cet utilisateur');
+          console.log('ℹ️ No images found for this user');
         } else {
           images.forEach((image, index) => {
             console.log(`Image ${index + 1}:`, {
