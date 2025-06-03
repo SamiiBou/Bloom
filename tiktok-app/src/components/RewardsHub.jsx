@@ -9,7 +9,7 @@ import { encodeVoucher } from '../utils/encodeVoucher';
 import './RewardsHub.css';
 
 // Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://d8a0e486e7eb.ngrok.app/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://bloom-m284.onrender.com/api';
 const BACKEND_URL = API_BASE_URL;
 const API_TIMEOUT = 15000;
 const TOKEN_CONTRACT_ADDRESS = '0x8b2D045381c7B9E09dC72fc3DDEbC1c74724E78D';
