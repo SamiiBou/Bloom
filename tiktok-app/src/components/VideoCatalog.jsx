@@ -623,7 +623,9 @@ const VideoCatalog = () => {
   };
 
   const handleUploadSubmit = async () => {
+    console.log('[UPLOAD] handleUploadSubmit called');
     if (!uploadFormData.file || !uploadFormData.title.trim() || !uploadFormData.description.trim() || !uploadFormData.thumbnail) {
+      console.warn('[UPLOAD] Missing required fields:', uploadFormData);
       alert('Please fill in all required fields and add a poster image');
       return;
     }
@@ -631,10 +633,10 @@ const VideoCatalog = () => {
     try {
       setIsUploading(true);
       setUploadStatus('⏳ Upload in progress...');
-
+      console.log('[UPLOAD] Preparing to get video duration...');
       // Get video duration
       const duration = await getVideoDuration(uploadFormData.file);
-      console.log(`📹 Detected duration: ${duration}s`);
+      console.log(`[UPLOAD] Detected duration: ${duration}s`);
 
       const formData = new FormData();
       formData.append('video', uploadFormData.file);
@@ -643,17 +645,25 @@ const VideoCatalog = () => {
       formData.append('category', uploadFormData.category);
       formData.append('type', 'long');
       formData.append('duration', duration.toString());
-
-      // Add poster image (now required)
       formData.append('thumbnail', uploadFormData.thumbnail);
 
-      // Upload via API service uploadVideo (uses /upload/video)
+      // Debug: log FormData keys
+      for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`[UPLOAD] FormData: ${key} = File(${value.name}, ${value.size} bytes, ${value.type})`);
+        } else {
+          console.log(`[UPLOAD] FormData: ${key} = ${value}`);
+        }
+      }
+
+      console.log('[UPLOAD] Calling apiService.uploadVideo...');
       const response = await apiService.uploadVideo(formData);
+      console.log('[UPLOAD] API response:', response);
 
       if (response.status === 'success') {
         setUploadStatus('✅ Video uploaded successfully!');
         setShowUploadModal(false);
-        
+        console.log('[UPLOAD] Upload success, resetting form and reloading videos');
         // Reset form
         setUploadFormData({
           title: '',
@@ -664,21 +674,23 @@ const VideoCatalog = () => {
           thumbnail: null,
           thumbnailPreview: null
         });
-        
         // Reload videos
         setTimeout(() => {
           loadVideos(1, false);
           setUploadStatus('');
         }, 2000);
       } else {
+        console.error('[UPLOAD] Upload failed:', response);
         throw new Error(response.message || 'Upload failed');
       }
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('[UPLOAD] Upload error:', error);
       setUploadStatus(`❌ ${error.message}`);
       setTimeout(() => setUploadStatus(''), 4000);
+      alert('Upload error: ' + (error.message || error));
     } finally {
       setIsUploading(false);
+      console.log('[UPLOAD] handleUploadSubmit finished, isUploading:', false);
     }
   };
 
@@ -1005,7 +1017,7 @@ const VideoCatalog = () => {
                 </button>
                 <button 
                   type="button"
-                  onClick={handleUploadSubmit}
+                  onClick={() => { console.log('[UPLOAD] Publish button clicked'); handleUploadSubmit(); }}
                   className="btn-primary"
                   disabled={isUploading || !uploadFormData.file || !uploadFormData.title.trim() || !uploadFormData.description.trim() || !uploadFormData.thumbnail}
                 >
