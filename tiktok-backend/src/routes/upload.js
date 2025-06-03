@@ -258,7 +258,7 @@ router.post('/video', protect, (req, res, next) => {
 
     try {
       const { description, music, title, category } = req.body;
-
+      console.log('[UPLOAD] Fields received:', { description, music, title, category });
       if (!req.files || !req.files.video) {
         console.error('[UPLOAD] No video file received');
         return res.status(400).json({
@@ -266,7 +266,6 @@ router.post('/video', protect, (req, res, next) => {
           message: 'Video file is required',
         });
       }
-
       if (!description) {
         console.error('[UPLOAD] No description received');
         return res.status(400).json({
@@ -274,16 +273,13 @@ router.post('/video', protect, (req, res, next) => {
           message: 'Description is required',
         });
       }
-
       const originalVideoFile = req.files.video[0];
       const originalThumbnailFile = req.files.thumbnail ? req.files.thumbnail[0] : null;
-      
-      // Générer un ID unique pour cette tâche d'upload
       const uploadId = `upload_${Date.now()}_${Math.round(Math.random() * 1E9)}`;
-      
       console.log(`[UPLOAD] 📤 Processing video upload: ${originalVideoFile.originalname} (size: ${originalVideoFile.size} bytes)`);
-
-      // Créer la tâche d'upload avec statut initial
+      if (originalThumbnailFile) {
+        console.log(`[UPLOAD] Thumbnail received: ${originalThumbnailFile.originalname} (size: ${originalThumbnailFile.size} bytes)`);
+      }
       const uploadTask = new UploadTask({
         user: req.user._id,
         uploadId: uploadId,
@@ -299,14 +295,11 @@ router.post('/video', protect, (req, res, next) => {
           userAgent: req.get('User-Agent'),
         }
       });
-
       if (originalThumbnailFile) {
         uploadTask.tempFiles.push(originalThumbnailFile.path);
       }
-
       await uploadTask.save();
-
-      // Retourner immédiatement l'ID de la tâche pour permettre le suivi
+      console.log(`[UPLOAD] UploadTask created: ${uploadId}`);
       res.status(202).json({
         status: 'accepted',
         message: 'Upload started - use polling to track progress',
@@ -316,14 +309,12 @@ router.post('/video', protect, (req, res, next) => {
           initialStatus: 'File received, starting processing...'
         }
       });
-
-      // Traiter la vidéo de manière asynchrone
+      console.log('[UPLOAD] Launching async video processing...');
       processVideoAsync(uploadTask, originalVideoFile, originalThumbnailFile, req.body)
         .catch(error => {
           console.error('[UPLOAD] ❌ Async video processing error:', error);
           uploadTask.setError(error, 'async_processing').catch(console.error);
         });
-
     } catch (error) {
       console.error('[UPLOAD] ❌ Video upload error:', error);
       res.status(500).json({
@@ -338,42 +329,31 @@ router.post('/video', protect, (req, res, next) => {
 // Fonction asynchrone pour traiter la vidéo
 async function processVideoAsync(uploadTask, originalVideoFile, originalThumbnailFile, requestBody) {
   let tempFiles = uploadTask.tempFiles || [];
-
   try {
     console.log(`[UPLOAD] Step 1: Validation`);
     await uploadTask.updateProgress('VALIDATING', 10, '🔍 Validating file...');
-    
-    // Étape 2: Vérifier si la conversion est nécessaire
     const needsConversion = await videoConverter.needsConversion(originalVideoFile.path);
-    
     let finalVideoPath = originalVideoFile.path;
     let videoMetadata;
-
     if (needsConversion) {
       console.log(`[UPLOAD] Step 2: Conversion needed, converting to MP4...`);
       await uploadTask.updateProgress('CONVERTING', 20, '🔄 Converting video to MP4...');
-      
       uploadTask.processing.conversionNeeded = true;
       await uploadTask.save();
-      
       const convertedFileName = videoConverter.generateTempFilename(originalVideoFile.originalname, '_converted');
       const convertedVideoPath = path.join(path.dirname(originalVideoFile.path), convertedFileName);
-      
-      console.log(`🔄 Converting video to MP4...`);
+      console.log(`[UPLOAD] Step 2: Starting conversion: ${originalVideoFile.path} -> ${convertedVideoPath}`);
       finalVideoPath = await videoConverter.convertToMP4(originalVideoFile.path, convertedVideoPath);
       tempFiles.push(finalVideoPath);
       uploadTask.tempFiles = tempFiles;
       await uploadTask.save();
-
       await uploadTask.updateProgress('CONVERTING', 50, '🔄 Video conversion completed...');
-      console.log(`[UPLOAD] Step 2: Conversion completed`);
+      console.log(`[UPLOAD] Step 2: Conversion completed: ${finalVideoPath}`);
+    } else {
+      console.log('[UPLOAD] Step 2: No conversion needed, using original file');
     }
-
-    // Étape 4: Obtenir les métadonnées
     videoMetadata = await videoConverter.getVideoMetadata(finalVideoPath);
-    console.log(`📊 Video metadata:`, videoMetadata);
-
-    // Stocker les informations du fichier
+    console.log(`[UPLOAD] Step 3: Video metadata:`, videoMetadata);
     uploadTask.fileInfo = {
       originalSize: (await fs.stat(originalVideoFile.path)).size,
       convertedSize: (await fs.stat(finalVideoPath)).size,
@@ -386,52 +366,41 @@ async function processVideoAsync(uploadTask, originalVideoFile, originalThumbnai
       bitrate: videoMetadata.bitrate
     };
     await uploadTask.save();
-
-    // Étape 5: Génération de miniature
+    console.log(`[UPLOAD] Step 4: Thumbnail generation`);
     await uploadTask.updateProgress('GENERATING_THUMBNAIL', 60, '🖼️ Generating thumbnail...');
-    
     let thumbnailPath = originalThumbnailFile ? originalThumbnailFile.path : null;
-    
     if (!thumbnailPath) {
       const baseName = path.basename(originalVideoFile.originalname, path.extname(originalVideoFile.originalname));
       const timestamp = Date.now();
       const random = Math.round(Math.random() * 1E9);
       const thumbnailFileName = `${baseName}_${timestamp}_${random}_thumb.jpg`;
       const initialThumbnailPath = path.join(path.dirname(originalVideoFile.path), thumbnailFileName);
-      
-      console.log(`🖼️  Generating thumbnail...`);
+      console.log(`[UPLOAD] Step 4: Generating thumbnail at ${initialThumbnailPath}`);
       thumbnailPath = await videoConverter.generateThumbnail(finalVideoPath, initialThumbnailPath);
       tempFiles.push(thumbnailPath);
       uploadTask.tempFiles = tempFiles;
       await uploadTask.save();
       console.log(`[UPLOAD] Step 4: Thumbnail generated at ${thumbnailPath}`);
+    } else {
+      console.log(`[UPLOAD] Step 4: Using provided thumbnail: ${thumbnailPath}`);
     }
-
-    // Étape 6: Upload vers S3
     await uploadTask.updateProgress('UPLOADING_TO_S3', 75, '☁️ Uploading to cloud...');
-    
-    console.log(`☁️  Uploading to S3...`);
-    
+    console.log(`[UPLOAD] Step 5: Uploading to S3...`);
     const videoS3Key = generateS3Key(originalVideoFile.originalname, 'videos');
     const thumbnailS3Key = generateS3Key(path.basename(thumbnailPath), 'thumbnails', '.jpg');
-
-    // Upload vidéo vers S3
+    console.log(`[UPLOAD] Step 5: Uploading video to S3 as ${videoS3Key}`);
     const videoUploadResult = await uploadFileToS3(finalVideoPath, videoS3Key, 'video/mp4');
-    
-    // Upload miniature vers S3
+    console.log(`[UPLOAD] Step 5: Video uploaded to S3:`, videoUploadResult);
+    console.log(`[UPLOAD] Step 5: Uploading thumbnail to S3 as ${thumbnailS3Key}`);
     const thumbnailUploadResult = await uploadFileToS3(thumbnailPath, thumbnailS3Key, 'image/jpeg');
-
-    // Stocker les URLs S3
+    console.log(`[UPLOAD] Step 5: Thumbnail uploaded to S3:`, thumbnailUploadResult);
     uploadTask.videoUrl = videoUploadResult.location;
     uploadTask.videoKey = videoUploadResult.key;
     uploadTask.thumbnailUrl = thumbnailUploadResult.location;
     uploadTask.thumbnailKey = thumbnailUploadResult.key;
     await uploadTask.save();
-
-    // Étape 7: Créer l'enregistrement vidéo
+    console.log(`[UPLOAD] Step 6: S3 upload completed`);
     await uploadTask.updateProgress('UPLOADING_TO_S3', 85, '💾 Creating video record...');
-
-    // Parse music data
     let musicData = {};
     if (requestBody.music) {
       try {
@@ -440,12 +409,9 @@ async function processVideoAsync(uploadTask, originalVideoFile, originalThumbnai
         musicData = { title: requestBody.music };
       }
     }
-
-    // Déterminer le type de vidéo
     const { type } = requestBody;
     let videoType = 'short';
     const videoDuration = Math.round(videoMetadata.duration || 0);
-    
     if (type && ['short', 'long'].includes(type)) {
       videoType = type;
       console.log(`📊 Type de vidéo forcé: ${videoType} (durée: ${videoDuration}s)`);
@@ -453,10 +419,8 @@ async function processVideoAsync(uploadTask, originalVideoFile, originalThumbnai
       videoType = 'long';
       console.log(`📊 Type de vidéo auto-détecté: ${videoType} (durée: ${videoDuration}s)`);
     }
-
-    // Générer un titre automatique si non fourni
     const videoTitle = requestBody.title || (uploadTask.description.length > 50 ? uploadTask.description.substring(0, 50) + '...' : uploadTask.description);
-    
+    console.log(`[UPLOAD] Step 7: Creating Video document in DB...`);
     const video = new Video({
       user: uploadTask.user,
       title: videoTitle,
@@ -479,27 +443,19 @@ async function processVideoAsync(uploadTask, originalVideoFile, originalThumbnai
         lastModeratedAt: new Date()
       }
     });
-
     await video.save();
     uploadTask.video = video._id;
     await uploadTask.save();
-
-    // Étape 8: Modération de contenu
+    console.log(`[UPLOAD] Step 7: Video document created: ${video._id}`);
     await uploadTask.updateProgress('MODERATING', 90, '🛡️ Content moderation...');
-    
-    console.log(`🛡️ Démarrage de la modération de contenu...`);
-    
+    console.log(`[UPLOAD] Step 8: Starting content moderation...`);
     let moderationResult;
     let processingStartTime = Date.now();
-    
     try {
       moderationResult = await contentModerationService.moderateVideo(finalVideoPath, {
         failSafe: 'allow'
       });
-      
       const processingTime = Date.now() - processingStartTime;
-      
-      // Sauvegarder le résultat de modération
       const moderationDoc = new ModerationResult({
         video: video._id,
         user: uploadTask.user,
@@ -517,10 +473,7 @@ async function processVideoAsync(uploadTask, originalVideoFile, originalThumbnai
         },
         action: moderationResult.isAllowed ? 'approved' : 'rejected'
       });
-      
       await moderationDoc.save();
-      
-      // Mettre à jour la vidéo avec les résultats de modération
       const updateData = {
         'contentModeration.autoModerationStatus': moderationResult.isAllowed ? 'approved' : 'rejected',
         'contentModeration.autoModerationResult': moderationDoc._id,
@@ -528,38 +481,29 @@ async function processVideoAsync(uploadTask, originalVideoFile, originalThumbnai
         'contentModeration.moderationConfidence': moderationResult.confidence,
         'contentModeration.lastModeratedAt': new Date()
       };
-      
       const needsManualReview = !moderationResult.isAllowed && moderationResult.confidence < 0.9;
       updateData['contentModeration.needsManualReview'] = needsManualReview;
-      
       if (!moderationResult.isAllowed) {
         updateData['contentModeration.rejectionReasons'] = moderationResult.detectedContent;
         updateData.moderationStatus = needsManualReview ? 'under_review' : 'rejected';
       } else {
         updateData.moderationStatus = 'approved';
       }
-      
       await Video.findByIdAndUpdate(video._id, updateData);
-      
-      // Stocker les résultats de modération dans la tâche
       uploadTask.moderation = {
         status: moderationResult.isAllowed ? 'approved' : 'rejected',
         confidence: moderationResult.confidence,
         detectedIssues: moderationResult.detectedContent,
         needsReview: needsManualReview
       };
-      
-      console.log(`🛡️ Modération terminée: ${moderationResult.isAllowed ? 'APPROUVÉ' : 'REJETÉ'} (confiance: ${(moderationResult.confidence * 100).toFixed(1)}%)`);
-      
+      console.log(`[UPLOAD] Step 8: Moderation completed: ${moderationResult.isAllowed ? 'APPROUVÉ' : 'REJETÉ'} (confiance: ${(moderationResult.confidence * 100).toFixed(1)}%)`);
     } catch (moderationError) {
-      console.error('❌ Erreur lors de la modération:', moderationError);
-      
+      console.error('[UPLOAD] Step 8: Moderation error:', moderationError);
       await Video.findByIdAndUpdate(video._id, {
         'contentModeration.autoModerationStatus': 'error',
         'contentModeration.needsManualReview': true,
         moderationStatus: 'under_review'
       });
-      
       uploadTask.moderation = {
         status: 'error',
         confidence: 0,
@@ -567,28 +511,20 @@ async function processVideoAsync(uploadTask, originalVideoFile, originalThumbnai
         needsReview: true
       };
     }
-
-    // Mettre à jour le compteur de vidéos de l'utilisateur
     await User.findByIdAndUpdate(uploadTask.user, {
       $inc: { videosCount: 1 }
     });
-
-    // Populer les données utilisateur pour la réponse
     await video.populate('user', 'username displayName avatar verified');
-
-    // Étape finale: Succès
     await uploadTask.updateProgress('SUCCEEDED', 100, '✅ Upload completed!');
-    
-    console.log(`✅ Video uploaded successfully: ${video._id}`);
-
+    console.log(`[UPLOAD] Step 9: Upload process completed successfully for video: ${video._id}`);
   } catch (error) {
-    console.error('❌ Video processing error:', error);
+    console.error('[UPLOAD] ❌ Video processing error:', error);
     await uploadTask.setError(error, 'video_processing');
   } finally {
-    // Nettoyer les fichiers temporaires
     if (tempFiles.length > 0) {
-      console.log(`🧹 Cleaning up ${tempFiles.length} temporary files...`);
+      console.log(`[UPLOAD] Step 10: Cleaning up ${tempFiles.length} temporary files...`);
       await videoConverter.cleanupFiles(tempFiles);
+      console.log('[UPLOAD] Step 10: Cleanup completed');
     }
   }
 }
