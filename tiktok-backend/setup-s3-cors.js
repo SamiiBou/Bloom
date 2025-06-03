@@ -21,7 +21,7 @@ async function setupCORS() {
             AllowedOrigins: [
               'http://localhost:3000',
               'https://localhost:3000',
-              'https://ecd7ef7e0b27.ngrok.app',
+              'https://bloom-3n1v.vercel.app',
               'https://*.ngrok.app',
               'https://*.ngrok.io'
             ],
