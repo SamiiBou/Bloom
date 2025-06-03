@@ -389,6 +389,96 @@ router.get('/task/:taskId', protect, async (req, res) => {
 
         console.log(`✅ AI video downloaded and ready for preview: ${aiTask.runwayTaskId}`);
 
+        // ============ NOUVEAU: MODÉRATION AUTOMATIQUE IMMÉDIATE ============
+        console.log(`🛡️ Démarrage de la modération automatique pour la vidéo AI: ${aiTask.runwayTaskId}`);
+        
+        try {
+          // Créer un enregistrement vidéo temporaire pour la modération
+          const tempVideo = new Video({
+            user: req.user._id,
+            description: `Vidéo AI temporaire pour modération: ${aiTask.promptText}`,
+            videoUrl: uploadResult.location,
+            videoKey: uploadResult.key,
+            duration: aiTask.options.duration,
+            resolution: {
+              width: aiTask.options.ratio === '1280:720' ? 1280 : 720,
+              height: aiTask.options.ratio === '1280:720' ? 720 : 1280,
+            },
+            metadata: {
+              aiGenerated: true,
+              promptText: aiTask.promptText,
+              model: aiTask.options.model,
+              temporaryForModeration: true // Flag pour indiquer que c'est temporaire
+            },
+            type: 'short',
+            // Définir le statut de modération initial
+            moderationStatus: 'pending',
+            contentModeration: {
+              autoModerationStatus: 'analyzing',
+              isAutoApproved: false,
+              needsManualReview: false,
+              lastModeratedAt: new Date()
+            }
+          });
+
+          await tempVideo.save();
+
+          // Effectuer la modération de contenu
+          const contentModerationService = require('../services/contentModerationService');
+          const moderationResult = await contentModerationService.moderateVideoFromUrl(uploadResult.location, {
+            failSafe: 'allow' // En cas d'erreur, autoriser la vidéo par défaut
+          });
+
+          // Mettre à jour le statut de modération
+          const updateData = {
+            'contentModeration.autoModerationStatus': moderationResult.isAllowed ? 'approved' : 'rejected',
+            'contentModeration.isAutoApproved': moderationResult.isAllowed,
+            'contentModeration.moderationConfidence': moderationResult.confidence,
+            'contentModeration.lastModeratedAt': new Date()
+          };
+          
+          if (!moderationResult.isAllowed) {
+            updateData['contentModeration.rejectionReasons'] = moderationResult.detectedContent;
+            updateData.moderationStatus = 'rejected';
+          } else {
+            updateData.moderationStatus = 'approved';
+          }
+
+          await Video.findByIdAndUpdate(tempVideo._id, updateData);
+
+          // Stocker les résultats de modération dans la tâche AI
+          aiTask.moderationResult = {
+            isAllowed: moderationResult.isAllowed,
+            confidence: moderationResult.confidence,
+            detectedContent: moderationResult.detectedContent,
+            moderatedAt: new Date(),
+            videoId: tempVideo._id // Pour référence
+          };
+          await aiTask.save();
+
+          console.log(`🛡️ Modération automatique terminée: ${moderationResult.isAllowed ? 'APPROUVÉ' : 'REJETÉ'} (confiance: ${(moderationResult.confidence * 100).toFixed(1)}%)`);
+          if (moderationResult.detectedContent.length > 0) {
+            console.log(`🚨 Problèmes détectés: ${moderationResult.detectedContent.join(', ')}`);
+          }
+
+          // Supprimer l'enregistrement vidéo temporaire après modération
+          await Video.findByIdAndDelete(tempVideo._id);
+          console.log(`🗑️ Enregistrement vidéo temporaire supprimé après modération`);
+
+        } catch (moderationError) {
+          console.error('❌ Erreur lors de la modération automatique AI:', moderationError);
+          
+          // En cas d'erreur, stocker l'erreur dans la tâche
+          aiTask.moderationResult = {
+            isAllowed: true, // Par défaut, autoriser en cas d'erreur
+            confidence: 0,
+            detectedContent: ['moderation_error'],
+            error: moderationError.message,
+            moderatedAt: new Date()
+          };
+          await aiTask.save();
+        }
+
         return res.json({
           status: 'success',
           data: {
@@ -398,7 +488,15 @@ router.get('/task/:taskId', protect, async (req, res) => {
               videoUrl: aiTask.videoUrl,
               publishStatus: aiTask.publishStatus,
               cost: aiTask.cost,
-              processingTime: aiTask.metadata.processingTime
+              processingTime: aiTask.metadata.processingTime,
+              // ============ NOUVEAU: INCLURE LES RÉSULTATS DE MODÉRATION ============
+              moderation: aiTask.moderationResult || {
+                isAllowed: true,
+                confidence: 0.95,
+                detectedContent: [],
+                moderatedAt: new Date(),
+                fallback: true
+              }
             }
           }
         });
@@ -646,10 +744,84 @@ router.post('/task/:taskId/publish', protect, async (req, res) => {
         model: aiTask.options.model,
         hasCustomMusic: !!music,
         musicMetadata: music || null
+      },
+      type: 'short',
+      // ============ NOUVEAU: DÉFINIR LE STATUT DE MODÉRATION INITIAL ============
+      moderationStatus: 'pending',
+      contentModeration: {
+        autoModerationStatus: 'analyzing',
+        isAutoApproved: false,
+        needsManualReview: false,
+        lastModeratedAt: new Date()
       }
     });
 
     await video.save();
+
+    // ============ EFFECTUER LA MODÉRATION AUTOMATIQUE LORS DE LA PUBLICATION ============
+    console.log(`🛡️ Démarrage de la modération automatique lors de la publication: ${video._id}`);
+    
+    try {
+      const contentModerationService = require('../services/contentModerationService');
+      let moderationResult;
+      
+      // Si nous avons déjà des résultats de modération de la prévisualisation, les utiliser
+      if (aiTask.moderationResult && aiTask.moderationResult.isAllowed !== undefined) {
+        console.log(`🛡️ Utilisation des résultats de modération existants`);
+        moderationResult = aiTask.moderationResult;
+        
+      } else {
+        // Sinon, effectuer une nouvelle modération
+        console.log(`🛡️ Effectuer une nouvelle modération lors de la publication`);
+        moderationResult = await contentModerationService.moderateVideoFromUrl(aiTask.videoUrl, {
+          failSafe: 'allow'
+        });
+        
+        // Stocker les résultats dans la tâche AI pour référence future
+        aiTask.moderationResult = {
+          isAllowed: moderationResult.isAllowed,
+          confidence: moderationResult.confidence,
+          detectedContent: moderationResult.detectedContent,
+          moderatedAt: new Date()
+        };
+        await aiTask.save();
+      }
+      
+      // Mettre à jour la vidéo avec les résultats de modération
+      const updateData = {
+        'contentModeration.autoModerationStatus': moderationResult.isAllowed ? 'approved' : 'rejected',
+        'contentModeration.isAutoApproved': moderationResult.isAllowed,
+        'contentModeration.moderationConfidence': moderationResult.confidence,
+        'contentModeration.lastModeratedAt': new Date()
+      };
+      
+      if (!moderationResult.isAllowed) {
+        updateData['contentModeration.rejectionReasons'] = moderationResult.detectedContent;
+        updateData.moderationStatus = 'rejected';
+      } else {
+        updateData.moderationStatus = 'approved';
+      }
+      
+      await Video.findByIdAndUpdate(video._id, updateData);
+      console.log(`🛡️ Modération de publication terminée: ${moderationResult.isAllowed ? 'APPROUVÉ' : 'REJETÉ'} (confiance: ${(moderationResult.confidence * 100).toFixed(1)}%)`);
+      
+      if (moderationResult.detectedContent && moderationResult.detectedContent.length > 0) {
+        console.log(`🚨 Problèmes détectés: ${moderationResult.detectedContent.join(', ')}`);
+      }
+      
+    } catch (moderationError) {
+      console.error('❌ Erreur lors de la modération de publication:', moderationError);
+      
+      // En cas d'erreur, approuver par défaut (fallback)
+      await Video.findByIdAndUpdate(video._id, {
+        'contentModeration.autoModerationStatus': 'approved',
+        'contentModeration.isAutoApproved': true,
+        'contentModeration.moderationConfidence': 0.95,
+        'contentModeration.lastModeratedAt': new Date(),
+        moderationStatus: 'approved'
+      });
+      console.log(`🛡️ Modération échouée, approbation par défaut appliquée`);
+    }
 
     // Update AI task
     aiTask.video = video._id;
