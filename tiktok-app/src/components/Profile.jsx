@@ -151,7 +151,7 @@ const Profile = () => {
       console.log('💰 [PROFILE PAYMENT ADDRESS] Backend URL:', BACKEND_URL);
       
       try {
-        const paymentUrl = `${BACKEND_URL}/api/users/payment/address`;
+        const paymentUrl = `${BACKEND_URL}/users/payment/address`;
         console.log('💰 [PROFILE PAYMENT ADDRESS] 🔗 URL:', paymentUrl);
         console.log('💰 [PROFILE PAYMENT ADDRESS] 🔑 Token (first 20 chars):', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
         
@@ -175,7 +175,7 @@ const Profile = () => {
           // NOUVEAU: Essayer l'endpoint alternatif comme fallback
           try {
             console.log('💰 [PROFILE PAYMENT ADDRESS] 🔄 Trying alternative endpoint...');
-            const alternativeUrl = `${BACKEND_URL}/api/payment/address`;
+            const alternativeUrl = `${BACKEND_URL}/payment/address`;
             console.log('💰 [PROFILE PAYMENT ADDRESS] 🔗 Alternative URL:', alternativeUrl);
             
             const res2 = await axios.get(alternativeUrl);
@@ -205,7 +205,7 @@ const Profile = () => {
         // NOUVEAU: Essayer l'endpoint alternatif comme fallback
         try {
           console.log('💰 [PROFILE PAYMENT ADDRESS] 🔄 Trying alternative endpoint after main failure...');
-          const alternativeUrl = `${BACKEND_URL}/api/payment/address`;
+          const alternativeUrl = `${BACKEND_URL}/payment/address`;
           console.log('💰 [PROFILE PAYMENT ADDRESS] 🔗 Alternative URL:', alternativeUrl);
           
           const res2 = await axios.get(alternativeUrl);
@@ -254,7 +254,7 @@ const Profile = () => {
       let voucherResponse;
       try {
         voucherResponse = await axios.post(
-          `${BACKEND_URL}/api/airdrop/request`,
+          `${BACKEND_URL}/airdrop/request`,
           {},
           {
             withCredentials: true,
@@ -308,7 +308,7 @@ const Profile = () => {
 
       if (transactionResponse.finalPayload?.status === "error") {
         await axios.post(
-          `${BACKEND_URL}/api/airdrop/cancel`,
+          `${BACKEND_URL}/airdrop/cancel`,
           { nonce: voucher.nonce },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -317,7 +317,7 @@ const Profile = () => {
 
       if (!transactionResponse.finalPayload?.transaction_id) {
         await axios.post(
-          `${BACKEND_URL}/api/airdrop/cancel`,
+          `${BACKEND_URL}/airdrop/cancel`,
           { nonce: voucher.nonce },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -337,7 +337,7 @@ const Profile = () => {
         console.log(`[CLAIM] Confirmation attempt ${attempts}/${maxAttempts}`);
         
         const confirmResponse = await axios.post(
-          `${BACKEND_URL}/api/airdrop/confirm`,
+          `${BACKEND_URL}/airdrop/confirm`,
           { nonce: voucher.nonce, transaction_id: txId },
           { 
             headers: { Authorization: `Bearer ${token}` },
@@ -442,7 +442,7 @@ const Profile = () => {
       console.log('🏪 [PROFILE CREDIT PURCHASE] ✅ Payment address available:', paymentAddress);
       console.log('🏪 [PROFILE CREDIT PURCHASE] 📡 Initiating purchase with backend...');
       
-      const initiateUrl = `${BACKEND_URL}/api/users/initiate-credit-purchase`;
+      const initiateUrl = `${BACKEND_URL}/users/initiate-credit-purchase`;
       console.log('🏪 [PROFILE CREDIT PURCHASE] 🔗 Initiate URL:', initiateUrl);
       
       const initResponse = await axios.post(
@@ -498,7 +498,7 @@ const Profile = () => {
       if (finalPayload.status === 'success') {
         console.log('🏪 [PROFILE CREDIT PURCHASE] ✅ Payment successful! Transaction ID:', finalPayload.transaction_id);
         
-        const confirmUrl = `${BACKEND_URL}/api/users/confirm-credit-purchase`;
+        const confirmUrl = `${BACKEND_URL}/users/confirm-credit-purchase`;
         console.log('🏪 [PROFILE CREDIT PURCHASE] 🔗 Confirm URL:', confirmUrl);
         
         // Confirm purchase with backend
@@ -587,7 +587,7 @@ const Profile = () => {
       try {
         console.log('🎯 [Profile] Making request to /airdrop/status...');
         const statusResponse = await axios.get(
-          `${BACKEND_URL}/api/airdrop/status`,
+          `${BACKEND_URL}/airdrop/status`,
           {
             headers: { Authorization: `Bearer ${token}` },
             timeout: 10000
@@ -1249,7 +1249,7 @@ const Profile = () => {
         return;
       }
       
-      const creditsUrl = `${BACKEND_URL}/api/users/credits`;
+      const creditsUrl = `${BACKEND_URL}/users/credits`;
       console.log('🔄 [PROFILE FETCH CREDITS] 🔗 URL:', creditsUrl);
       console.log('🔄 [PROFILE FETCH CREDITS] 🔑 Token (first 20 chars):', token.substring(0, 20) + '...');
       

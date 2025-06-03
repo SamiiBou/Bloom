@@ -131,23 +131,52 @@ const FluxImageGenerator = () => {
 
   // NOUVEAU: Fonction pour acheter des crédits
   const buyCredits = async () => {
-    if (creditPurchaseLoading || !creditAmountToBuy || creditAmountToBuy <= 0) return;
+    console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] =================================');
+    console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] STARTING CREDIT PURCHASE FLOW');
+    console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] Timestamp:', new Date().toISOString());
+    console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] Credit amount:', creditAmountToBuy);
+    console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] Backend URL:', BACKEND_URL);
+    console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] API_BASE_URL:', API_BASE_URL);
+    console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] Payment address:', paymentAddress);
+    console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] Token (first 20 chars):', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
+    console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] =================================');
+    
+    if (creditPurchaseLoading || !creditAmountToBuy || creditAmountToBuy <= 0) {
+      console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] ❌ Precondition failed:', {
+        creditPurchaseLoading,
+        creditAmountToBuy,
+        isValid: creditAmountToBuy > 0
+      });
+      return;
+    }
     
     setCreditPurchaseLoading(true);
     setNotification({ show: true, message: "Initiating credit purchase...", type: "info" });
 
     try {
       if (!MiniKit.isInstalled()) {
+        console.error('🏪 [FLUXGENERATOR CREDIT PURCHASE] ❌ MiniKit not installed');
         setNotification({ show: true, message: "World App / MiniKit not detected", type: "error" });
         setCreditPurchaseLoading(false);
         return;
       }
 
-      // Initiate the purchase
-      console.log('[CREDIT PURCHASE] Initiating purchase...');
+      // NOUVEAU: Vérifier que l'adresse de paiement est disponible
+      if (!paymentAddress || paymentAddress.trim() === '') {
+        console.error('🏪 [FLUXGENERATOR CREDIT PURCHASE] ❌ No payment address available:', paymentAddress);
+        setNotification({ show: true, message: "Payment address not available. Please try again.", type: "error" });
+        setCreditPurchaseLoading(false);
+        return;
+      }
+
+      console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] ✅ Payment address available:', paymentAddress);
+      console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] 📡 Initiating purchase with backend...');
+      
+      const initiateUrl = `${BACKEND_URL}/users/initiate-credit-purchase`;
+      console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] 🔗 Initiate URL:', initiateUrl);
       
       const initResponse = await axios.post(
-        `${BACKEND_URL}/users/initiate-credit-purchase`,
+        initiateUrl,
         { creditAmount: creditAmountToBuy },
         {
           withCredentials: true,
@@ -159,17 +188,20 @@ const FluxImageGenerator = () => {
         }
       );
 
+      console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] 📨 Initiate response status:', initResponse.status);
+      console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] 📨 Initiate response data:', initResponse.data);
+
       if (initResponse.status !== 200 || !initResponse.data?.reference) {
         throw new Error(initResponse.data?.error || 'Failed to initiate purchase');
       }
 
       const { reference, wldPrice } = initResponse.data;
-      console.log('[CREDIT PURCHASE] Purchase initiated:', { reference, wldPrice, creditAmountToBuy });
+      console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] ✅ Purchase initiated successfully:', { reference, wldPrice, creditAmountToBuy });
 
-      // Prepare the payload for World Pay
+      // Prepare payload for World Pay
       const payload = {
         reference: reference,
-        to: paymentAddress,
+        to: paymentAddress, // Adresse dynamique reçue du back
         tokens: [
           {
             symbol: 'WLD',
@@ -179,17 +211,29 @@ const FluxImageGenerator = () => {
         description: `Purchase ${creditAmountToBuy} credits for ${wldPrice} WLD`,
       };
 
+      console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] 💰 Payment payload prepared:', payload);
+      console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] 🔍 Payment address check:', { 
+        paymentAddress, 
+        isEmpty: !paymentAddress || paymentAddress.trim() === '',
+        length: paymentAddress?.length 
+      });
+
       setNotification({ show: true, message: "Confirming payment...", type: "info" });
       
-      console.log('[CREDIT PURCHASE] Sending payment via MiniKit...', payload);
+      console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] 📱 Sending payment via MiniKit...');
       const { finalPayload } = await MiniKit.commandsAsync.pay(payload);
 
+      console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] 📱 MiniKit response received:', finalPayload);
+
       if (finalPayload.status === 'success') {
-        console.log('[CREDIT PURCHASE] Payment successful:', finalPayload.transaction_id);
+        console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] ✅ Payment successful! Transaction ID:', finalPayload.transaction_id);
         
-        // Confirm the purchase with the backend
+        const confirmUrl = `${BACKEND_URL}/users/confirm-credit-purchase`;
+        console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] 🔗 Confirm URL:', confirmUrl);
+        
+        // Confirm purchase with backend
         const confirmResponse = await axios.post(
-          `${BACKEND_URL}/users/confirm-credit-purchase`,
+          confirmUrl,
           {
             reference: reference,
             transaction_id: finalPayload.transaction_id
@@ -204,6 +248,9 @@ const FluxImageGenerator = () => {
           }
         );
 
+        console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] 📨 Confirm response status:', confirmResponse.status);
+        console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] 📨 Confirm response data:', confirmResponse.data);
+
         if (confirmResponse.data.success) {
           setCredits(confirmResponse.data.credits);
           setNotification({ 
@@ -212,20 +259,35 @@ const FluxImageGenerator = () => {
             type: "success" 
           });
           setCreditAmountToBuy(35); // Reset to default
-          setShowCreditPurchase(false); // Close the purchase interface
+          setShowCreditPurchase(false); // Close quick purchase interface
+          console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] ✅ Purchase completed successfully!');
         } else {
           throw new Error('Purchase confirmation failed');
         }
       } else {
-        console.log('[CREDIT PURCHASE] Payment failed or cancelled:', finalPayload);
+        console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] ❌ Payment failed or cancelled:', finalPayload);
+        
+        let errorMessage = "Payment cancelled or failed";
+        if (finalPayload.error_code === 'user_rejected') {
+          errorMessage = "Payment cancelled by user";
+        } else if (finalPayload.error_code === 'transaction_failed') {
+          errorMessage = "Transaction failed. Please check your wallet balance and try again.";
+        }
+        
         setNotification({ 
           show: true, 
-          message: "Payment cancelled or failed", 
+          message: errorMessage, 
           type: "error" 
         });
       }
     } catch (error) {
-      console.error('[CREDIT PURCHASE] Error:', error);
+      console.error('🏪 [FLUXGENERATOR CREDIT PURCHASE] ❌ CRITICAL ERROR:', error);
+      console.error('🏪 [FLUXGENERATOR CREDIT PURCHASE] ❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.url
+      });
       
       // Gestion spéciale pour l'erreur 429 (Too Many Requests)
       if (error.response?.status === 429) {
@@ -243,6 +305,7 @@ const FluxImageGenerator = () => {
       }
     } finally {
       setCreditPurchaseLoading(false);
+      console.log('🏪 [FLUXGENERATOR CREDIT PURCHASE] 🏁 Purchase flow ended');
       setTimeout(() => setNotification({ show: false, message: "", type: "info" }), 5000);
     }
   };
@@ -626,18 +689,119 @@ const FluxImageGenerator = () => {
 
   const activeConfig = config || defaultConfig;
 
+  // NOUVEAU: Setup MiniKit event handlers
+  useEffect(() => {
+    if (!MiniKit.isInstalled()) return;
+
+    const unsubscribe = MiniKit.subscribe(
+      ResponseEvent.MiniAppSendTransaction,
+      async (payload) => {
+        console.log('[MiniKit Event] Transaction response:', payload);
+        
+        if (payload.status === "success") {
+          console.log('[MiniKit Event] Transaction successful:', payload.transaction_id);
+        } else {
+          console.log('[MiniKit Event] Transaction failed or rejected:', payload);
+          setNotification({ 
+            show: true, 
+            message: "Transaction cancelled or failed", 
+            type: "error" 
+          });
+          setCreditPurchaseLoading(false);
+        }
+      }
+    );
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  // NOUVEAU: Récupérer l'adresse de paiement depuis le backend au montage
   useEffect(() => {
     async function fetchPaymentAddress() {
+      console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] =================================');
+      console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] STARTING FETCH PAYMENT ADDRESS');
+      console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] Backend URL:', BACKEND_URL);
+      
       try {
-        const res = await axios.get(`${BACKEND_URL}/payment/address`);
-        setPaymentAddress(res.data.paymentAddress);
+        const paymentUrl = `${BACKEND_URL}/users/payment/address`;
+        console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] 🔗 URL:', paymentUrl);
+        console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] 🔑 Token (first 20 chars):', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
+        
+        const res = await axios.get(paymentUrl, {
+          withCredentials: true,
+          headers: token ? {
+            Authorization: `Bearer ${token}`,
+          } : {},
+          timeout: API_TIMEOUT,
+        });
+
+        console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] 📨 Response status:', res.status);
+        console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] 📨 Response data:', res.data);
+        
+        if (res.data.address) {
+          setPaymentAddress(res.data.address);
+          console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] ✅ Payment address fetched successfully:', res.data.address);
+        } else {
+          console.error('💰 [FLUXGENERATOR PAYMENT ADDRESS] ❌ No payment address in response');
+          
+          // NOUVEAU: Essayer l'endpoint alternatif comme fallback
+          try {
+            console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] 🔄 Trying alternative endpoint...');
+            const alternativeUrl = `${BACKEND_URL}/payment/address`;
+            console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] 🔗 Alternative URL:', alternativeUrl);
+            
+            const res2 = await axios.get(alternativeUrl);
+            console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] 📨 Alternative response:', res2.data);
+            
+            if (res2.data.paymentAddress) {
+              setPaymentAddress(res2.data.paymentAddress);
+              console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] ✅ Alternative address fetched:', res2.data.paymentAddress);
+            } else {
+              console.error('💰 [FLUXGENERATOR PAYMENT ADDRESS] ❌ No payment address in alternative response');
+              setPaymentAddress('');
+            }
+          } catch (e2) {
+            console.error('💰 [FLUXGENERATOR PAYMENT ADDRESS] ❌ Alternative endpoint failed:', e2);
+            setPaymentAddress('');
+          }
+        }
       } catch (e) {
-        setPaymentAddress('');
-        console.error('Failed to fetch payment address', e);
+        console.error('💰 [FLUXGENERATOR PAYMENT ADDRESS] ❌ Main endpoint failed:', e);
+        console.error('💰 [FLUXGENERATOR PAYMENT ADDRESS] ❌ Error details:', {
+          message: e.message,
+          status: e.response?.status,
+          data: e.response?.data,
+          url: e.config?.url
+        });
+        
+        // NOUVEAU: Essayer l'endpoint alternatif comme fallback
+        try {
+          console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] 🔄 Trying alternative endpoint after main failure...');
+          const alternativeUrl = `${BACKEND_URL}/payment/address`;
+          console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] 🔗 Alternative URL:', alternativeUrl);
+          
+          const res2 = await axios.get(alternativeUrl);
+          console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] 📨 Alternative response:', res2.data);
+          
+          if (res2.data.paymentAddress) {
+            setPaymentAddress(res2.data.paymentAddress);
+            console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] ✅ Alternative address fetched after failure:', res2.data.paymentAddress);
+          } else {
+            console.error('💰 [FLUXGENERATOR PAYMENT ADDRESS] ❌ No payment address in alternative response');
+            setPaymentAddress('');
+          }
+        } catch (e2) {
+          console.error('💰 [FLUXGENERATOR PAYMENT ADDRESS] ❌ All endpoints failed:', e2);
+          setPaymentAddress('');
+        }
+      } finally {
+        console.log('💰 [FLUXGENERATOR PAYMENT ADDRESS] 🏁 Fetch payment address ended');
       }
     }
     fetchPaymentAddress();
-  }, []);
+  }, [token]); // Ajouter token comme dépendance
 
   return (
     <div className="flux-image-generator">
@@ -666,37 +830,89 @@ const FluxImageGenerator = () => {
         )}
       </AnimatePresence>
 
-      {/* NOUVEAU: Affichage des crédits et interface d'achat */}
-      <div className="credits-section">
-        <div className="credits-header">
-          <div className="credits-display">
-            <Coins size={20} className="credits-icon" />
-            <span className="credits-count">{credits}</span>
-            <span className="credits-label">credits</span>
-          </div>
-          <div className="credits-info">
-            <span className="generation-cost">5 credits per image</span>
+      {/* NOUVEAU: Affichage des crédits minimaliste - horizontal */}
+      <div className="credits-section-flux-minimal">
+        <div className="credits-display-flux">
+          <div className="balance-display-flux">
+            <Sparkles size={14} className="credits-icon-flux" />
+            <span className="balance-value-flux">{credits} credits</span>
+            <button className="refresh-btn-flux" onClick={loadUserCredits} title="Refresh credits">
+              <RefreshCw size={12} />
+            </button>
           </div>
         </div>
-
-        {!showCreditPurchase ? (
-          <button 
-            className="buy-credits-trigger"
-            onClick={() => setShowCreditPurchase(true)}
-          >
-            <Sparkles size={16} />
-            <span>Buy credits</span>
-          </button>
-        ) : (
-          <CreditPurchaseCard
-            isOpen={showCreditPurchase}
-            onClose={() => setShowCreditPurchase(false)}
-            credits={credits}
-            onPurchase={buyCredits}
-            isLoading={creditPurchaseLoading}
-          />
-        )}
+        
+        <button 
+          className="buy-credits-btn-flux"
+          onClick={() => setShowCreditPurchase(true)}
+        >
+          <Sparkles size={14} />
+          <span>Buy credits</span>
+        </button>
       </div>
+
+      {/* Modal d'achat rapide - exactement comme dans Profile */}
+      {showCreditPurchase && (
+        <div 
+          className="quick-purchase-overlay"
+          onClick={(e) => {
+            // Close modal if clicked outside (not on content)
+            if (e.target === e.currentTarget) {
+              setShowCreditPurchase(false);
+            }
+          }}
+        >
+          <div className="quick-purchase-interface">
+            <div className="quick-purchase-header">
+              <h4>Quick purchase</h4>
+              <button 
+                className="close-quick-purchase"
+                onClick={() => setShowCreditPurchase(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="quick-purchase-presets">
+              <button 
+                className={`preset-btn ${creditAmountToBuy === 35 ? 'active' : ''}`}
+                onClick={() => setCreditAmountToBuy(35)}
+                disabled={creditPurchaseLoading}
+              >
+                <div className="preset-amount">35 credits</div>
+                <div className="preset-price">1 WLD</div>
+              </button>
+              <button 
+                className={`preset-btn ${creditAmountToBuy === 175 ? 'active' : ''}`}
+                onClick={() => setCreditAmountToBuy(175)}
+                disabled={creditPurchaseLoading}
+              >
+                <div className="preset-amount">175 credits</div>
+                <div className="preset-price">5 WLD</div>
+              </button>
+              <button 
+                className={`preset-btn ${creditAmountToBuy === 350 ? 'active' : ''}`}
+                onClick={() => setCreditAmountToBuy(350)}
+                disabled={creditPurchaseLoading}
+              >
+                <div className="preset-amount">350 credits</div>
+                <div className="preset-price">10 WLD</div>
+              </button>
+            </div>
+            <button
+              className={`quick-buy-btn ${creditPurchaseLoading ? 'loading' : ''}`}
+              onClick={buyCredits}
+              disabled={creditPurchaseLoading || creditAmountToBuy <= 0}
+            >
+              {creditPurchaseLoading ? (
+                'Processing...'
+              ) : (
+                `Buy ${creditAmountToBuy} credits`
+              )}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flux-tabs">
@@ -741,6 +957,9 @@ const FluxImageGenerator = () => {
                     <Palette size={16} />
                     Image description *
                   </label>
+                  <div className="cost-info-flux">
+                    <span className="generation-cost-flux">5 credits per image</span>
+                  </div>
                   <textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
@@ -984,11 +1203,9 @@ const FluxImageGenerator = () => {
         initialText={activeTab === 'generate' ? prompt : editPrompt}
       />
 
-      {/* NOUVEAU: Notification pour les crédits */}
+      {/* NOUVEAU: Notification pour les crédits - EXACTEMENT COMME DANS PROFILE */}
       {notification.show && (
-        <div className={`notification-credits ${notification.type}`}>
-          {notification.type === 'error' && <AlertCircle size={16} />}
-          {notification.type === 'success' && <Check size={16} />}
+        <div className={`notification-profile ${notification.type}`}>
           <span>{notification.message}</span>
         </div>
       )}
