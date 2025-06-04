@@ -76,7 +76,7 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
             verified: video.user.verified || false
           },
           description: video.description,
-          music: video.music?.title ? `${video.music.title} - ${video.music.artist}` : 'Original sound',
+          music: video.music || { title: 'Original sound', artist: '' },
           likes: video.likesCount || 0,
           comments: video.commentsCount || 0,
           shares: video.sharesCount || 0,
