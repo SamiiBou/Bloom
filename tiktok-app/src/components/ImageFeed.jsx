@@ -533,8 +533,9 @@ const ImageFeed = () => {
                     {/* Actions */}
                     <div className="post-actions">
                       {/* Like button - Recreated for better click handling */}
-                      <div 
+                      <div
                         onClick={(e) => handleLike(image._id, e)}
+                        onTouchEnd={(e) => handleLike(image._id, e)}
                         className={`action-button like-button ${
                           image.likes?.includes(apiService.getCurrentUserId()) ? 'liked' : ''
                         }`}
@@ -551,17 +552,17 @@ const ImageFeed = () => {
                           transition: 'all 0.2s ease',
                           fontSize: '14px',
                           fontWeight: '500',
-                          color: image.likes?.includes(apiService.getCurrentUserId()) ? '#ff0050' : '#86868b',
+                          color: image.likes?.includes(apiService.getCurrentUserId()) ? '#ff0050' : 'black !important',
                           pointerEvents: 'auto'
                         }}
                       >
-                        <Heart 
-                          size={16} 
+                        <Heart
+                          size={16}
                           fill={image.likes?.includes(apiService.getCurrentUserId()) ? '#ff0050' : 'none'}
-                          color={image.likes?.includes(apiService.getCurrentUserId()) ? '#ff0050' : '#86868b'}
+                          color={image.likes?.includes(apiService.getCurrentUserId()) ? '#ff0050' : 'black !important'}
                           style={{ pointerEvents: 'none' }}
                         />
-                        <span 
+                        <span
                           className="action-count"
                           style={{ pointerEvents: 'none' }}
                         >
@@ -570,8 +571,13 @@ const ImageFeed = () => {
                       </div>
 
                       {/* Comment button - Recreated for better click handling */}
-                      <div 
+                      <div
                         onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handleComment(image._id);
+                        }}
+                        onTouchEnd={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
                           handleComment(image._id);
@@ -590,16 +596,16 @@ const ImageFeed = () => {
                           transition: 'all 0.2s ease',
                           fontSize: '14px',
                           fontWeight: '500',
-                          color: '#86868b',
+                          color: 'black !important',
                           pointerEvents: 'auto'
                         }}
                       >
-                        <MessageCircle 
-                          size={16} 
-                          color="#86868b"
+                        <MessageCircle
+                          size={16}
+                          color="black !important"
                           style={{ pointerEvents: 'none' }}
                         />
-                        <span 
+                        <span
                           className="action-count"
                           style={{ pointerEvents: 'none' }}
                         >
