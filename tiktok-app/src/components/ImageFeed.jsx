@@ -622,14 +622,12 @@ const ImageFeed = () => {
                           transition: 'all 0.2s ease',
                           fontSize: '14px',
                           fontWeight: '500',
-                          color: image.likes?.includes(apiService.getCurrentUserId()) ? '#ff0050' : 'black !important',
                           pointerEvents: 'auto'
                         }}
                       >
                         <Heart
                           size={16}
                           fill={image.likes?.includes(apiService.getCurrentUserId()) ? '#ff0050' : 'none'}
-                          color={image.likes?.includes(apiService.getCurrentUserId()) ? '#ff0050' : 'black !important'}
                           style={{ pointerEvents: 'none' }}
                         />
                         <span
@@ -666,13 +664,11 @@ const ImageFeed = () => {
                           transition: 'all 0.2s ease',
                           fontSize: '14px',
                           fontWeight: '500',
-                          color: 'black !important',
                           pointerEvents: 'auto'
                         }}
                       >
                         <MessageCircle
                           size={16}
-                          color="black !important"
                           style={{ pointerEvents: 'none' }}
                         />
                         <span
