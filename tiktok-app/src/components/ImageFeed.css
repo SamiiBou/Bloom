@@ -170,9 +170,7 @@
   /* Post Info */
   .post-info {
     padding: 1rem;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: transparent;
   }
   
   .post-header {
@@ -264,11 +262,11 @@
   
   /* AI Metadata */
   .ai-metadata {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
     padding: 0.75rem;
     margin-bottom: 0.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
@@ -358,28 +356,33 @@
     justify-content: space-between;
     align-items: center;
     padding-top: 0.75rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: transparent;
   }
   
   .action-button {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0;
-    background: none;
-    border: none;
-    border-radius: 8px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
     color: #ffffff;
     text-decoration: none;
     cursor: pointer;
-    transition: transform 0.2s ease;
+    transition: all 0.2s ease;
     font-size: 0.85rem;
     font-weight: 500;
-    box-shadow: none;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
   
   .action-button:hover {
-    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
   }
   
   .action-count {

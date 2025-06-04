@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Send, Heart } from 'lucide-react';
+import { X, Send, Heart, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiService from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,7 +13,7 @@ const CommentsModal = ({ isOpen, onClose, videoId, initialCommentsCount = 0 }) =
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Charger les commentaires quand le modal s'ouvre
+  // Load comments when modal opens
   useEffect(() => {
     if (isOpen && videoId) {
       loadComments();
@@ -29,11 +29,11 @@ const CommentsModal = ({ isOpen, onClose, videoId, initialCommentsCount = 0 }) =
       if (response.status === 'success') {
         setComments(response.data.comments || []);
       } else {
-        setError('Erreur lors du chargement des commentaires');
+        setError('Error loading comments');
       }
     } catch (err) {
-      console.error('Erreur lors du chargement des commentaires:', err);
-      setError('Erreur lors du chargement des commentaires');
+      console.error('Error loading comments:', err);
+      setError('Error loading comments');
     } finally {
       setLoading(false);
     }
@@ -43,7 +43,7 @@ const CommentsModal = ({ isOpen, onClose, videoId, initialCommentsCount = 0 }) =
     e.preventDefault();
     
     if (!isAuthenticated) {
-      setError('Vous devez être connecté pour commenter');
+      setError('You must be signed in to comment');
       return;
     }
 
@@ -58,38 +58,35 @@ const CommentsModal = ({ isOpen, onClose, videoId, initialCommentsCount = 0 }) =
       const response = await apiService.addComment(videoId, newComment.trim());
       
       if (response.status === 'success') {
-        // Ajouter le nouveau commentaire en haut de la liste
+        // Add the new comment at the top of the list
         const comment = response.data.comment;
         setComments(prev => [comment, ...prev]);
         setNewComment('');
       } else {
-        setError(response.message || 'Erreur lors de l\'ajout du commentaire');
+        setError('Error adding comment');
       }
     } catch (err) {
-      console.error('Erreur lors de l\'ajout du commentaire:', err);
-      setError('Erreur lors de l\'ajout du commentaire');
+      console.error('Error adding comment:', err);
+      setError('Error adding comment');
     } finally {
       setSubmitting(false);
     }
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
     const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
-
-    if (diffInSeconds < 60) {
-      return 'À l\'instant';
-    } else if (diffInSeconds < 3600) {
-      const minutes = Math.floor(diffInSeconds / 60);
-      return `${minutes}min`;
-    } else if (diffInSeconds < 86400) {
-      const hours = Math.floor(diffInSeconds / 3600);
-      return `${hours}h`;
-    } else {
-      const days = Math.floor(diffInSeconds / 86400);
-      return `${days}j`;
-    }
+    const date = new Date(dateString);
+    const diffInMs = now - date;
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}min ago`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays}d ago`;
   };
 
   const CommentItem = ({ comment }) => (
@@ -107,7 +104,7 @@ const CommentsModal = ({ isOpen, onClose, videoId, initialCommentsCount = 0 }) =
       <div className="comment-content">
         <div className="comment-header">
           <span className="comment-username">
-            {comment.user?.displayName || comment.user?.username || 'Utilisateur'}
+            {comment.user?.displayName || comment.user?.username || 'User'}
           </span>
           <span className="comment-time">
             {formatDate(comment.createdAt)}
@@ -122,7 +119,7 @@ const CommentsModal = ({ isOpen, onClose, videoId, initialCommentsCount = 0 }) =
             <span>{comment.likes?.length || 0}</span>
           </button>
           <button className="comment-reply-btn">
-            Répondre
+            Reply
           </button>
         </div>
       </div>
@@ -148,28 +145,29 @@ const CommentsModal = ({ isOpen, onClose, videoId, initialCommentsCount = 0 }) =
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           >
-            <div className="comments-modal-header">
-              <h3>Commentaires ({comments.length})</h3>
+            <div className="modal-header">
+              <h3>Comments ({comments.length})</h3>
               <button className="close-btn" onClick={onClose}>
-                <X size={24} />
+                <X size={20} />
               </button>
             </div>
 
             <div className="comments-modal-content">
               {loading ? (
                 <div className="comments-loading">
-                  <div className="spinner"></div>
-                  <p>Chargement des commentaires...</p>
+                  <div className="spinner" />
+                  <p>Loading comments...</p>
                 </div>
               ) : error ? (
                 <div className="comments-error">
                   <p>{error}</p>
-                  <button onClick={loadComments}>Réessayer</button>
+                  <button onClick={loadComments}>Retry</button>
                 </div>
               ) : comments.length === 0 ? (
                 <div className="no-comments">
-                  <p>Aucun commentaire pour le moment</p>
-                  <p>Soyez le premier à commenter !</p>
+                  <MessageCircle size={48} />
+                  <p>No comments yet</p>
+                  <p>Be the first to comment!</p>
                 </div>
               ) : (
                 <div className="comments-list">
@@ -195,7 +193,7 @@ const CommentsModal = ({ isOpen, onClose, videoId, initialCommentsCount = 0 }) =
                   
                   <input
                     type="text"
-                    placeholder="Ajouter un commentaire..."
+                    placeholder="Add a comment..."
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     disabled={submitting}
@@ -225,7 +223,7 @@ const CommentsModal = ({ isOpen, onClose, videoId, initialCommentsCount = 0 }) =
 
             {!isAuthenticated && (
               <div className="login-prompt">
-                <p>Connectez-vous pour commenter</p>
+                <p>Sign in to comment</p>
               </div>
             )}
           </motion.div>
