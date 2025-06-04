@@ -298,6 +298,76 @@
   appearance: none !important;
 }
 
+/* Spécialiser les boutons d'action dans les VideoCard pour éviter les conflits */
+.video-card .action-button {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.video-card .action-button:hover {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  transform: scale(1.1);
+}
+
+.video-card .like-button {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.video-card .comment-button {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.video-card .share-button {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+/* Styles ultra-spécifiques pour forcer la transparence */
+.video-feed .video-card .action-button {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.video-feed .video-card .like-button {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.video-feed .video-card .comment-button {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.video-feed .video-card .share-button {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+/* Assurer que les icônes restent visibles */
+.video-card .action-icon {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
 .action-button:hover {
   transform: scale(1.1);
 }
