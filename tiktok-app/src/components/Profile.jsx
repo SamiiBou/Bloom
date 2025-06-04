@@ -1345,19 +1345,21 @@ const Profile = () => {
 
       if (distance < 0) {
         clearInterval(interval);
-        setCountdown('Processing drop...'); // Or fetch new time immediately
-        // Optionally, re-fetch the next drop time here after a short delay
+        setCountdown('Processing drop...'); 
         setTimeout(async () => {
             try {
                 const response = await apiService.getNextBloomDropTime();
                 if (response.status === 'success' && response.data && response.data.nextBloomDropTime) {
                     setNextBloomDropTime(new Date(response.data.nextBloomDropTime));
+                    // setCountdown will be updated by the next interval or when nextBloomDropTime changes
+                } else {
+                    setCountdown('Waiting for next drop...');
                 }
             } catch (error) {
                 console.error('Error re-fetching next bloom drop time:', error);
-                setCountdown('Waiting for next drop...')
+                setCountdown('Waiting for next drop...');
             }
-        }, 5000); // 5 second delay before re-fetch
+        }, 5000); 
         return;
       }
 
@@ -1366,7 +1368,7 @@ const Profile = () => {
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
       setCountdown(
-        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')} before next drop`
+        `Next air drop in ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
       );
     }, 1000);
 
@@ -1471,10 +1473,10 @@ const Profile = () => {
             )}
           </button>
 
-          {/* Reward reminder message */}
+          {/* Reward reminder message - MODIFIED */}
           <div className="reward-reminder-message">
             <Coins size={14} className="reminder-icon" />
-            <span>Come back after every 3 hours to receive 1 Bloom</span>
+            <span>{countdown}</span>
           </div>
 
           {/* Quick credit purchase section */}
