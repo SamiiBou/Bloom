@@ -18,14 +18,8 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
   const [showComments, setShowComments] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [localVideo, setLocalVideo] = useState(video);
   const [hasTrackedWatch, setHasTrackedWatch] = useState(false);
   const [watchStartTime, setWatchStartTime] = useState(null);
-
-  // Synchronize changes from parent
-  useEffect(() => {
-    setLocalVideo(video);
-  }, [video]);
 
   // DEBUG: Track isMuted state changes
   useEffect(() => {
@@ -37,7 +31,7 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
 
   // NEW: Force apply mute state for each new video
   useEffect(() => {
-    if (videoRef.current && localVideo.videoUrl) {
+    if (videoRef.current && video.videoUrl) {
       console.log('🔊 [DEBUG] New video detected, applying mute state:', isMuted);
       videoRef.current.muted = isMuted;
       // Small delay to ensure video is loaded
@@ -48,7 +42,7 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
         }
       }, 100);
     }
-  }, [localVideo.videoUrl, isMuted]); // Triggers on each new video
+  }, [video.videoUrl, isMuted]); // Triggers on each new video
 
   // Handle autoplay
   useEffect(() => {
@@ -90,7 +84,7 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
     
     try {
       const response = await apiService.trackVideoWatch(
-        localVideo.id, 
+        video.id, 
         section, 
         watchDuration
       );
@@ -190,55 +184,29 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
     e.stopPropagation();
     e.preventDefault();
     
-    console.log('❤️ [Like] Button clicked, isAuthenticated:', isAuthenticated, 'isLiking:', isLiking);
-    
-    if (!isAuthenticated) {
-      console.log('❤️ [Like] User not authenticated');
-      return;
-    }
-    
-    if (isLiking) {
-      console.log('❤️ [Like] Already processing like');
-      return;
-    }
-
-    console.log('❤️ [Like] Processing like for video:', localVideo.id);
+    if (!isAuthenticated) return;
+    if (isLiking) return;
     setIsLiking(true);
     
-    // Store the previous state before making changes
-    const previousState = { ...localVideo };
-    const newLikedState = !localVideo.isLiked;
-    const newLikesCount = newLikedState ? localVideo.likes + 1 : localVideo.likes - 1;
-    
-    console.log('❤️ [Like] Previous liked state:', localVideo.isLiked, '-> New state:', newLikedState);
-    console.log('❤️ [Like] Previous likes count:', localVideo.likes, '-> New count:', newLikesCount);
-    
-    // Optimistic update
-    const updatedVideo = {
-      ...localVideo,
-      isLiked: newLikedState,
-      likes: newLikesCount
-    };
-    setLocalVideo(updatedVideo);
-    
+    // Optimistic update via parent
+    const newLikedState = !video.isLiked;
+    const newLikesCount = newLikedState ? video.likes + 1 : video.likes - 1;
+    if (onUpdateVideo) {
+      onUpdateVideo(video.id, {
+        isLiked: newLikedState,
+        likes: newLikesCount
+      });
+    }
     try {
-      console.log('❤️ [Like] Making API call...');
-      const response = await apiService.likeVideo(localVideo.id);
-      console.log('❤️ [Like] API response:', response);
-      
-      // Notify parent
+      await apiService.likeVideo(video.id);
+    } catch (error) {
+      // Revert via parent
       if (onUpdateVideo) {
-        onUpdateVideo(localVideo.id, {
-          isLiked: newLikedState,
-          likes: newLikesCount
+        onUpdateVideo(video.id, {
+          isLiked: video.isLiked,
+          likes: video.likes
         });
       }
-      console.log('❤️ [Like] Success!');
-    } catch (error) {
-      console.error('❤️ [Like] Error during like:', error);
-      
-      // Revert to previous state on error
-      setLocalVideo(previousState);
     } finally {
       setIsLiking(false);
     }
@@ -254,31 +222,17 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
 
     setIsFollowing(true);
     
-    const newFollowingState = !localVideo.isFollowing;
+    const newFollowingState = !video.isFollowing;
     
     // Optimistic update
     const updatedVideo = {
-      ...localVideo,
+      ...video,
       isFollowing: newFollowingState
     };
-    setLocalVideo(updatedVideo);
-    
-    try {
-      await apiService.followUser(localVideo.user.username);
-      
-      // Notify parent
-      if (onUpdateVideo) {
-        onUpdateVideo(localVideo.id, {
-          isFollowing: newFollowingState
-        });
-      }
-    } catch (error) {
-      console.error('Error during follow:', error);
-      
-      // Revert to previous state
-      setLocalVideo(localVideo);
-    } finally {
-      setIsFollowing(false);
+    if (onUpdateVideo) {
+      onUpdateVideo(video.id, {
+        isFollowing: newFollowingState
+      });
     }
   };
 
@@ -298,22 +252,16 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
 
   // Callback when new comment is added
   const handleCommentAdded = (newComment) => {
-    const updatedVideo = {
-      ...localVideo,
-      comments: localVideo.comments + 1
-    };
-    setLocalVideo(updatedVideo);
-    
     if (onUpdateVideo) {
-      onUpdateVideo(localVideo.id, {
-        comments: localVideo.comments + 1
+      onUpdateVideo(video.id, {
+        comments: video.comments + 1
       });
     }
   };
 
   // Effect to synchronize music with video
   useEffect(() => {
-    if (isPlaying && audioRef.current && localVideo.music?.url) {
+    if (isPlaying && audioRef.current && video.music?.url) {
       // Synchronize audio with video
       audioRef.current.currentTime = videoRef.current?.currentTime || 0;
       audioRef.current.play().catch(error => {
@@ -322,14 +270,14 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
     } else if (!isPlaying && audioRef.current) {
       audioRef.current.pause();
     }
-  }, [isPlaying, localVideo.music]);
+  }, [isPlaying, video.music]);
 
   // Effect to handle music volume
   useEffect(() => {
-    if (audioRef.current && localVideo.metadata?.musicMetadata?.volume) {
-      audioRef.current.volume = localVideo.metadata.musicMetadata.volume;
+    if (audioRef.current && video.metadata?.musicMetadata?.volume) {
+      audioRef.current.volume = video.metadata.musicMetadata.volume;
     }
-  }, [localVideo.metadata]);
+  }, [video.metadata]);
 
   // Handle video events
   const handleVideoPlay = () => {
@@ -339,7 +287,7 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
       setWatchStartTime(Date.now());
     }
     // Start music if it exists
-    if (audioRef.current && localVideo.music?.url) {
+    if (audioRef.current && video.music?.url) {
       audioRef.current.currentTime = videoRef.current.currentTime;
       audioRef.current.play().catch(error => {
         console.warn('Music sync error:', error);
@@ -363,20 +311,20 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
     console.log('🎬 [VideoCard] hasTrackedWatch:', hasTrackedWatch);
     console.log('🎬 [VideoCard] watchStartTime:', watchStartTime);
     console.log('🎬 [VideoCard] section:', section);
-    console.log('🎬 [VideoCard] video ID:', localVideo.id);
+    console.log('🎬 [VideoCard] video ID:', video.id);
     
     // Track fully watched video for rewards
     if (isAuthenticated && !hasTrackedWatch && watchStartTime) {
       const watchDuration = (Date.now() - watchStartTime) / 1000; // in seconds
       
       // Get real video duration from video element
-      let videoDuration = localVideo.duration || 30; // default duration if not defined
+      let videoDuration = video.duration || 30; // default duration if not defined
       if (videoRef.current && videoRef.current.duration && !isNaN(videoRef.current.duration)) {
         videoDuration = videoRef.current.duration;
       }
       
       console.log('🎬 [VideoCard] Watch duration:', watchDuration, 'seconds');
-      console.log('🎬 [VideoCard] Video duration (from props):', localVideo.duration, 'seconds');
+      console.log('🎬 [VideoCard] Video duration (from props):', video.duration, 'seconds');
       console.log('🎬 [VideoCard] Video duration (from element):', videoRef.current?.duration, 'seconds');
       console.log('🎬 [VideoCard] Final video duration used:', videoDuration, 'seconds');
       console.log('🎬 [VideoCard] 50% threshold:', videoDuration * 0.5, 'seconds');
@@ -387,7 +335,7 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
         console.log('🎬 [VideoCard] Calling trackVideoWatch API...');
         try {
           const response = await apiService.trackVideoWatch(
-            localVideo.id, 
+            video.id, 
             section, 
             watchDuration
           );
@@ -424,7 +372,7 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
 
   const handleVideoTimeUpdate = () => {
     // Synchronize music with video
-    if (audioRef.current && localVideo.music?.url && isPlaying) {
+    if (audioRef.current && video.music?.url && isPlaying) {
       const timeDiff = Math.abs(videoRef.current.currentTime - audioRef.current.currentTime);
       if (timeDiff > 0.5) {
         audioRef.current.currentTime = videoRef.current.currentTime;
@@ -452,7 +400,7 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
         <div className="video-container" onClick={handleVideoClick}>
           <video
             ref={videoRef}
-            src={localVideo.videoUrl}
+            src={video.videoUrl}
             muted={isMuted}
             loop
             playsInline
@@ -529,27 +477,27 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
           {/* User avatar */}
           <div className="user-avatar-section">
             <div className="user-avatar">
-              {localVideo.user.avatar ? (
+              {video.user.avatar ? (
                 <img 
-                  src={localVideo.user.avatar} 
-                  alt={localVideo.user.username}
+                  src={video.user.avatar} 
+                  alt={video.user.username}
                   className="avatar-image"
                 />
               ) : (
                 <div className="avatar-placeholder">
-                  {localVideo.user.username.charAt(0).toUpperCase()}
+                  {video.user.username.charAt(0).toUpperCase()}
                 </div>
               )}
             </div>
             
             {/* Follow button with minimalist icon */}
-            {isAuthenticated && user?.username !== localVideo.user.username && (
+            {isAuthenticated && user?.username !== video.user.username && (
               <button 
-                className={`follow-button ${localVideo.isFollowing ? 'following' : ''}`}
+                className={`follow-button ${video.isFollowing ? 'following' : ''}`}
                 onClick={handleFollow}
                 disabled={isFollowing}
               >
-                {localVideo.isFollowing ? 
+                {video.isFollowing ? 
                   <Check size={16} style={{ pointerEvents: 'none' }} /> : 
                   <Plus size={16} style={{ pointerEvents: 'none' }} />
                 }
@@ -561,7 +509,7 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
           <div className="video-actions">
             {/* Like button - Recreated for better click handling */}
             <div 
-              className={`action-button like-button ${localVideo.isLiked ? 'liked' : ''}`}
+              className={`action-button like-button ${video.isLiked ? 'liked' : ''}`}
               onClick={handleLike}
               style={{
                 display: 'flex',
@@ -582,11 +530,11 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
               <div className="action-icon" style={{ fontSize: '30px', marginBottom: '2px' }}>
                 <Heart 
                   size={28} 
-                  fill={localVideo.isLiked ? '#ff0050' : 'none'} 
-                  color={localVideo.isLiked ? '#ff0050' : 'white'}
+                  fill={video.isLiked ? '#ff0050' : 'none'} 
+                  color={video.isLiked ? '#ff0050' : 'white'}
                   style={{ 
                     pointerEvents: 'none',
-                    filter: localVideo.isLiked ? 'drop-shadow(0 0 8px rgba(255, 0, 80, 0.5))' : 'none'
+                    filter: video.isLiked ? 'drop-shadow(0 0 8px rgba(255, 0, 80, 0.5))' : 'none'
                   }}
                 />
               </div>
@@ -601,7 +549,7 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
                   pointerEvents: 'none'
                 }}
               >
-                {formatNumber(localVideo.likes)}
+                {formatNumber(video.likes)}
               </span>
             </div>
 
@@ -642,7 +590,7 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
                   pointerEvents: 'none'
                 }}
               >
-                {formatNumber(localVideo.comments)}
+                {formatNumber(video.comments)}
               </span>
             </div>
           </div>
@@ -652,13 +600,13 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
         <div className="video-info">
           <div className="user-info">
             <span className="username">
-              @{localVideo.user.username}
-              {localVideo.user.verified && <span className="verified-badge">✓</span>}
+              @{video.user.username}
+              {video.user.verified && <span className="verified-badge">✓</span>}
             </span>
           </div>
           
           <p className="video-description">
-            {localVideo.description}
+            {video.description}
           </p>
           
           <div className="video-music">
@@ -666,9 +614,9 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
               <Music size={16} color="white" style={{ pointerEvents: 'none' }} />
             </span>
             <span className="music-title">
-              {localVideo.music?.title && localVideo.music?.title !== 'AI Generated' 
-                ? `${localVideo.music.title} - ${localVideo.music.artist}`
-                : localVideo.music?.title || 'Original sound'
+              {video.music?.title && video.music?.title !== 'AI Generated' 
+                ? `${video.music.title} - ${video.music.artist}`
+                : video.music?.title || 'Original sound'
               }
             </span>
           </div>
@@ -676,22 +624,22 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
       </div>
 
       {/* Audio for background music */}
-      {localVideo.music?.url && (
+      {video.music?.url && (
         <audio
           ref={audioRef}
-          src={localVideo.music.url}
+          src={video.music.url}
           loop
           preload="auto"
-          volume={localVideo.metadata?.musicMetadata?.volume || 0.3}
+          volume={video.metadata?.musicMetadata?.volume || 0.3}
         />
       )}
 
       {/* Comments Component */}
       <Comments
-        videoId={localVideo.id}
+        videoId={video.id}
         isOpen={showComments}
         onClose={handleCloseComments}
-        commentsCount={localVideo.comments}
+        commentsCount={video.comments}
         onCommentAdded={handleCommentAdded}
       />
     </>
