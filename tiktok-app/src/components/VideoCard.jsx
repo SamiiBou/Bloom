@@ -436,6 +436,7 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
             muted={isMuted}
             loop
             playsInline
+            preload="auto"
             className="video-player"
             onPlay={handleVideoPlay}
             onPause={handleVideoPause}
