@@ -208,6 +208,19 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
     }
   };
 
+  // New wrapper function for like button events
+  const triggerLike = (e) => {
+    if (e) { // Ensure event object exists
+      if (typeof e.preventDefault === 'function') {
+        e.preventDefault();
+      }
+      if (typeof e.stopPropagation === 'function') {
+        e.stopPropagation();
+      }
+    }
+    handleLike(); // Call the original async logic
+  };
+
   // Handle follow
   const handleFollow = async (e) => {
     e.stopPropagation();
@@ -507,7 +520,8 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
             <button
               type="button"
               className={`action-button like-button${video.isLiked ? ' liked' : ''}`}
-              onClick={handleLike}
+              onClick={triggerLike}
+              onTouchEnd={triggerLike}
               disabled={!isAuthenticated || isLiking}
               aria-pressed={video.isLiked}
               aria-label={video.isLiked ? "Unlike" : "Like"}
