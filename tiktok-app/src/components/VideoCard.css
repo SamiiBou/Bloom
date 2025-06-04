@@ -653,3 +653,17 @@
   -moz-user-select: none !important;
   -ms-user-select: none !important;
 }
+
+.action-button:focus,
+.action-button:active,
+.action-button::-moz-focus-inner {
+  outline: none !important;
+  box-shadow: none !important;
+  background: none !important;
+}
+
+.action-button, .like-button {
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none !important;
+}

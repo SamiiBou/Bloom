@@ -512,6 +512,8 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
               type="button"
               className={`action-button like-button ${video.isLiked ? 'liked' : ''}`}
               onClick={handleLike}
+              onTouchStart={e => e.stopPropagation()}
+              onMouseDown={e => e.stopPropagation()}
               style={{
                 display: 'flex',
                 flexDirection: 'column',
