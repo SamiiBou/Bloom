@@ -19,7 +19,6 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
   const [isLiking, setIsLiking] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [localVideo, setLocalVideo] = useState(video);
-  const [isLiked, setIsLiked] = useState(video.isLiked || false);
   const [hasTrackedWatch, setHasTrackedWatch] = useState(false);
   const [watchStartTime, setWatchStartTime] = useState(null);
 
@@ -196,6 +195,8 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
 
     setIsLiking(true);
     
+    // Store the previous state before making changes
+    const previousState = { ...localVideo };
     const newLikedState = !localVideo.isLiked;
     const newLikesCount = newLikedState ? localVideo.likes + 1 : localVideo.likes - 1;
     
@@ -221,7 +222,7 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
       console.error('Error during like:', error);
       
       // Revert to previous state on error
-      setLocalVideo(localVideo);
+      setLocalVideo(previousState);
     } finally {
       setIsLiking(false);
     }
