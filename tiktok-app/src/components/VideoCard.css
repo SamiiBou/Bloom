@@ -625,3 +625,31 @@
     background: rgba(255, 255, 255, 1);
   }
 }
+
+/* Nouveaux styles pour les boutons d'action recréés */
+.video-actions .action-button:hover {
+  transform: scale(1.1) !important;
+  background: transparent !important;
+}
+
+.video-actions .like-button:hover .action-icon {
+  transform: scale(1.2);
+  filter: drop-shadow(0 0 12px rgba(255, 0, 80, 0.6)) !important;
+}
+
+.video-actions .comment-button:hover .action-icon {
+  transform: scale(1.2);
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+}
+
+.video-actions .action-button:active {
+  transform: scale(0.95) !important;
+}
+
+/* Assurer que les nouveaux boutons sont clickables */
+.video-actions .action-button {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}

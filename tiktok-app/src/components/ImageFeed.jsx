@@ -102,10 +102,19 @@ const ImageFeed = () => {
     }
   }, [loading, hasMore, page, loadImages]);
 
-  // Like/unlike image
-  const handleLike = useCallback(async (imageId) => {
+  // Like/unlike image - Improved version
+  const handleLike = useCallback(async (imageId, e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    
+    console.log('❤️ [ImageLike] Button clicked for image:', imageId);
+    
     try {
+      console.log('❤️ [ImageLike] Making API call...');
       const response = await apiService.likeImage(imageId);
+      console.log('❤️ [ImageLike] API response:', response);
       
       if (response.status === 'success') {
         // Update local state
@@ -120,9 +129,10 @@ const ImageFeed = () => {
               }
             : img
         ));
+        console.log('❤️ [ImageLike] Local state updated successfully');
       }
     } catch (error) {
-      console.error('Error liking image:', error);
+      console.error('❤️ [ImageLike] Error liking image:', error);
     }
   }, []);
 
@@ -522,25 +532,80 @@ const ImageFeed = () => {
 
                     {/* Actions */}
                     <div className="post-actions">
-                      <button 
-                        onClick={() => handleLike(image._id)}
+                      {/* Like button - Recreated for better click handling */}
+                      <div 
+                        onClick={(e) => handleLike(image._id, e)}
                         className={`action-button like-button ${
                           image.likes?.includes(apiService.getCurrentUserId()) ? 'liked' : ''
                         }`}
                         title="Like"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '8px 12px',
+                          borderRadius: '20px',
+                          transition: 'all 0.2s ease',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          color: image.likes?.includes(apiService.getCurrentUserId()) ? '#ff0050' : '#86868b',
+                          pointerEvents: 'auto'
+                        }}
                       >
-                        <Heart size={16} />
-                        <span className="action-count">{image.likesCount || image.likes?.length || 0}</span>
-                      </button>
+                        <Heart 
+                          size={16} 
+                          fill={image.likes?.includes(apiService.getCurrentUserId()) ? '#ff0050' : 'none'}
+                          color={image.likes?.includes(apiService.getCurrentUserId()) ? '#ff0050' : '#86868b'}
+                          style={{ pointerEvents: 'none' }}
+                        />
+                        <span 
+                          className="action-count"
+                          style={{ pointerEvents: 'none' }}
+                        >
+                          {image.likesCount || image.likes?.length || 0}
+                        </span>
+                      </div>
 
-                      <button 
-                        onClick={() => handleComment(image._id)}
+                      {/* Comment button - Recreated for better click handling */}
+                      <div 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handleComment(image._id);
+                        }}
                         className="action-button comment-button"
                         title="Comment"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '8px 12px',
+                          borderRadius: '20px',
+                          transition: 'all 0.2s ease',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          color: '#86868b',
+                          pointerEvents: 'auto'
+                        }}
                       >
-                        <MessageCircle size={16} />
-                        <span className="action-count">{commentsCount[image._id] || 0}</span>
-                      </button>
+                        <MessageCircle 
+                          size={16} 
+                          color="#86868b"
+                          style={{ pointerEvents: 'none' }}
+                        />
+                        <span 
+                          className="action-count"
+                          style={{ pointerEvents: 'none' }}
+                        >
+                          {commentsCount[image._id] || 0}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </motion.div>

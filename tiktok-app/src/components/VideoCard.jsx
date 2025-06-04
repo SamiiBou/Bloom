@@ -185,20 +185,33 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
     return false;
   };
 
-  // Handle like
+  // Handle like - Improved version
   const handleLike = async (e) => {
     e.stopPropagation();
+    e.preventDefault();
     
-    if (!isAuthenticated || isLiking) {
+    console.log('❤️ [Like] Button clicked, isAuthenticated:', isAuthenticated, 'isLiking:', isLiking);
+    
+    if (!isAuthenticated) {
+      console.log('❤️ [Like] User not authenticated');
+      return;
+    }
+    
+    if (isLiking) {
+      console.log('❤️ [Like] Already processing like');
       return;
     }
 
+    console.log('❤️ [Like] Processing like for video:', localVideo.id);
     setIsLiking(true);
     
     // Store the previous state before making changes
     const previousState = { ...localVideo };
     const newLikedState = !localVideo.isLiked;
     const newLikesCount = newLikedState ? localVideo.likes + 1 : localVideo.likes - 1;
+    
+    console.log('❤️ [Like] Previous liked state:', localVideo.isLiked, '-> New state:', newLikedState);
+    console.log('❤️ [Like] Previous likes count:', localVideo.likes, '-> New count:', newLikesCount);
     
     // Optimistic update
     const updatedVideo = {
@@ -209,7 +222,9 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
     setLocalVideo(updatedVideo);
     
     try {
-      await apiService.likeVideo(localVideo.id);
+      console.log('❤️ [Like] Making API call...');
+      const response = await apiService.likeVideo(localVideo.id);
+      console.log('❤️ [Like] API response:', response);
       
       // Notify parent
       if (onUpdateVideo) {
@@ -218,8 +233,9 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
           likes: newLikesCount
         });
       }
+      console.log('❤️ [Like] Success!');
     } catch (error) {
-      console.error('Error during like:', error);
+      console.error('❤️ [Like] Error during like:', error);
       
       // Revert to previous state on error
       setLocalVideo(previousState);
@@ -266,9 +282,12 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
     }
   };
 
-  // Open comments
+  // Handle comments - Improved version  
   const handleCommentsClick = (e) => {
     e.stopPropagation();
+    e.preventDefault();
+    
+    console.log('💬 [Comments] Button clicked');
     setShowComments(true);
   };
 
@@ -540,37 +559,92 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
 
           {/* Video actions with minimalist icons */}
           <div className="video-actions">
-            {/* Like with minimalist icon */}
-            <button 
+            {/* Like button - Recreated for better click handling */}
+            <div 
               className={`action-button like-button ${localVideo.isLiked ? 'liked' : ''}`}
               onClick={handleLike}
-              disabled={!isAuthenticated || isLiking}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px',
+                background: 'transparent',
+                border: 'none',
+                color: 'white',
+                cursor: !isAuthenticated || isLiking ? 'not-allowed' : 'pointer',
+                padding: '8px',
+                margin: '0',
+                transition: 'transform 0.2s ease',
+                opacity: !isAuthenticated || isLiking ? 0.6 : 1,
+                pointerEvents: !isAuthenticated || isLiking ? 'none' : 'auto'
+              }}
             >
-              <span className="action-icon">
+              <div className="action-icon" style={{ fontSize: '30px', marginBottom: '2px' }}>
                 <Heart 
                   size={28} 
                   fill={localVideo.isLiked ? '#ff0050' : 'none'} 
                   color={localVideo.isLiked ? '#ff0050' : 'white'}
-                  style={{ pointerEvents: 'none' }}
+                  style={{ 
+                    pointerEvents: 'none',
+                    filter: localVideo.isLiked ? 'drop-shadow(0 0 8px rgba(255, 0, 80, 0.5))' : 'none'
+                  }}
                 />
-              </span>
-              <span className="action-count">
+              </div>
+              <span 
+                className="action-count" 
+                style={{ 
+                  fontSize: '12px', 
+                  fontWeight: '700', 
+                  textAlign: 'center', 
+                  lineHeight: '1', 
+                  color: 'white',
+                  pointerEvents: 'none'
+                }}
+              >
                 {formatNumber(localVideo.likes)}
               </span>
-            </button>
+            </div>
 
-            {/* Comments with minimalist icon */}
-            <button 
+            {/* Comments button - Recreated for better click handling */}
+            <div 
               className="action-button comment-button"
               onClick={handleCommentsClick}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px',
+                background: 'transparent',
+                border: 'none',
+                color: 'white',
+                cursor: 'pointer',
+                padding: '8px',
+                margin: '0',
+                transition: 'transform 0.2s ease',
+                pointerEvents: 'auto'
+              }}
             >
-              <span className="action-icon">
-                <MessageCircle size={28} color="white" style={{ pointerEvents: 'none' }} />
-              </span>
-              <span className="action-count">
+              <div className="action-icon" style={{ fontSize: '30px', marginBottom: '2px' }}>
+                <MessageCircle 
+                  size={28} 
+                  color="white" 
+                  style={{ pointerEvents: 'none' }} 
+                />
+              </div>
+              <span 
+                className="action-count"
+                style={{ 
+                  fontSize: '12px', 
+                  fontWeight: '700', 
+                  textAlign: 'center', 
+                  lineHeight: '1', 
+                  color: 'white',
+                  pointerEvents: 'none'
+                }}
+              >
                 {formatNumber(localVideo.comments)}
               </span>
-            </button>
+            </div>
           </div>
         </div>
 
