@@ -508,7 +508,8 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
           {/* Video actions with minimalist icons */}
           <div className="video-actions">
             {/* Like button - Recreated for better click handling */}
-            <div 
+            <button
+              type="button"
               className={`action-button like-button ${video.isLiked ? 'liked' : ''}`}
               onClick={handleLike}
               style={{
@@ -526,6 +527,10 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
                 opacity: !isAuthenticated || isLiking ? 0.6 : 1,
                 pointerEvents: !isAuthenticated || isLiking ? 'none' : 'auto'
               }}
+              disabled={!isAuthenticated || isLiking}
+              tabIndex={0}
+              aria-pressed={video.isLiked}
+              aria-label={video.isLiked ? "Unlike" : "Like"}
             >
               <div className="action-icon" style={{ fontSize: '30px', marginBottom: '2px' }}>
                 <Heart 
@@ -551,7 +556,7 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
               >
                 {formatNumber(video.likes)}
               </span>
-            </div>
+            </button>
 
             {/* Comments button - Recreated for better click handling */}
             <div 
