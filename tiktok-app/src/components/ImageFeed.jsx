@@ -30,6 +30,7 @@ const ImageFeed = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [likingStatus, setLikingStatus] = useState({});
   
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
@@ -38,7 +39,7 @@ const ImageFeed = () => {
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
-  const [pendingUpload, setPendingUpload] = useState(null); // Store file and preview for publish modal
+  const [pendingUpload, setPendingUpload] = useState(null);
   
   // Comments states
   const [showCommentsModal, setShowCommentsModal] = useState(false);
@@ -102,39 +103,108 @@ const ImageFeed = () => {
     }
   }, [loading, hasMore, page, loadImages]);
 
-  // Like/unlike image - Improved version
+  // Like/unlike image - Improved version with optimistic update
   const handleLike = useCallback(async (imageId, e) => {
     if (e) {
       e.stopPropagation();
       e.preventDefault();
     }
-    
-    console.log('❤️ [ImageLike] Button clicked for image:', imageId);
-    
+
+    if (likingStatus[imageId]) {
+      console.log('❤️ [ImageLike] Already processing like for image:', imageId);
+      return; // Prevent multiple rapid clicks
+    }
+
+    setLikingStatus(prev => ({ ...prev, [imageId]: true }));
+
+    const currentUserId = apiService.getCurrentUserId();
+    if (!currentUserId) {
+      console.error("❤️ [ImageLike] User ID not found. Cannot perform like.");
+      setLikingStatus(prev => ({ ...prev, [imageId]: false }));
+      return;
+    }
+
+    const imageIndex = images.findIndex(img => img._id === imageId);
+    if (imageIndex === -1) {
+      console.error("❤️ [ImageLike] Image not found in state:", imageId);
+      setLikingStatus(prev => ({ ...prev, [imageId]: false }));
+      return;
+    }
+
+    const originalImage = JSON.parse(JSON.stringify(images[imageIndex])); // Deep copy for reliable revert
+
+    // Optimistic update
+    setImages(prevImages => {
+      const newImages = [...prevImages];
+      const imageToUpdate = { ...newImages[imageIndex] }; // Work on a copy
+
+      const isCurrentlyLiked = imageToUpdate.likes?.includes(currentUserId);
+      
+      if (isCurrentlyLiked) {
+        imageToUpdate.likes = (imageToUpdate.likes || []).filter(id => id !== currentUserId);
+        imageToUpdate.likesCount = (imageToUpdate.likesCount || 1) - 1;
+      } else {
+        imageToUpdate.likes = [...(imageToUpdate.likes || []), currentUserId];
+        imageToUpdate.likesCount = (imageToUpdate.likesCount || 0) + 1;
+      }
+      imageToUpdate.likesCount = Math.max(0, imageToUpdate.likesCount); // Ensure likesCount is not negative
+
+      newImages[imageIndex] = imageToUpdate;
+      return newImages;
+    });
+
     try {
-      console.log('❤️ [ImageLike] Making API call...');
+      console.log('❤️ [ImageLike] Making API call for image:', imageId);
       const response = await apiService.likeImage(imageId);
-      console.log('❤️ [ImageLike] API response:', response);
+      console.log('❤️ [ImageLike] API response for image:', imageId, response);
       
       if (response.status === 'success') {
-        // Update local state
-        setImages(prev => prev.map(img => 
-          img._id === imageId 
-            ? { 
-                ...img, 
-                likes: response.data.liked 
-                  ? [...(img.likes || []), response.data.userId]
-                  : (img.likes || []).filter(id => id !== response.data.userId),
-                likesCount: response.data.likesCount 
+        // Sync with server state if necessary, especially likesCount
+        setImages(prevImages => prevImages.map(img => {
+          if (img._id === imageId) {
+            const serverUserId = response.data.userId; // Should be currentUserId
+            const serverLiked = response.data.liked;
+            const serverLikesCount = response.data.likesCount;
+
+            const updatedImg = { ...img, likesCount: serverLikesCount };
+            
+            // Reconcile likes array based on server response for the current user
+            let currentLikesOptimistic = [...(img.likes || [])]; // Take from current state (which is optimistic)
+            if (serverLiked) {
+              if (!currentLikesOptimistic.includes(serverUserId)) {
+                currentLikesOptimistic.push(serverUserId);
               }
-            : img
+            } else {
+              currentLikesOptimistic = currentLikesOptimistic.filter(id => id !== serverUserId);
+            }
+            updatedImg.likes = currentLikesOptimistic;
+            
+            // Double check integrity of likesCount with actual likes array length for the current user
+            // This is a safety, serverLikesCount should be the source of truth for the count.
+            // updatedImg.likesCount = updatedImg.likes.length; // Or trust serverLikesCount
+
+            return updatedImg;
+          }
+          return img;
+        }));
+        console.log('❤️ [ImageLike] API call successful, state synced with server for image:', imageId);
+      } else {
+        console.error('❤️ [ImageLike] API error (not success status) for image:', imageId, response.message);
+        // Revert optimistic update
+        setImages(prevImages => prevImages.map(img => 
+          img._id === imageId ? originalImage : img
         ));
-        console.log('❤️ [ImageLike] Local state updated successfully');
       }
     } catch (error) {
-      console.error('❤️ [ImageLike] Error liking image:', error);
+      console.error('❤️ [ImageLike] Network/request error, reverting optimistic update for image:', imageId, error);
+      // Revert optimistic update
+      setImages(prevImages => prevImages.map(img => 
+        img._id === imageId ? originalImage : img
+      ));
+    } finally {
+      setLikingStatus(prev => ({ ...prev, [imageId]: false }));
     }
-  }, []);
+  }, [images, likingStatus]);
 
   // Handle comment action
   const handleComment = useCallback(async (imageId) => {
