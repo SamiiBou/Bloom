@@ -529,7 +529,6 @@
 /* Focus states for accessibility */
 .play-button:focus,
 .mute-button:focus,
-.action-button:focus,
 .follow-button:focus {
   outline: 2px solid #007bff;
   outline-offset: 2px;
