@@ -180,15 +180,11 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
   };
 
   // Handle like - Improved version
-  const handleLike = async (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    if (!isAuthenticated) return;
-    if (isLiking) return;
+  const handleLike = async () => {
+    if (!isAuthenticated || isLiking) return;
     setIsLiking(true);
-    
-    // Optimistic update via parent
+
+    // Optimistic update
     const newLikedState = !video.isLiked;
     const newLikesCount = newLikedState ? video.likes + 1 : video.likes - 1;
     if (onUpdateVideo) {
@@ -510,10 +506,11 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
             {/* Like button - Recreated for better click handling */}
             <button
               type="button"
-              className={`action-button like-button ${video.isLiked ? 'liked' : ''}`}
+              className={`action-button like-button${video.isLiked ? ' liked' : ''}`}
               onClick={handleLike}
-              onTouchStart={e => e.stopPropagation()}
-              onMouseDown={e => e.stopPropagation()}
+              disabled={!isAuthenticated || isLiking}
+              aria-pressed={video.isLiked}
+              aria-label={video.isLiked ? "Unlike" : "Like"}
               style={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -527,35 +524,34 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
                 margin: '0',
                 transition: 'transform 0.2s ease',
                 opacity: !isAuthenticated || isLiking ? 0.6 : 1,
-                pointerEvents: !isAuthenticated || isLiking ? 'none' : 'auto'
+                outline: 'none',
+                boxShadow: 'none',
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation',
+                userSelect: 'none'
               }}
-              disabled={!isAuthenticated || isLiking}
-              tabIndex={0}
-              aria-pressed={video.isLiked}
-              aria-label={video.isLiked ? "Unlike" : "Like"}
             >
-              <div className="action-icon" style={{ fontSize: '30px', marginBottom: '2px' }}>
-                <Heart 
-                  size={28} 
-                  fill={video.isLiked ? '#ff0050' : 'none'} 
+              <span className="action-icon" style={{
+                fontSize: '30px',
+                marginBottom: '2px',
+                pointerEvents: 'none',
+                filter: video.isLiked ? 'drop-shadow(0 0 8px rgba(255, 0, 80, 0.5))' : 'none'
+              }}>
+                <Heart
+                  size={28}
+                  fill={video.isLiked ? '#ff0050' : 'none'}
                   color={video.isLiked ? '#ff0050' : 'white'}
-                  style={{ 
-                    pointerEvents: 'none',
-                    filter: video.isLiked ? 'drop-shadow(0 0 8px rgba(255, 0, 80, 0.5))' : 'none'
-                  }}
+                  style={{ pointerEvents: 'none' }}
                 />
-              </div>
-              <span 
-                className="action-count" 
-                style={{ 
-                  fontSize: '12px', 
-                  fontWeight: '700', 
-                  textAlign: 'center', 
-                  lineHeight: '1', 
-                  color: 'white',
-                  pointerEvents: 'none'
-                }}
-              >
+              </span>
+              <span className="action-count" style={{
+                fontSize: '12px',
+                fontWeight: '700',
+                textAlign: 'center',
+                lineHeight: '1',
+                color: 'white',
+                pointerEvents: 'none'
+              }}>
                 {formatNumber(video.likes)}
               </span>
             </button>
