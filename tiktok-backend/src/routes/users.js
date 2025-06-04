@@ -1,10 +1,17 @@
 const express = require('express');
 const User = require('../models/User');
 const Video = require('../models/Video');
-const { protect, optionalAuth } = require('../middleware/auth');
+const { protect, optionalAuth, admin } = require('../middleware/auth');
+const { processUploadedVideo, deleteS3Object, getSignedUrl } = require('../services/videoService');
 const { ethers } = require('ethers');
 const crypto = require('crypto');
 const axios = require('axios');
+const { getNextBloomDropTime } = require('../services/bloomService');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const { Readable } = require('stream');
+const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 
 const router = express.Router();
 
@@ -499,6 +506,22 @@ router.post('/add-test-credits', protect, async (req, res) => {
 // Endpoint sécurisé pour fournir l'adresse de paiement au front
 router.get('/payment/address', (req, res) => {
   res.json({ address: PAYMENT_ADDRESS });
+});
+
+// Added: Route to get the next Bloom drop time
+router.get('/next-bloom-drop', async (req, res, next) => {
+  try {
+    const nextDropTime = await getNextBloomDropTime();
+    res.status(200).json({
+      status: 'success',
+      data: {
+        nextBloomDropTime: nextDropTime
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching next bloom drop time:', error);
+    next(error); // Pass to error handler
+  }
 });
 
 module.exports = router;
