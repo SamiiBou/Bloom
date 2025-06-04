@@ -23,10 +23,16 @@ class ApiService {
     }
 
     // Add authorization header if token exists
-    if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`;
-      console.log(`🌐 [API] Added auth header: Bearer ${this.token.substring(0, 20)}...`);
+    const storedToken = localStorage.getItem('authToken');
+    if (storedToken) {
+      // Update the instance token if it differs from the stored one
+      if (storedToken !== this.token) {
+        this.token = storedToken;
+      }
+      headers.Authorization = `Bearer ${storedToken}`;
+      console.log(`🌐 [API] Added auth header: Bearer ${storedToken.substring(0, 20)}...`);
     } else {
+      this.token = null;
       console.log(`🌐 [API] No auth token available`);
     }
 
