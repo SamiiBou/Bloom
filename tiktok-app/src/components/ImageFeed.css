@@ -366,8 +366,8 @@
     align-items: center;
     gap: 0.5rem;
     padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
     border-radius: 20px;
     color: #ffffff !important;
     text-decoration: none;
@@ -380,8 +380,8 @@
   }
   
   .image-feed .action-button:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.85) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
     transform: translateY(-1px);
   }
   
@@ -392,9 +392,16 @@
     color: #ffffff !important;
   }
   
-  /* Boutons like et commentaire - CORRECTION DES COULEURS */
+  /* Boutons like et commentaire - CORRECTION DES COULEURS AVEC FOND CONTRASTÉ */
   .image-feed .like-button {
+    background: rgba(0, 0, 0, 0.7) !important;
     color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  }
+
+  .image-feed .like-button:hover {
+    background: rgba(0, 0, 0, 0.85) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
   }
 
   .image-feed .like-button svg {
@@ -406,20 +413,33 @@
   }
   
   .image-feed .like-button.liked {
-    color: #ff6b6b !important;
+    background: rgba(255, 0, 80, 0.9) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 0, 80, 1) !important;
+  }
+
+  .image-feed .like-button.liked:hover {
+    background: rgba(255, 0, 80, 1) !important;
   }
 
   .image-feed .like-button.liked svg {
-    color: #ff6b6b !important;
-    fill: #ff6b6b !important;
+    color: #ffffff !important;
+    fill: #ffffff !important;
   }
 
   .image-feed .like-button.liked .action-count {
-    color: #ff6b6b !important;
+    color: #ffffff !important;
   }
 
   .image-feed .comment-button {
+    background: rgba(0, 0, 0, 0.7) !important;
     color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  }
+
+  .image-feed .comment-button:hover {
+    background: rgba(59, 130, 246, 0.9) !important;
+    border-color: rgba(59, 130, 246, 1) !important;
   }
 
   .image-feed .comment-button svg {
@@ -430,20 +450,23 @@
     color: #ffffff !important;
   }
   
-  .image-feed .comment-button:hover {
-    color: #3b82f6 !important;
-  }
-
   .image-feed .comment-button:hover svg {
-    color: #3b82f6 !important;
+    color: #ffffff !important;
   }
 
   .image-feed .comment-button:hover .action-count {
-    color: #3b82f6 !important;
+    color: #ffffff !important;
   }
   
   .image-feed .download-button {
+    background: rgba(0, 0, 0, 0.7) !important;
     color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  }
+
+  .image-feed .download-button:hover {
+    background: rgba(59, 130, 246, 0.9) !important;
+    border-color: rgba(59, 130, 246, 1) !important;
   }
 
   .image-feed .download-button svg {
@@ -453,23 +476,24 @@
   .image-feed .download-button .action-count {
     color: #ffffff !important;
   }
-  
-  .image-feed .download-button:hover {
-    background: rgba(59, 130, 246, 0.3);
-    border-color: rgba(59, 130, 246, 0.5);
-    color: #3b82f6 !important;
-  }
 
   .image-feed .download-button:hover svg {
-    color: #3b82f6 !important;
+    color: #ffffff !important;
   }
 
   .image-feed .download-button:hover .action-count {
-    color: #3b82f6 !important;
+    color: #ffffff !important;
   }
 
   .image-feed .share-button {
+    background: rgba(0, 0, 0, 0.7) !important;
     color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  }
+
+  .image-feed .share-button:hover {
+    background: rgba(34, 197, 94, 0.9) !important;
+    border-color: rgba(34, 197, 94, 1) !important;
   }
 
   .image-feed .share-button svg {
@@ -480,18 +504,12 @@
     color: #ffffff !important;
   }
   
-  .image-feed .share-button:hover {
-    background: rgba(34, 197, 94, 0.3);
-    border-color: rgba(34, 197, 94, 0.5);
-    color: #22c55e !important;
-  }
-
   .image-feed .share-button:hover svg {
-    color: #22c55e !important;
+    color: #ffffff !important;
   }
 
   .image-feed .share-button:hover .action-count {
-    color: #22c55e !important;
+    color: #ffffff !important;
   }
   
   /* Load More */
@@ -1405,4 +1423,58 @@
   .fab-label-dark {
     background: #1d1d1f;
   }
+}
+
+/* RÈGLES SUPER SPÉCIFIQUES POUR ÉCRASER TOUS LES STYLES INLINE */
+.image-feed .post-actions .action-button {
+  background: rgba(0, 0, 0, 0.7) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.image-feed .post-actions .action-button:hover {
+  background: rgba(0, 0, 0, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.image-feed .post-actions .like-button {
+  background: rgba(0, 0, 0, 0.7) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.image-feed .post-actions .like-button.liked {
+  background: rgba(255, 0, 80, 0.9) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 0, 80, 1) !important;
+}
+
+.image-feed .post-actions .comment-button {
+  background: rgba(0, 0, 0, 0.7) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.image-feed .post-actions .comment-button:hover {
+  background: rgba(59, 130, 246, 0.9) !important;
+  border-color: rgba(59, 130, 246, 1) !important;
+  color: #ffffff !important;
+}
+
+/* Forcer la couleur des icônes et textes dans les boutons */
+.image-feed .post-actions .action-button svg {
+  color: #ffffff !important;
+}
+
+.image-feed .post-actions .action-button .action-count {
+  color: #ffffff !important;
+}
+
+.image-feed .post-actions .like-button.liked svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+.image-feed .post-actions .like-button.liked .action-count {
+  color: #ffffff !important;
 }
