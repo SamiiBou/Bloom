@@ -527,7 +527,7 @@ const ImageFeed = () => {
                         className={`action-button like-button ${
                           image.likes?.includes(apiService.getCurrentUserId()) ? 'liked' : ''
                         }`}
-                        title="J'aime"
+                        title="Like"
                       >
                         <Heart size={16} />
                         <span className="action-count">{image.likesCount || image.likes?.length || 0}</span>
@@ -536,7 +536,7 @@ const ImageFeed = () => {
                       <button 
                         onClick={() => handleComment(image._id)}
                         className="action-button comment-button"
-                        title="Commenter"
+                        title="Comment"
                       >
                         <MessageCircle size={16} />
                         <span className="action-count">{commentsCount[image._id] || 0}</span>
@@ -759,7 +759,7 @@ const ImageFeed = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="comments-modal-header">
-                <h3>Commentaires</h3>
+                <h3>Comments</h3>
                 <button 
                   className="close-button"
                   onClick={() => setShowCommentsModal(false)}
@@ -775,7 +775,7 @@ const ImageFeed = () => {
                     <textarea
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Ajouter un commentaire..."
+                      placeholder="Add a comment..."
                       maxLength={500}
                       disabled={addingComment}
                       rows={3}
@@ -793,7 +793,7 @@ const ImageFeed = () => {
                           <Sparkles size={16} />
                         </motion.div>
                       ) : (
-                        'Publier'
+                        'Publish'
                       )}
                     </button>
                   </div>
@@ -818,13 +818,13 @@ const ImageFeed = () => {
                       >
                         <Sparkles size={24} />
                       </motion.div>
-                      <p>Chargement des commentaires...</p>
+                      <p>Loading comments...</p>
                     </div>
                   ) : comments.length === 0 ? (
                     <div className="no-comments">
                       <MessageCircle size={48} />
-                      <p>Aucun commentaire</p>
-                      <span>Soyez le premier à commenter cette image&nbsp;!</span>
+                      <p>No comments</p>
+                      <span>Be the first to comment on this image!</span>
                     </div>
                   ) : (
                     <div className="comments-container">

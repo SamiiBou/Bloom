@@ -17,7 +17,7 @@ const Comments = ({ videoId, isOpen, onClose, commentsCount: initialCommentsCoun
   const commentsContainerRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Charger les commentaires
+  // Load comments
   const loadComments = async (pageNum = 1, append = false) => {
     try {
       setLoading(true);
@@ -37,17 +37,17 @@ const Comments = ({ videoId, isOpen, onClose, commentsCount: initialCommentsCoun
         setHasMore(response.data.pagination?.hasMore || false);
         setCommentsCount(response.data.comments?.length || newComments.length);
       } else {
-        setError('Erreur lors du chargement des commentaires');
+        setError('Error loading comments');
       }
     } catch (err) {
       console.error('Erreur lors du chargement des commentaires:', err);
-      setError(err.message || 'Erreur lors du chargement des commentaires');
+      setError('Error loading comments');
     } finally {
       setLoading(false);
     }
   };
 
-  // Ajouter un commentaire
+  // Add a comment
   const handleSubmitComment = async (e) => {
     e.preventDefault();
     
@@ -62,30 +62,30 @@ const Comments = ({ videoId, isOpen, onClose, commentsCount: initialCommentsCoun
       const response = await apiService.addComment(videoId, newComment.trim());
       
       if (response.status === 'success') {
-        // Ajouter le nouveau commentaire en haut de la liste
+        // Add the new comment at the top of the list
         const comment = response.data.comment;
         setComments(prev => [comment, ...prev]);
         setCommentsCount(prev => prev + 1);
         setNewComment('');
         
-        // Scroll vers le haut pour voir le nouveau commentaire
+        // Scroll to top to see the new comment
         if (commentsContainerRef.current) {
           commentsContainerRef.current.scrollTop = 0;
         }
       } else {
-        setError(response.message || 'Erreur lors de l\'ajout du commentaire');
+        setError('Error adding comment');
       }
     } catch (err) {
       console.error('Erreur lors de l\'ajout du commentaire:', err);
-      setError(err.message || 'Erreur lors de l\'ajout du commentaire');
+      setError('Error adding comment');
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Supprimer un commentaire
+  // Delete a comment
   const handleDeleteComment = async (commentId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce commentaire ?')) {
+    if (!window.confirm('Are you sure you want to delete this comment?')) {
       return;
     }
     
@@ -95,11 +95,11 @@ const Comments = ({ videoId, isOpen, onClose, commentsCount: initialCommentsCoun
       setCommentsCount(prev => prev - 1);
     } catch (err) {
       console.error('Erreur lors de la suppression du commentaire:', err);
-      setError('Erreur lors de la suppression du commentaire');
+      setError('Error deleting comment');
     }
   };
 
-  // Charger plus de commentaires
+  // Load more comments
   const loadMoreComments = () => {
     if (!loading && hasMore) {
       const nextPage = page + 1;
@@ -108,7 +108,7 @@ const Comments = ({ videoId, isOpen, onClose, commentsCount: initialCommentsCoun
     }
   };
 
-  // Charger les commentaires quand le composant s'ouvre
+  // Load comments when component opens
   useEffect(() => {
     if (isOpen && videoId) {
       setComments([]);
@@ -117,7 +117,7 @@ const Comments = ({ videoId, isOpen, onClose, commentsCount: initialCommentsCoun
     }
   }, [isOpen, videoId]);
 
-  // Focus sur l'input quand les commentaires s'ouvrent
+  // Focus on input when comments open
   useEffect(() => {
     if (isOpen && inputRef.current) {
       setTimeout(() => {
@@ -126,7 +126,7 @@ const Comments = ({ videoId, isOpen, onClose, commentsCount: initialCommentsCoun
     }
   }, [isOpen]);
 
-  // Gérer le scroll pour charger plus de commentaires
+  // Handle scroll to load more comments
   const handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
     
@@ -135,23 +135,23 @@ const Comments = ({ videoId, isOpen, onClose, commentsCount: initialCommentsCoun
     }
   };
 
-  // Formatage de la date
+  // Date formatting
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
     
     if (diffInSeconds < 60) {
-      return 'À l\'instant';
+      return 'Just now';
     } else if (diffInSeconds < 3600) {
       const minutes = Math.floor(diffInSeconds / 60);
-      return `Il y a ${minutes}min`;
+      return `${minutes}min ago`;
     } else if (diffInSeconds < 86400) {
       const hours = Math.floor(diffInSeconds / 3600);
-      return `Il y a ${hours}h`;
+      return `${hours}h ago`;
     } else {
       const days = Math.floor(diffInSeconds / 86400);
-      return `Il y a ${days}j`;
+      return `${days}d ago`;
     }
   };
 
@@ -164,11 +164,11 @@ const Comments = ({ videoId, isOpen, onClose, commentsCount: initialCommentsCoun
       <div className="comments-container">
         {/* Header */}
         <div className="comments-header">
-          <h3>Commentaires ({commentsCount})</h3>
+          <h3>Comments ({commentsCount})</h3>
           <button 
             className="comments-close-button"
             onClick={onClose}
-            aria-label="Fermer les commentaires"
+            aria-label="Close comments"
           >
             <X size={20} />
           </button>
@@ -183,7 +183,7 @@ const Comments = ({ videoId, isOpen, onClose, commentsCount: initialCommentsCoun
           {loading && comments.length === 0 && (
             <div className="comments-loading">
               <div className="spinner"></div>
-              <span>Chargement des commentaires...</span>
+              <span>Loading comments...</span>
             </div>
           )}
 
@@ -191,15 +191,15 @@ const Comments = ({ videoId, isOpen, onClose, commentsCount: initialCommentsCoun
             <div className="comments-error">
               <AlertCircle size={24} />
               <p>{error}</p>
-              <button onClick={() => loadComments(1, false)}>Réessayer</button>
+              <button onClick={() => loadComments(1, false)}>Retry</button>
             </div>
           )}
 
           {comments.length === 0 && !loading && !error && (
             <div className="comments-empty">
               <MessageCircle size={32} />
-              <p>Aucun commentaire pour le moment</p>
-              <p>Soyez le premier à commenter !</p>
+              <p>No comments yet</p>
+              <p>Be the first to comment!</p>
             </div>
           )}
 
@@ -222,7 +222,7 @@ const Comments = ({ videoId, isOpen, onClose, commentsCount: initialCommentsCoun
               <div className="comment-content">
                 <div className="comment-header">
                   <span className="comment-username">
-                    @{comment.user?.username || 'Utilisateur'}
+                    @{comment.user?.username || 'User'}
                   </span>
                   <span className="comment-date">
                     {formatDate(comment.createdAt)}
@@ -241,7 +241,7 @@ const Comments = ({ videoId, isOpen, onClose, commentsCount: initialCommentsCoun
                       className="comment-delete-button"
                       onClick={() => handleDeleteComment(comment._id)}
                     >
-                      <Trash2 size={20} /> Supprimer
+                      <Trash2 size={20} /> Delete
                     </button>
                   )}
                 </div>
@@ -259,7 +259,7 @@ const Comments = ({ videoId, isOpen, onClose, commentsCount: initialCommentsCoun
           {!hasMore && comments.length > 0 && (
             <div className="comments-end">
               <Check size={20} />
-              <p>Vous avez vu tous les commentaires !</p>
+              <p>You've seen all comments!</p>
             </div>
           )}
         </div>
@@ -273,7 +273,7 @@ const Comments = ({ videoId, isOpen, onClose, commentsCount: initialCommentsCoun
                 type="text"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Ajouter un commentaire..."
+                placeholder="Add a comment..."
                 className="comment-input"
                 maxLength={500}
                 disabled={submitting}
@@ -297,7 +297,7 @@ const Comments = ({ videoId, isOpen, onClose, commentsCount: initialCommentsCoun
         ) : (
           <div className="comment-login-prompt">
             <MessageCircle size={24} />
-            <p>Connectez-vous pour commenter</p>
+            <p>Sign in to comment</p>
           </div>
         )}
       </div>
