@@ -6,9 +6,17 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/database');
+const GlobalSettings = require('./models/GlobalSettings');
+const bloomService = require('./services/bloomService');
 
 // Connexion à la base de données
 connectDB();
+
+// Initialize Global Settings
+GlobalSettings.initializeSettings().catch(err => console.error('Error initializing GlobalSettings:', err));
+
+// Start Bloom Service (and its cron job)
+bloomService.startBloomService();
 
 const app = express();
 

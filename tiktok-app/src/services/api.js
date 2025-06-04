@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 class ApiService {
@@ -320,7 +322,11 @@ class ApiService {
 
   // Get current user profile
   async getUserProfile() {
-    return await this.request('/auth/me');
+    const token = localStorage.getItem('authToken');
+    const response = await axios.get(`${this.baseURL}/users/profile`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
   }
 
   async followUser(username) {
@@ -702,10 +708,16 @@ class ApiService {
       throw error;
     }
   }
+
+  // Added method to get next Bloom drop time
+  async getNextBloomDropTime() {
+    const token = localStorage.getItem('authToken'); // Or however you manage auth tokens
+    const response = await axios.get(`${this.baseURL}/users/next-bloom-drop`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return response.data; // Assuming backend returns { status: 'success', data: { nextBloomDropTime: '...' } }
+  }
 }
-
-
-
 
 // Create and export a singleton instance
 const apiService = new ApiService();

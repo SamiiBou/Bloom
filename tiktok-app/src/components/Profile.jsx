@@ -72,6 +72,10 @@ const Profile = () => {
   // Ajout d'un state pour l'adresse de paiement
   const [paymentAddress, setPaymentAddress] = useState('');
 
+  // Added states for Bloom drop countdown
+  const [nextBloomDropTime, setNextBloomDropTime] = useState(null);
+  const [countdown, setCountdown] = useState('Loading...');
+
   // Setup MiniKit event handlers (from RewardsHub)
   useEffect(() => {
     if (!MiniKit.isInstalled()) return;
@@ -1309,6 +1313,66 @@ const Profile = () => {
     return () => clearInterval(interval);
   }, [isAuthenticated, token]);
 
+  // Fetch next Bloom drop time
+  useEffect(() => {
+    const fetchNextDropTime = async () => {
+      try {
+        // Assuming apiService is configured to hit your backend
+        // The endpoint might be /api/v1/users/next-bloom-drop or similar based on your backend routes
+        const response = await apiService.getNextBloomDropTime(); // You'll need to add this method to your apiService
+        if (response.status === 'success' && response.data && response.data.nextBloomDropTime) {
+          setNextBloomDropTime(new Date(response.data.nextBloomDropTime));
+        } else {
+          console.error('Failed to fetch next bloom drop time:', response);
+          setCountdown('Error loading timer');
+        }
+      } catch (error) {
+        console.error('Error fetching next bloom drop time:', error);
+        setCountdown('Error loading timer');
+      }
+    };
+
+    fetchNextDropTime();
+  }, []);
+
+  // Countdown timer logic
+  useEffect(() => {
+    if (!nextBloomDropTime) return;
+
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = nextBloomDropTime.getTime() - now;
+
+      if (distance < 0) {
+        clearInterval(interval);
+        setCountdown('Processing drop...'); // Or fetch new time immediately
+        // Optionally, re-fetch the next drop time here after a short delay
+        setTimeout(async () => {
+            try {
+                const response = await apiService.getNextBloomDropTime();
+                if (response.status === 'success' && response.data && response.data.nextBloomDropTime) {
+                    setNextBloomDropTime(new Date(response.data.nextBloomDropTime));
+                }
+            } catch (error) {
+                console.error('Error re-fetching next bloom drop time:', error);
+                setCountdown('Waiting for next drop...')
+            }
+        }, 5000); // 5 second delay before re-fetch
+        return;
+      }
+
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      setCountdown(
+        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')} before next drop`
+      );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [nextBloomDropTime]);
+
   return (
     <div className="profile-container-new">
       {/* Header premium with balance */}
@@ -1693,6 +1757,10 @@ const Profile = () => {
               <div className="detail-item-new">
                 <span>BLOOM earned by watching :</span>
                 <span>{tokensEarnedFromVideos.toFixed(2)} BLOOM</span>
+              </div>
+              <div className="detail-item-new">
+                <span>Next Bloom Drop:</span>
+                <span>{countdown}</span>
               </div>
             </div>
             <div className="detail-card">
