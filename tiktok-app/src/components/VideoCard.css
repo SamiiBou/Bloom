@@ -387,6 +387,16 @@
   font-weight: 700;
   text-align: center;
   line-height: 1;
+  color: white !important;
+}
+
+/* Assurer que les action-count dans les video cards soient en blanc */
+.video-card .action-count {
+  color: white !important;
+}
+
+.video-feed .video-card .action-count {
+  color: white !important;
 }
 
 .like-button.liked .action-icon {
