@@ -1321,12 +1321,6 @@ const Profile = () => {
       <div className="profile-header-premium">
         <div className="header-left">
           <img src={BloomLogo} alt="Logo Bloom" style={{ height: 50, maxWidth: 140, width: 'auto', objectFit: 'contain', display: 'block' }} />
-          
-          {/* Bouton Telegram */}
-          <div className="social-btn telegram-btn" onClick={openTelegramGroup}>
-            <FaTelegramPlane size={18} />
-            <span>Join Us</span>
-          </div>
         </div>
         <div className="header-balances">
           <div className="credits-balance-header">
@@ -1356,6 +1350,14 @@ const Profile = () => {
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Section bouton Telegram sous le header */}
+      <div className="telegram-section">
+        <div className="social-btn telegram-btn" onClick={openTelegramGroup}>
+          <FaTelegramPlane size={18} />
+          <span>Join Us</span>
         </div>
       </div>
 
