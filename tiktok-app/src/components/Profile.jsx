@@ -8,6 +8,7 @@ import distributorAbi from '../abi/Distributor.json';
 import permit2Abi from '../abi/Permit2.json';
 import { encodeVoucher } from '../utils/encodeVoucher';
 import BloomLogo from '../assets/Bloom_LOGO.jpg';
+import { FaTelegramPlane } from 'react-icons/fa';
 
 import './Profile.css';
 import { 
@@ -1309,12 +1310,23 @@ const Profile = () => {
     return () => clearInterval(interval);
   }, [isAuthenticated, token]);
 
+  // Fonction pour ouvrir le groupe Telegram
+  const openTelegramGroup = () => {
+    window.open('https://t.me/+X5ymk_jSYKk0Mjdk', '_blank');
+  };
+
   return (
     <div className="profile-container-new">
       {/* Header premium with balance */}
       <div className="profile-header-premium">
         <div className="header-left">
           <img src={BloomLogo} alt="Logo Bloom" style={{ height: 50, maxWidth: 140, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          
+          {/* Bouton Telegram */}
+          <div className="social-btn telegram-btn" onClick={openTelegramGroup}>
+            <FaTelegramPlane size={18} />
+            <span>Join Us</span>
+          </div>
         </div>
         <div className="header-balances">
           <div className="credits-balance-header">
