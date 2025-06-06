@@ -20,9 +20,54 @@ setInterval(() => {
 
 // Generate JWT Token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'your-secret-key', {
-    expiresIn: '30d',
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || '30d',
   });
+};
+
+// Fonction pour nettoyer le nom d'utilisateur
+const sanitizeUsername = (username) => {
+  if (!username) return null;
+  
+  // Remplacer les caractères non autorisés par des underscores
+  // Le regex autorise seulement lettres, chiffres et underscores
+  const sanitized = username.replace(/[^a-zA-Z0-9_]/g, '_');
+  
+  // S'assurer que le nom fait au moins 3 caractères
+  if (sanitized.length < 3) {
+    return `user_${sanitized}_${Date.now().toString().slice(-4)}`;
+  }
+  
+  // S'assurer que le nom ne dépasse pas 30 caractères
+  return sanitized.slice(0, 30);
+};
+
+// Fonction pour générer un nom d'utilisateur unique
+const generateUniqueUsername = async (baseUsername, walletAddress) => {
+  if (!baseUsername) {
+    // Fallback: utiliser l'adresse wallet
+    baseUsername = `user_${walletAddress.slice(2, 8)}`;
+  }
+  
+  let uniqueUsername = baseUsername;
+  let counter = 1;
+  
+  // Vérifier si le nom d'utilisateur existe déjà
+  while (await User.findOne({ username: uniqueUsername })) {
+    // Si le nom existe, ajouter un numéro
+    const suffix = `_${counter}`;
+    const maxBaseLength = 30 - suffix.length;
+    uniqueUsername = baseUsername.slice(0, maxBaseLength) + suffix;
+    counter++;
+    
+    // Éviter une boucle infinie
+    if (counter > 999) {
+      uniqueUsername = `user_${Date.now().toString().slice(-8)}`;
+      break;
+    }
+  }
+  
+  return uniqueUsername;
 };
 
 // GET /api/wallet/nonce - Générer un nonce pour l'authentification
@@ -138,8 +183,9 @@ router.post('/complete-siwe', async (req, res) => {
         if (minikitUserData.username) {
           userData.minikitUsername = minikitUserData.username;
           // Utiliser le username MiniKit comme username principal s'il n'existe pas
-          userData.username = minikitUserData.username;
-          userData.displayName = minikitUserData.username;
+          const sanitizedUsername = sanitizeUsername(minikitUserData.username);
+          userData.username = await generateUniqueUsername(sanitizedUsername, walletAddress);
+          userData.displayName = sanitizedUsername; // Garder le nom original comme displayName
         }
         
         if (minikitUserData.userId) {
@@ -163,7 +209,7 @@ router.post('/complete-siwe', async (req, res) => {
       
       // Si pas de username MiniKit, générer un username basé sur l'adresse wallet
       if (!userData.username) {
-        userData.username = `user_${walletAddress.slice(2, 8)}`;
+        userData.username = await generateUniqueUsername(null, walletAddress);
         userData.displayName = userData.username;
       }
       
