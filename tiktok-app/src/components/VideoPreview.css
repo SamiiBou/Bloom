@@ -110,6 +110,24 @@
   pointer-events: none;
 }
 
+.video-error {
+  position: absolute;
+  bottom: -70px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #ff6b6b;
+  font-size: 0.8rem;
+  text-align: center;
+  opacity: 0.9;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  background: rgba(255, 107, 107, 0.1);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* Bottom Controls - AVEC BOUTON CLOSE */
 .video-controls {
   position: absolute;
