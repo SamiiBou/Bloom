@@ -288,6 +288,10 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
+.purchase-button:hover:not(:disabled) .button-price {
+  color: #ffffff !important;
+}
+
 .purchase-button:active:not(:disabled) {
   transform: translateY(0);
 }
@@ -304,8 +308,22 @@
 
 .button-price {
   font-size: 14px;
-  opacity: 0.8;
+  opacity: 1;
   font-weight: 500;
+  color: #1d1d1f !important;
+  background: none !important;
+  text-shadow: none !important;
+}
+
+/* Assurer la visibilité du prix dans tous les contextes */
+.purchase-button .button-price {
+  color: #1d1d1f !important;
+  background: none !important;
+  text-shadow: none !important;
+}
+
+.purchase-button:hover:not(:disabled) .button-price {
+  color: #ffffff !important;
 }
 
 /* Loading state */
@@ -407,6 +425,10 @@
 
   .purchase-button:hover:not(:disabled) {
     background: #ffffff;
+  }
+
+  .button-price {
+    color: #1d1d1f !important;
   }
 
   .spinner {
