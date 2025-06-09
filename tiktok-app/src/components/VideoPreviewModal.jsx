@@ -26,10 +26,14 @@ const VideoPreviewModal = ({
   const [userInteracted, setUserInteracted] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [forceReloadKey, setForceReloadKey] = useState(Date.now());
+  const [showNativeControls, setShowNativeControls] = useState(false);
+  const [autoPlayTries, setAutoPlayTries] = useState(0);
   
   const videoRef = useRef(null);
   const loadingTimeoutRef = useRef(null);
   const retryTimeoutRef = useRef(null);
+  const autoPlayIntervalRef = useRef(null);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -98,6 +102,9 @@ const VideoPreviewModal = ({
   // Reset state when modal opens/closes or video changes
   useEffect(() => {
     if (isOpen && video?.url) {
+      setForceReloadKey(Date.now());
+      setShowNativeControls(false);
+      setAutoPlayTries(0);
       console.log('🎬 VideoPreviewModal: Modal opened with video URL:', video.url);
       setIsPlaying(false);
       setVideoLoaded(false);
@@ -402,6 +409,56 @@ const VideoPreviewModal = ({
     loadVideo();
   }, [loadVideo]);
 
+  // Tentative de lecture automatique en boucle
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!videoRef.current) return;
+    if (isPlaying) return;
+    if (showNativeControls) return;
+    if (videoError) return;
+    if (!videoLoaded || !videoReady) return;
+
+    let tries = 0;
+    autoPlayIntervalRef.current = setInterval(async () => {
+      if (!videoRef.current) return;
+      if (isPlaying) {
+        clearInterval(autoPlayIntervalRef.current);
+        return;
+      }
+      try {
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+          setIsPlaying(true);
+          clearInterval(autoPlayIntervalRef.current);
+        }
+      } catch (e) {
+        tries++;
+        setAutoPlayTries(tries);
+        if (tries > 6) {
+          clearInterval(autoPlayIntervalRef.current);
+          setShowNativeControls(true);
+        }
+      }
+    }, 500);
+    return () => clearInterval(autoPlayIntervalRef.current);
+  }, [isOpen, isPlaying, videoLoaded, videoReady, showNativeControls, videoError]);
+
+  // Hard reset du tag video
+  const handleForceReload = () => {
+    setForceReloadKey(Date.now());
+    setShowNativeControls(false);
+    setAutoPlayTries(0);
+    setTimeout(() => {
+      if (videoRef.current) {
+        videoRef.current.load();
+        setTimeout(() => {
+          videoRef.current.play().catch(() => setShowNativeControls(true));
+        }, 200);
+      }
+    }, 100);
+  };
+
   if (!video || !video.url) {
     console.warn('❌ VideoPreviewModal: Missing video data or URL', { video });
     return null;
@@ -446,35 +503,31 @@ const VideoPreviewModal = ({
             <div className="preview-content">
               <div className="preview-video-container">
                 <video
-                  key={`${video.url}-${loadingAttempts}`}
+                  key={forceReloadKey}
                   ref={videoRef}
                   src={video.url}
                   className="preview-video"
                   onPlay={() => {
-                    console.log('🎬 Video onPlay event fired');
                     setIsPlaying(true);
                   }}
                   onPause={() => {
-                    console.log('⏸️ Video onPause event fired');
                     setIsPlaying(false);
                   }}
-                  muted={isMuted}
+                  muted={false} // Désactive le mute par défaut
                   volume={videoVolume}
                   loop
                   playsInline
                   crossOrigin="anonymous"
+                  controls={showNativeControls}
                   onLoadedData={handleVideoLoadedData}
                   onError={handleVideoError}
                   onCanPlay={handleVideoCanPlay}
                   onLoadedMetadata={() => {
-                    console.log('📊 Video metadata loaded');
                     setVideoLoaded(true);
                   }}
                   onWaiting={() => {
-                    console.log('⏳ Video waiting for data...');
                   }}
                   onSeeking={() => {
-                    console.log('🔍 Video seeking...');
                   }}
                   preload="auto"
                 />
@@ -489,7 +542,7 @@ const VideoPreviewModal = ({
                     {isPlaying ? <Pause size={32} /> : <Play size={32} />}
                   </div>
                   
-                  {!isPlaying && !videoError && (
+                  {!isPlaying && !videoError && !showNativeControls && (
                     <div className="play-instruction">
                       {videoLoaded && videoReady ? 
                         'Cliquez pour lire la vidéo' : 
@@ -497,9 +550,22 @@ const VideoPreviewModal = ({
                           `Chargement de la vidéo... (tentative ${loadingAttempts})` :
                           'Chargement de la vidéo...'
                       }
+                      {autoPlayTries > 2 && (
+                        <div style={{marginTop:8}}>
+                          <button className="retry-button" onClick={e => {e.stopPropagation(); handleForceReload();}}>
+                            <RefreshCw size={16} /> Forcer la lecture
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
-                  
+                  {showNativeControls && (
+                    <div className="video-error">
+                      <AlertCircle size={24} style={{ marginBottom: '8px' }} />
+                      <div>Impossible de lancer la vidéo automatiquement.<br/>Utilisez les contrôles natifs ci-dessous.</div>
+                      <button className="retry-button" onClick={e => {e.stopPropagation(); handleForceReload();}}> <RefreshCw size={16} /> Réinitialiser la vidéo </button>
+                    </div>
+                  )}
                   {videoError && (
                     <div className="video-error">
                       <AlertCircle size={24} style={{ marginBottom: '8px' }} />
@@ -508,19 +574,7 @@ const VideoPreviewModal = ({
                         className="retry-button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleManualRetry();
-                        }}
-                        style={{
-                          marginTop: '8px',
-                          padding: '8px 16px',
-                          background: '#ff4444',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px'
+                          handleForceReload();
                         }}
                       >
                         <RefreshCw size={16} />
