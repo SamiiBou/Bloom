@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Play, Pause, Volume2, VolumeX, 
-  Trash2, CheckCircle 
+  Trash2, Share, Download
 } from 'lucide-react';
 import './VideoPreviewModal.css';
 
@@ -19,6 +19,7 @@ const VideoPreviewModal = ({
   const [videoVolume, setVideoVolume] = useState(1);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
+  const [publishDescription, setPublishDescription] = useState('');
   
   const videoRef = useRef(null);
 
@@ -48,6 +49,18 @@ const VideoPreviewModal = ({
     }
   };
 
+  // Video download
+  const handleDownload = () => {
+    if (video.url) {
+      const link = document.createElement('a');
+      link.href = video.url;
+      link.download = `ai-video-${video.taskId || 'generated'}.mp4`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   // Video publication
   const handlePublish = async () => {
     try {
@@ -65,13 +78,12 @@ const VideoPreviewModal = ({
       
       const result = await apiService.publishAIVideo(
         video.taskId,
-        `AI generated video`, // Default description
-        ['ai', 'generated'] // Default hashtags
+        publishDescription || `AI generated video`, 
+        ['ai', 'generated'] 
       );
       
       if (result.status === 'success') {
         console.log('✅ Video published successfully');
-        alert('Video published successfully!');
         onPublish(result.data.video);
         onClose();
       } else {
@@ -99,7 +111,7 @@ const VideoPreviewModal = ({
       }
       
       // Confirm rejection
-      const confirmed = window.confirm('Are you sure you want to reject this video?');
+      const confirmed = window.confirm('Are you sure you want to delete this video?');
       if (!confirmed) {
         setIsRejecting(false);
         return;
@@ -112,7 +124,6 @@ const VideoPreviewModal = ({
       
       if (result.status === 'success') {
         console.log('✅ Video rejected');
-        alert('Video rejected');
         onReject(video.taskId);
         onClose();
       } else {
@@ -145,51 +156,54 @@ const VideoPreviewModal = ({
     <AnimatePresence>
       {isOpen && (
         <motion.div 
-          className="video-preview-overlay"
+          className="preview-modal-overlay"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          onClick={handleClose}
         >
           <motion.div 
-            className="video-preview-modal"
+            className="preview-modal"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="preview-header">
-              <h2>Video preview</h2>
-              <button className="btn-close" onClick={handleClose}>
-                <X size={20} />
+              <h3>Generated video preview</h3>
+              <button 
+                className="close-button"
+                onClick={handleClose}
+              >
+                ×
               </button>
             </div>
-
-            {/* Video Container */}
-            <div className="preview-video-container">
-              <video
-                ref={videoRef}
-                src={video.url}
-                className="preview-video"
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                muted={isMuted}
-                volume={videoVolume}
-                loop
-                playsInline
-              />
-              
-              {/* Video Controls Overlay */}
-              <div className="video-controls-overlay">
-                <button className="play-pause-btn" onClick={handlePlayPause}>
-                  {isPlaying ? <Pause size={32} /> : <Play size={32} />}
-                </button>
+            
+            <div className="preview-content">
+              <div className="preview-video-container">
+                <video
+                  ref={videoRef}
+                  src={video.url}
+                  className="preview-video"
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                  muted={isMuted}
+                  volume={videoVolume}
+                  loop
+                  playsInline
+                />
+                
+                {/* Video Controls Overlay */}
+                <div className="video-controls-overlay" onClick={handlePlayPause}>
+                  <div className="play-pause-btn">
+                    {isPlaying ? <Pause size={32} /> : <Play size={32} />}
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Controls */}
-            <div className="preview-controls">
+              {/* Volume Controls */}
               <div className="volume-controls">
-                <button className="mute-btn" onClick={handleMuteToggle}>
+                <button className="volume-btn" onClick={handleMuteToggle}>
                   {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
                 </button>
                 <input
@@ -203,49 +217,70 @@ const VideoPreviewModal = ({
                 />
                 <span className="volume-label">{Math.round(videoVolume * 100)}%</span>
               </div>
-            </div>
 
-            {/* Video Info - Removed to simplify interface */}
-            {/* 
-            <div className="video-info">
-              <div className="info-item">
-                <strong>Duration:</strong> {video.duration || 'N/A'}s
-              </div>
-              <div className="info-item">
-                <strong>Resolution:</strong> {video.resolution || 'HD'}
-              </div>
-              <div className="info-item">
-                <strong>Format:</strong> MP4
-              </div>
-              {video.promptText && (
-                <div className="info-item">
-                  <strong>Prompt:</strong> {video.promptText}
+              {/* Description Field */}
+              <div className="publish-fields">
+                <div className="field-group">
+                  <label htmlFor="description">Description (optional)</label>
+                  <textarea
+                    id="description"
+                    value={publishDescription}
+                    onChange={(e) => setPublishDescription(e.target.value)}
+                    placeholder="Add a description for your video..."
+                    rows={3}
+                    className="publish-textarea"
+                  />
                 </div>
-              )}
+              </div>
             </div>
-            */}
-
-            {/* Action Buttons */}
+            
             <div className="preview-actions">
-              <button 
-                className="btn-primary"
-                onClick={handlePublish}
-                disabled={isPublishing}
-                title="Publish to feed"
-              >
-                <CheckCircle size={18} />
-                {isPublishing ? 'Publishing...' : 'Publish'}
-              </button>
-              
-              <button 
-                className="btn-danger"
+              <motion.button
                 onClick={handleReject}
+                className="action-button reject-button"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 disabled={isRejecting}
-                title="Reject this video"
               >
-                <Trash2 size={18} />
-                {isRejecting ? 'Rejecting...' : 'Reject'}
-              </button>
+                <Trash2 size={16} />
+                {isRejecting ? 'Deleting...' : 'Delete'}
+              </motion.button>
+              
+              <motion.button
+                onClick={handleDownload}
+                className="action-button download-button"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Download video"
+              >
+                <Download size={16} />
+                Download
+              </motion.button>
+              
+              <motion.button
+                onClick={handlePublish}
+                className="action-button publish-button"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                disabled={isPublishing}
+              >
+                {isPublishing ? (
+                  <>
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    >
+                      <Share size={16} />
+                    </motion.div>
+                    Publishing...
+                  </>
+                ) : (
+                  <>
+                    <Share size={16} />
+                    Publish
+                  </>
+                )}
+              </motion.button>
             </div>
           </motion.div>
         </motion.div>
