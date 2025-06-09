@@ -27,10 +27,12 @@ const VideoPreviewModal = ({
   const handlePlayPause = () => {
     if (!videoRef.current) return;
     
-    if (isPlaying) {
-      videoRef.current.pause();
-    } else {
+    if (videoRef.current.paused) {
       videoRef.current.play().catch(console.error);
+      setIsPlaying(true);
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
     }
   };
 
@@ -194,10 +196,18 @@ const VideoPreviewModal = ({
                 />
                 
                 {/* Video Controls Overlay */}
-                <div className="video-controls-overlay" onClick={handlePlayPause}>
+                <div 
+                  className={`video-controls-overlay ${isPlaying ? 'playing' : ''}`} 
+                  onClick={handlePlayPause}
+                >
                   <div className="play-pause-btn">
                     {isPlaying ? <Pause size={32} /> : <Play size={32} />}
                   </div>
+                  {!isPlaying && (
+                    <div className="play-instruction">
+                      Cliquez pour lire la vidéo
+                    </div>
+                  )}
                 </div>
               </div>
 
