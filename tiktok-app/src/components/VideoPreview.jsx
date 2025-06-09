@@ -124,17 +124,6 @@ const VideoPreview = ({
             exit="exit"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="preview-header">
-              <div className="preview-title">
-                <h2>Preview of your video</h2>
-                <p>Generated with AI • {videoData.duration}s</p>
-              </div>
-              <button className="preview-close" onClick={onClose}>
-                <X size={20} />
-              </button>
-            </div>
-
             {/* Video Container */}
             <div className="preview-video-container">
               <div className="video-wrapper">
@@ -175,6 +164,9 @@ const VideoPreview = ({
                     <button className="control-btn" onClick={toggleMute}>
                       {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
                     </button>
+                    <button className="control-btn preview-close-btn" onClick={onClose}>
+                      <X size={16} />
+                    </button>
                   </div>
                 </div>
 
@@ -188,43 +180,27 @@ const VideoPreview = ({
               </div>
             </div>
 
-            {/* Video Info */}
-            <div className="preview-info">
-              <div className="info-item">
-                <span className="info-label">Prompt:</span>
-                <span className="info-value">{videoData.promptText}</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">Duration:</span>
-                <span className="info-value">{videoData.duration} seconds</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">Cost:</span>
-                <span className="info-value">{videoData.cost} credits</span>
-              </div>
-            </div>
-
             {/* Actions */}
             <div className="preview-actions">
               <motion.button 
-                className="action-button reject-button"
+                className="action-button reject-button compact"
                 onClick={() => onReject(videoData.taskId)}
                 disabled={isRejecting || isPublishing}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <Trash2 size={18} />
+                <Trash2 size={14} />
                 {isRejecting ? 'Deleting...' : 'Delete'}
               </motion.button>
               
               <motion.button 
-                className="action-button publish-button"
+                className="action-button publish-button compact"
                 onClick={() => onPublish(videoData.taskId)}
                 disabled={isPublishing || isRejecting}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <Download size={18} />
+                <Download size={14} />
                 {isPublishing ? 'Publishing...' : 'Publish'}
               </motion.button>
             </div>
