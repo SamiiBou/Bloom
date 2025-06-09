@@ -596,7 +596,7 @@
   transform: none !important;
 }
 
-/* Preview Modal */
+/* Preview Modal - CORRIGÉ POUR UN SEUL SCROLL SYSTÈME */
 .preview-modal-overlay {
   position: fixed;
   top: 0;
@@ -610,23 +610,22 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 0.5rem;
-  padding-top: 2rem;
-  overflow-y: auto; /* Allow scrolling the overlay */
+  padding: 1rem;
+  padding-bottom: 6rem; /* NOUVEAU: Espace pour la bottom navbar */
 }
 
 .preview-modal {
   background: #ffffff;
   border-radius: 20px;
   max-width: 95vw;
-  max-height: 90vh; /* Increased height */
+  max-height: calc(100vh - 8rem); /* CORRIGÉ: Hauteur en tenant compte de la navbar */
   width: auto;
+  min-width: 320px;
   overflow: hidden;
   border: 1px solid #e5e5e7;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
-  margin: 0.5rem;
 }
 
 .preview-header {
@@ -635,7 +634,11 @@
   align-items: center;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #f0f0f2;
-  flex-shrink: 0; /* Don't shrink header */
+  flex-shrink: 0; /* Ne pas rétrécir */
+  background: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .preview-header h3 {
@@ -667,13 +670,33 @@
 }
 
 .preview-content {
-  padding: 1rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  flex: 1; /* Take remaining space */
-  overflow-y: auto; /* Enable scrolling within content */
-  min-height: 0; /* Allow shrinking */
+  gap: 1rem;
+  flex: 1; /* Prendre l'espace restant */
+  overflow-y: auto; /* UN SEUL SCROLL ICI */
+  min-height: 0; /* Permettre le rétrécissement */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* NOUVEAU: Styles pour le scrollbar sur webkit */
+.preview-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.preview-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.preview-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.preview-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .preview-image {
@@ -682,7 +705,7 @@
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   align-self: center;
-  max-height: 40vh; /* Smaller image on mobile */
+  max-height: 50vh; /* AUGMENTÉ: Plus d'espace pour l'image */
   object-fit: contain;
 }
 
@@ -730,12 +753,14 @@
 .preview-actions {
   display: flex;
   gap: 0.6rem;
-  padding: 0.8rem 1.2rem;
+  padding: 1rem 1.5rem;
   border-top: 1px solid #f0f0f2;
   justify-content: flex-end;
   background: #fafbfc;
-  flex-shrink: 0; /* Don't shrink actions */
-  margin-top: auto; /* Push to bottom */
+  flex-shrink: 0; /* Ne pas rétrécir */
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 /* CORRECTION: Styles pour les boutons d'action avec !important pour assurer la visibilité */
@@ -871,6 +896,7 @@
 @media (max-width: 768px) {
   .flux-image-generator {
     padding: 0.75rem;
+    padding-bottom: 6rem; /* NOUVEAU: Espace pour la bottom navbar sur mobile */
   }
   
   .header-content {
@@ -900,26 +926,26 @@
     padding: 1rem;
   }
   
-  .preview-modal {
-    margin: 0.5rem;
-    max-width: calc(100vw - 1rem);
-    max-height: calc(100vh - 1rem);
-  }
-  
   .preview-modal-overlay {
     padding: 0.5rem;
-    align-items: flex-start;
-    padding-top: 2rem;
+    padding-bottom: 7rem; /* AUGMENTÉ: Plus d'espace sur mobile pour la navbar */
+  }
+  
+  .preview-modal {
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100vh - 8rem); /* CORRIGÉ: Hauteur mobile */
+    min-width: auto;
   }
   
   .preview-content {
     padding: 1rem;
+    gap: 0.75rem;
   }
   
   .preview-actions {
     flex-direction: column;
     gap: 0.75rem;
-    padding: 1rem 1.2rem;
+    padding: 1rem;
   }
   
   .preview-actions .action-button {
@@ -929,12 +955,8 @@
     min-height: 44px !important;
   }
   
-  .info-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  
   .preview-image {
-    max-height: 40vh;
+    max-height: 35vh; /* RÉDUIT: Moins d'espace sur mobile */
   }
   
   .publish-fields {
@@ -942,10 +964,10 @@
     padding-top: 0.75rem;
   }
   
-  .publish-textarea,
-  .publish-input {
+  .publish-textarea {
     padding: 0.6rem;
     font-size: 0.85rem;
+    min-height: 80px; /* NOUVEAU: Hauteur minimale pour le textarea */
   }
 }
 
