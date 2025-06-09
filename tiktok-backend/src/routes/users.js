@@ -144,6 +144,30 @@ router.get('/credits', protect, async (req, res, next) => {
   }
 });
 
+// Get current user profile - NEW ROUTE TO FIX 404 ERROR
+router.get('/profile', protect, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found',
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        user: user.getPublicProfile(),
+      },
+    });
+  } catch (error) {
+    console.error('Error loading user profile:', error);
+    next(error);
+  }
+});
+
 // Get user profile
 router.get('/:username', optionalAuth, async (req, res, next) => {
   try {
