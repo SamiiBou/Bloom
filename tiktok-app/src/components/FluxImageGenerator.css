@@ -610,18 +610,23 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 1rem;
+  padding: 0.5rem;
+  padding-top: 2rem;
+  overflow-y: auto; /* Allow scrolling the overlay */
 }
 
 .preview-modal {
   background: #ffffff;
   border-radius: 20px;
   max-width: 95vw;
-  max-height: 80vh;
+  max-height: 90vh; /* Increased height */
   width: auto;
   overflow: hidden;
   border: 1px solid #e5e5e7;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  margin: 0.5rem;
 }
 
 .preview-header {
@@ -630,6 +635,7 @@
   align-items: center;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #f0f0f2;
+  flex-shrink: 0; /* Don't shrink header */
 }
 
 .preview-header h3 {
@@ -661,12 +667,13 @@
 }
 
 .preview-content {
-  padding: 0.75rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  max-height: 50vh;
-  overflow-y: auto;
+  flex: 1; /* Take remaining space */
+  overflow-y: auto; /* Enable scrolling within content */
+  min-height: 0; /* Allow shrinking */
 }
 
 .preview-image {
@@ -675,6 +682,8 @@
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   align-self: center;
+  max-height: 40vh; /* Smaller image on mobile */
+  object-fit: contain;
 }
 
 .preview-info {
@@ -725,6 +734,8 @@
   border-top: 1px solid #f0f0f2;
   justify-content: flex-end;
   background: #fafbfc;
+  flex-shrink: 0; /* Don't shrink actions */
+  margin-top: auto; /* Push to bottom */
 }
 
 /* CORRECTION: Styles pour les boutons d'action avec !important pour assurer la visibilité */
@@ -859,12 +870,12 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .flux-image-generator {
-    padding: 0.5rem;
+    padding: 0.75rem;
   }
   
   .header-content {
     flex-direction: column;
-    text-align: center;
+    align-items: stretch;
   }
   
   .header-title h1 {
@@ -872,7 +883,7 @@
   }
   
   .tab-content {
-    padding: 1rem;
+    padding: 1.5rem;
   }
   
   .form-footer {
@@ -895,6 +906,12 @@
     max-height: calc(100vh - 1rem);
   }
   
+  .preview-modal-overlay {
+    padding: 0.5rem;
+    align-items: flex-start;
+    padding-top: 2rem;
+  }
+  
   .preview-content {
     padding: 1rem;
   }
@@ -902,10 +919,33 @@
   .preview-actions {
     flex-direction: column;
     gap: 0.75rem;
+    padding: 1rem 1.2rem;
+  }
+  
+  .preview-actions .action-button {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 0.8rem 1rem !important;
+    min-height: 44px !important;
   }
   
   .info-grid {
     grid-template-columns: 1fr 1fr;
+  }
+  
+  .preview-image {
+    max-height: 40vh;
+  }
+  
+  .publish-fields {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+  }
+  
+  .publish-textarea,
+  .publish-input {
+    padding: 0.6rem;
+    font-size: 0.85rem;
   }
 }
 
@@ -2396,4 +2436,57 @@
     width: 100%;
     justify-content: center;
   }
+}
+
+/* NOUVEAU: Styles pour les champs de publication intégrés */
+.publish-fields {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f0f0f2;
+}
+
+.field-group {
+  margin-bottom: 1rem;
+}
+
+.field-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin-bottom: 0.5rem;
+}
+
+.publish-textarea,
+.publish-input {
+  width: 100%;
+  background: #f5f5f7;
+  border: 1px solid #e5e5e7;
+  border-radius: 8px;
+  padding: 0.75rem;
+  color: #1d1d1f;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.publish-textarea:focus,
+.publish-input:focus {
+  outline: none;
+  border-color: #00d4aa;
+  box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.1);
+  background: #ffffff;
+}
+
+.publish-textarea::placeholder,
+.publish-input::placeholder {
+  color: #8e8e93;
+}
+
+.field-hint {
+  font-size: 0.75rem;
+  color: #86868b;
+  margin-top: 0.25rem;
+  display: block;
 }
