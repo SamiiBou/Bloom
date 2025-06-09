@@ -104,10 +104,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
-  opacity: 0;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 1;
   transition: opacity 0.3s ease;
   cursor: pointer;
+}
+
+.video-controls-overlay.playing {
+  opacity: 0;
 }
 
 .preview-video-container:hover .video-controls-overlay {
@@ -127,11 +132,21 @@
   transition: all 0.3s ease;
   color: #1d1d1f;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  margin-bottom: 0.5rem;
 }
 
 .play-pause-btn:hover {
   background: #ffffff;
   transform: scale(1.1);
+}
+
+.play-instruction {
+  color: white;
+  font-size: 0.9rem;
+  text-align: center;
+  opacity: 0.9;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  margin-top: 0.5rem;
 }
 
 /* Volume Controls */

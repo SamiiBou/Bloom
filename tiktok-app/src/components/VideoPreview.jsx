@@ -28,12 +28,13 @@ const VideoPreview = ({
 
   const togglePlay = () => {
     if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
+      if (videoRef.current.paused) {
+        videoRef.current.play().catch(console.error);
+        setIsPlaying(true);
       } else {
-        videoRef.current.play();
+        videoRef.current.pause();
+        setIsPlaying(false);
       }
-      setIsPlaying(!isPlaying);
     }
   };
 
@@ -134,6 +135,8 @@ const VideoPreview = ({
                   loop
                   muted={isMuted}
                   playsInline
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
                   onEnded={() => setIsPlaying(false)}
@@ -148,6 +151,15 @@ const VideoPreview = ({
                   >
                     <Play size={48} fill="white" />
                   </motion.div>
+                  {!isPlaying && (
+                    <motion.div 
+                      className="play-instruction"
+                      animate={{ opacity: isPlaying ? 0 : 0.9 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      Cliquez pour lire la vidéo
+                    </motion.div>
+                  )}
                 </div>
 
                 {/* Bottom Controls */}
