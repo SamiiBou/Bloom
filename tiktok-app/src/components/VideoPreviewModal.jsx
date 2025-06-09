@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Play, Pause, Volume2, VolumeX, 
@@ -20,18 +20,56 @@ const VideoPreviewModal = ({
   const [isPublishing, setIsPublishing] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   const [publishDescription, setPublishDescription] = useState('');
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoError, setVideoError] = useState(null);
   
   const videoRef = useRef(null);
 
+  // Reset state when modal opens/closes or video changes
+  useEffect(() => {
+    if (isOpen && video?.url) {
+      console.log('VideoPreviewModal: Modal opened with video URL:', video.url);
+      setIsPlaying(false);
+      setVideoLoaded(false);
+      setVideoError(null);
+    }
+  }, [isOpen, video?.url]);
+
   // Playback management
-  const handlePlayPause = () => {
-    if (!videoRef.current) return;
-    
-    if (videoRef.current.paused) {
-      videoRef.current.play().catch(console.error);
-      setIsPlaying(true);
-    } else {
-      videoRef.current.pause();
+  const handlePlayPause = async () => {
+    if (!videoRef.current) {
+      console.warn('Video ref not available');
+      return;
+    }
+
+    try {
+      // Check if video is loaded
+      if (!videoLoaded) {
+        console.log('Video not loaded yet, waiting...');
+        return;
+      }
+
+      if (videoRef.current.paused) {
+        console.log('Starting video playback...');
+        // Reset any previous error
+        setVideoError(null);
+        
+        // Attempt playback
+        const playPromise = videoRef.current.play();
+        
+        if (playPromise !== undefined) {
+          await playPromise;
+          setIsPlaying(true);
+          console.log('Video playback started successfully');
+        }
+      } else {
+        console.log('Pausing video playback...');
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    } catch (error) {
+      console.error('Error during video playback:', error);
+      setVideoError(error.message);
       setIsPlaying(false);
     }
   };
@@ -150,9 +188,56 @@ const VideoPreviewModal = ({
     onClose();
   };
 
+  // Video event handlers
+  const handleVideoLoadedData = () => {
+    console.log('Video loaded and ready to play');
+    setVideoLoaded(true);
+    setVideoError(null);
+  };
+
+  const handleVideoError = (event) => {
+    console.error('Video loading error:', event);
+    const error = event.target.error;
+    let errorMessage = 'Error loading video';
+    
+    if (error) {
+      switch (error.code) {
+        case error.MEDIA_ERR_ABORTED:
+          errorMessage = 'Video loading aborted';
+          break;
+        case error.MEDIA_ERR_NETWORK:
+          errorMessage = 'Network error loading video';
+          break;
+        case error.MEDIA_ERR_DECODE:
+          errorMessage = 'Video decode error';
+          break;
+        case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+          errorMessage = 'Video format not supported';
+          break;
+        default:
+          errorMessage = 'Unknown video error';
+      }
+    }
+    
+    setVideoError(errorMessage);
+    setVideoLoaded(false);
+  };
+
+  const handleVideoCanPlay = () => {
+    console.log('Video can start playing');
+    setVideoLoaded(true);
+  };
+
   if (!video || !video.url) {
+    console.warn('VideoPreviewModal: Missing video data or URL', { video });
     return null;
   }
+
+  console.log('VideoPreviewModal: Rendering with video data:', { 
+    url: video.url, 
+    taskId: video.taskId, 
+    isOpen 
+  });
 
   return (
     <AnimatePresence>
@@ -184,15 +269,26 @@ const VideoPreviewModal = ({
             <div className="preview-content">
               <div className="preview-video-container">
                 <video
+                  key={video.url}
                   ref={videoRef}
                   src={video.url}
                   className="preview-video"
-                  onPlay={() => setIsPlaying(true)}
-                  onPause={() => setIsPlaying(false)}
+                  onPlay={() => {
+                    console.log('Video onPlay event fired');
+                    setIsPlaying(true);
+                  }}
+                  onPause={() => {
+                    console.log('Video onPause event fired');
+                    setIsPlaying(false);
+                  }}
                   muted={isMuted}
                   volume={videoVolume}
                   loop
                   playsInline
+                  onLoadedData={handleVideoLoadedData}
+                  onError={handleVideoError}
+                  onCanPlay={handleVideoCanPlay}
+                  preload="metadata"
                 />
                 
                 {/* Video Controls Overlay */}
@@ -203,9 +299,14 @@ const VideoPreviewModal = ({
                   <div className="play-pause-btn">
                     {isPlaying ? <Pause size={32} /> : <Play size={32} />}
                   </div>
-                  {!isPlaying && (
+                  {!isPlaying && !videoError && (
                     <div className="play-instruction">
-                      Cliquez pour lire la vidéo
+                      {videoLoaded ? 'Cliquez pour lire la vidéo' : 'Chargement de la vidéo...'}
+                    </div>
+                  )}
+                  {videoError && (
+                    <div className="video-error">
+                      Erreur de chargement: {videoError}
                     </div>
                   )}
                 </div>

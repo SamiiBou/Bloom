@@ -16,6 +16,8 @@ const VideoPreview = ({
   const [isMuted, setIsMuted] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoError, setVideoError] = useState(null);
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -23,18 +25,45 @@ const VideoPreview = ({
       videoRef.current.currentTime = 0;
       setCurrentTime(0);
       setIsPlaying(false);
+      setVideoLoaded(false);
+      setVideoError(null);
     }
   }, [isOpen]);
 
-  const togglePlay = () => {
-    if (videoRef.current) {
+  const togglePlay = async () => {
+    if (!videoRef.current) {
+      console.warn('Video ref not available');
+      return;
+    }
+
+    try {
+      // Check if video is loaded
+      if (!videoLoaded) {
+        console.log('Video not loaded yet, waiting...');
+        return;
+      }
+
       if (videoRef.current.paused) {
-        videoRef.current.play().catch(console.error);
-        setIsPlaying(true);
+        console.log('Starting video playback...');
+        setVideoError(null);
+        
+        // Attempt playback
+        const playPromise = videoRef.current.play();
+        
+        if (playPromise !== undefined) {
+          await playPromise;
+          setIsPlaying(true);
+          console.log('Video playback started successfully');
+        }
       } else {
+        console.log('Pausing video playback...');
         videoRef.current.pause();
         setIsPlaying(false);
       }
+    } catch (error) {
+      console.error('Error during video playback:', error);
+      setVideoError(error.message);
+      setIsPlaying(false);
     }
   };
 
@@ -55,6 +84,45 @@ const VideoPreview = ({
     if (videoRef.current) {
       setDuration(videoRef.current.duration);
     }
+  };
+
+  const handleVideoLoadedData = () => {
+    console.log('Video loaded and ready to play');
+    setVideoLoaded(true);
+    setVideoError(null);
+  };
+
+  const handleVideoError = (event) => {
+    console.error('Video loading error:', event);
+    const error = event.target.error;
+    let errorMessage = 'Error loading video';
+    
+    if (error) {
+      switch (error.code) {
+        case error.MEDIA_ERR_ABORTED:
+          errorMessage = 'Video loading aborted';
+          break;
+        case error.MEDIA_ERR_NETWORK:
+          errorMessage = 'Network error loading video';
+          break;
+        case error.MEDIA_ERR_DECODE:
+          errorMessage = 'Video decode error';
+          break;
+        case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+          errorMessage = 'Video format not supported';
+          break;
+        default:
+          errorMessage = 'Unknown video error';
+      }
+    }
+    
+    setVideoError(errorMessage);
+    setVideoLoaded(false);
+  };
+
+  const handleVideoCanPlay = () => {
+    console.log('Video can start playing');
+    setVideoLoaded(true);
   };
 
   const formatTime = (time) => {
@@ -140,6 +208,10 @@ const VideoPreview = ({
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
                   onEnded={() => setIsPlaying(false)}
+                  onLoadedData={handleVideoLoadedData}
+                  onError={handleVideoError}
+                  onCanPlay={handleVideoCanPlay}
+                  preload="metadata"
                 />
                 
                 {/* Video Controls Overlay */}
@@ -151,14 +223,19 @@ const VideoPreview = ({
                   >
                     <Play size={48} fill="white" />
                   </motion.div>
-                  {!isPlaying && (
+                  {!isPlaying && !videoError && (
                     <motion.div 
                       className="play-instruction"
                       animate={{ opacity: isPlaying ? 0 : 0.9 }}
                       transition={{ duration: 0.3 }}
                     >
-                      Cliquez pour lire la vidéo
+                      {videoLoaded ? 'Cliquez pour lire la vidéo' : 'Chargement de la vidéo...'}
                     </motion.div>
+                  )}
+                  {videoError && (
+                    <div className="video-error">
+                      Erreur de chargement: {videoError}
+                    </div>
                   )}
                 </div>
 
