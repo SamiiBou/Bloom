@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X, Eye, Download, Trash2, RefreshCw } from 'lucide-react';
+import { Sparkles, X, Download, Trash2, RefreshCw } from 'lucide-react';
 import './GenerationTracker.css';
 
 const GenerationTracker = ({ 
@@ -9,7 +9,6 @@ const GenerationTracker = ({
   status, 
   taskId, 
   onClose, 
-  onPreview, 
   onPublish, 
   onReject,
   generatedVideo 
@@ -29,7 +28,7 @@ const GenerationTracker = ({
   };
 
   const getStatusIcon = () => {
-    if (generatedVideo) return <Eye size={16} />;
+    if (generatedVideo) return <Sparkles size={16} />;
     if (isGenerating) return <RefreshCw size={16} className="spinning" />;
     return <Sparkles size={16} />;
   };
@@ -120,13 +119,6 @@ const GenerationTracker = ({
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
             >
-              <button 
-                className="action-btn preview-btn"
-                onClick={() => onPreview(generatedVideo)}
-              >
-                <Eye size={16} />
-                <span>Preview</span>
-              </button>
               <button 
                 className="action-btn publish-btn"
                 onClick={() => onPublish(taskId)}

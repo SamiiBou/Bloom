@@ -5,7 +5,6 @@ import VideoCard from './VideoCard';
 import apiService from '../services/api';
 import UploadModal from './UploadModal';
 import GenerationTracker from './GenerationTracker';
-import VideoPreview from './VideoPreview';
 import LoadingSpinner from './LoadingSpinner';
 import UploadTracker from './UploadTracker';
 import './VideoFeed.css';
@@ -29,7 +28,6 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
   const [generationStatus, setGenerationStatus] = useState('');
   const [currentTaskId, setCurrentTaskId] = useState(null);
   const [generatedVideo, setGeneratedVideo] = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   
@@ -483,10 +481,6 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
   };
 
   // Preview action handlers
-  const handlePreview = (videoData) => {
-    setShowPreview(true);
-  };
-
   const handlePublish = async (taskId) => {
     try {
       setIsPublishing(true);
@@ -503,7 +497,6 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
         // Reset states
         setTimeout(() => {
           setGeneratedVideo(null);
-          setShowPreview(false);
           setCurrentTaskId(null);
           setGenerationProgress(0);
           setGenerationStatus('');
@@ -532,7 +525,6 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
         // Reset states
         setTimeout(() => {
           setGeneratedVideo(null);
-          setShowPreview(false);
           setCurrentTaskId(null);
           setGenerationProgress(0);
           setGenerationStatus('');
@@ -668,7 +660,6 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
           status={generationStatus}
           taskId={currentTaskId}
           onClose={handleCloseTracker}
-          onPreview={handlePreview}
           onPublish={handlePublish}
           onReject={handleReject}
           generatedVideo={generatedVideo}
@@ -684,17 +675,6 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
           onPreview={handlePreviewUploaded}
           uploadedVideo={uploadedVideo}
           error={uploadError}
-        />
-
-        {/* Video Preview */}
-        <VideoPreview
-          isOpen={showPreview}
-          onClose={() => setShowPreview(false)}
-          videoData={generatedVideo}
-          onPublish={handlePublish}
-          onReject={handleReject}
-          isPublishing={isPublishing}
-          isRejecting={isRejecting}
         />
       </div>
     );
@@ -754,7 +734,6 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
         status={generationStatus}
         taskId={currentTaskId}
         onClose={handleCloseTracker}
-        onPreview={handlePreview}
         onPublish={handlePublish}
         onReject={handleReject}
         generatedVideo={generatedVideo}
@@ -770,17 +749,6 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
         onPreview={handlePreviewUploaded}
         uploadedVideo={uploadedVideo}
         error={uploadError}
-      />
-
-      {/* Video Preview */}
-      <VideoPreview
-        isOpen={showPreview}
-        onClose={() => setShowPreview(false)}
-        videoData={generatedVideo}
-        onPublish={handlePublish}
-        onReject={handleReject}
-        isPublishing={isPublishing}
-        isRejecting={isRejecting}
       />
 
       {/* Floating create button - Always visible */}
