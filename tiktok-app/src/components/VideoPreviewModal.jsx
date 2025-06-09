@@ -1,8 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Play, Pause, Volume2, VolumeX, 
-  Trash2, Share, Download
+  Trash2, Share, Download, SkipBack, SkipForward
 } from 'lucide-react';
 import './VideoPreviewModal.css';
 
@@ -20,8 +20,37 @@ const VideoPreviewModal = ({
   const [isPublishing, setIsPublishing] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   const [publishDescription, setPublishDescription] = useState('');
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [showClickHint, setShowClickHint] = useState(true);
   
   const videoRef = useRef(null);
+
+  // Update time progress
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const updateTime = () => setCurrentTime(video.currentTime);
+    const updateDuration = () => setDuration(video.duration);
+    
+    video.addEventListener('timeupdate', updateTime);
+    video.addEventListener('loadedmetadata', updateDuration);
+    video.addEventListener('durationchange', updateDuration);
+
+    return () => {
+      video.removeEventListener('timeupdate', updateTime);
+      video.removeEventListener('loadedmetadata', updateDuration);
+      video.removeEventListener('durationchange', updateDuration);
+    };
+  }, []);
+
+  // Hide click hint when video starts playing
+  useEffect(() => {
+    if (isPlaying) {
+      setShowClickHint(false);
+    }
+  }, [isPlaying]);
 
   // Playback management
   const handlePlayPause = () => {
@@ -32,6 +61,7 @@ const VideoPreviewModal = ({
     } else {
       videoRef.current.play().catch(console.error);
     }
+    setShowClickHint(false);
   };
 
   const handleVolumeChange = (newVolume) => {
@@ -47,6 +77,35 @@ const VideoPreviewModal = ({
     if (videoRef.current) {
       videoRef.current.muted = newMutedState;
     }
+  };
+
+  // Video navigation
+  const handleRewind = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10);
+    }
+  };
+
+  const handleForward = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = Math.min(duration, videoRef.current.currentTime + 10);
+    }
+  };
+
+  const handleProgressChange = (e) => {
+    if (videoRef.current && duration) {
+      const clickX = e.nativeEvent.offsetX;
+      const width = e.currentTarget.offsetWidth;
+      const newTime = (clickX / width) * duration;
+      videoRef.current.currentTime = newTime;
+    }
+  };
+
+  // Format time display
+  const formatTime = (time) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   // Video download
@@ -198,7 +257,56 @@ const VideoPreviewModal = ({
                   <div className="play-pause-btn">
                     {isPlaying ? <Pause size={32} /> : <Play size={32} />}
                   </div>
+                  
+                  {/* Click hint */}
+                  {showClickHint && !isPlaying && (
+                    <motion.div 
+                      className="click-hint"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                    >
+                      <Play size={16} />
+                      Cliquer pour jouer
+                    </motion.div>
+                  )}
                 </div>
+
+                {/* Progress Bar */}
+                <div className="video-progress-container">
+                  <div 
+                    className="video-progress-bar"
+                    onClick={handleProgressChange}
+                  >
+                    <div 
+                      className="video-progress-fill"
+                      style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <div className="video-time-display">
+                    <span>{formatTime(currentTime)}</span>
+                    <span>/</span>
+                    <span>{formatTime(duration)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Video Navigation Controls */}
+              <div className="video-navigation">
+                <button className="nav-btn" onClick={handleRewind} title="Reculer de 10s">
+                  <SkipBack size={20} />
+                  -10s
+                </button>
+                
+                <button className="nav-btn play-pause-main" onClick={handlePlayPause}>
+                  {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                  {isPlaying ? 'Pause' : 'Play'}
+                </button>
+                
+                <button className="nav-btn" onClick={handleForward} title="Avancer de 10s">
+                  <SkipForward size={20} />
+                  +10s
+                </button>
               </div>
 
               {/* Volume Controls */}
