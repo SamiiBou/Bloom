@@ -1,4 +1,4 @@
-/* Video Preview - Design Apple moderne */
+/* Video Preview - Design Apple moderne - SIMPLIFIÉ */
 
 .video-preview-overlay {
   position: fixed;
@@ -14,6 +14,8 @@
   justify-content: center;
   z-index: 2000;
   padding: 20px;
+  padding-bottom: 6rem; /* NOUVEAU: Espace pour la bottom navbar */
+  overflow-y: auto; /* NOUVEAU: Permettre le scroll */
 }
 
 .video-preview-modal {
@@ -26,60 +28,17 @@
     0 30px 60px rgba(0, 0, 0, 0.4),
     0 12px 24px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  max-width: 600px;
+  max-width: 500px; /* RÉDUIT: Modal plus compacte */
   width: 100%;
-  max-height: 90vh;
+  max-height: calc(100vh - 8rem); /* NOUVEAU: Hauteur en tenant compte de la navbar */
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-/* Header */
-.preview-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px 24px 0;
-  margin-bottom: 20px;
-}
-
-.preview-title h2 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #ffffff;
-  margin: 0 0 4px 0;
-  line-height: 1.2;
-}
-
-.preview-title p {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
-  margin: 0;
-}
-
-.preview-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.preview-close:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  transform: scale(1.05);
-}
-
-/* Video Container */
+/* Video Container - AJUSTÉ */
 .preview-video-container {
-  padding: 0 24px;
+  padding: 24px 24px 0; /* MODIFIÉ: Plus d'espace en haut */
   margin-bottom: 20px;
 }
 
@@ -137,7 +96,7 @@
   background: rgba(255, 255, 255, 1);
 }
 
-/* Bottom Controls */
+/* Bottom Controls - AVEC BOUTON CLOSE */
 .video-controls {
   position: absolute;
   bottom: 0;
@@ -180,6 +139,15 @@
 .control-btn:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: scale(1.05);
+}
+
+/* NOUVEAU: Bouton close spécial */
+.preview-close-btn {
+  background: rgba(255, 59, 48, 0.8) !important;
+}
+
+.preview-close-btn:hover {
+  background: rgba(255, 59, 48, 1) !important;
 }
 
 .time-display {
@@ -247,28 +215,37 @@
   word-break: break-word;
 }
 
-/* Actions */
+/* Actions - MODIFIÉ POUR ÊTRE PLUS COMPACT */
 .preview-actions {
   display: flex;
-  gap: 12px;
-  padding: 0 24px 24px;
+  gap: 8px; /* RÉDUIT: Gap plus petit */
+  padding: 0 24px 20px; /* RÉDUIT: Moins de padding en bas */
 }
 
 .action-button {
   flex: 1;
-  padding: 14px 20px;
-  border-radius: 12px;
+  padding: 10px 16px; /* RÉDUIT: Padding plus petit */
+  border-radius: 8px; /* RÉDUIT: Border radius plus petit */
   border: none;
-  font-size: 16px;
+  font-size: 13px; /* RÉDUIT: Font size plus petite */
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px; /* RÉDUIT: Gap plus petit */
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
+  min-height: 36px; /* NOUVEAU: Hauteur minimale réduite */
+}
+
+/* NOUVEAU: Classe spéciale pour les boutons compacts */
+.action-button.compact {
+  padding: 8px 12px;
+  font-size: 12px;
+  min-height: 32px;
+  gap: 4px;
 }
 
 .action-button::before {
@@ -316,38 +293,56 @@
   box-shadow: 0 4px 16px rgba(52, 199, 89, 0.2);
 }
 
-/* Responsive */
+/* Responsive - MODIFIÉ */
 @media (max-width: 768px) {
-  .video-preview-modal {
-    margin: 20px;
-    max-height: calc(100vh - 40px);
+  .video-preview-overlay {
+    padding: 16px;
+    padding-bottom: 7rem; /* AUGMENTÉ: Plus d'espace sur mobile */
   }
   
-  .preview-header {
-    padding: 20px 20px 0;
+  .video-preview-modal {
+    margin: 0;
+    max-width: calc(100vw - 2rem);
+    max-height: calc(100vh - 8rem); /* NOUVEAU: Hauteur mobile adaptée */
   }
   
   .preview-video-container {
-    padding: 0 20px;
-  }
-  
-  .preview-info {
-    padding: 0 20px;
+    padding: 20px 20px 0; /* AJUSTÉ: Espace en haut */
+    margin-bottom: 16px;
   }
   
   .preview-actions {
-    padding: 0 20px 20px;
+    padding: 0 20px 16px; /* RÉDUIT: Moins d'espace en bas */
     flex-direction: column;
+    gap: 8px;
   }
   
   .action-button {
-    padding: 16px 20px;
+    padding: 12px 16px; /* AJUSTÉ: Padding pour mobile */
+    font-size: 14px;
+    min-height: 40px; /* AUGMENTÉ: Meilleure cible tactile */
+  }
+  
+  .action-button.compact {
+    padding: 10px 14px;
+    font-size: 13px;
+    min-height: 38px;
   }
 }
 
 @media (max-width: 480px) {
   .video-preview-overlay {
-    padding: 16px;
+    padding: 12px;
+    padding-bottom: 7rem;
+  }
+  
+  .video-preview-modal {
+    max-width: calc(100vw - 1.5rem);
+  }
+  
+  .preview-video-container {
+    padding: 16px 16px 0;
+    margin-bottom: 12px;
   }
   
   .video-wrapper {
@@ -359,13 +354,17 @@
     height: 64px;
   }
   
-  .info-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
+  .preview-actions {
+    padding: 0 16px 12px;
+    gap: 6px;
   }
   
-  .info-label {
-    min-width: auto;
+  .action-button {
+    font-size: 13px;
+    min-height: 42px; /* AUGMENTÉ: Cible tactile encore plus grande sur petit écran */
+  }
+  
+  .action-button.compact {
+    min-height: 40px;
   }
 } 
