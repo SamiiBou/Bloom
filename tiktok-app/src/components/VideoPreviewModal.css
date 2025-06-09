@@ -102,14 +102,12 @@
   right: 0;
   bottom: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.3);
   opacity: 0;
   transition: opacity 0.3s ease;
   cursor: pointer;
-  gap: 1rem;
 }
 
 .preview-video-container:hover .video-controls-overlay {
@@ -134,132 +132,6 @@
 .play-pause-btn:hover {
   background: #ffffff;
   transform: scale(1.1);
-}
-
-/* Click Hint */
-.click-hint {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(0, 0, 0, 0.8);
-  color: #ffffff;
-  padding: 0.75rem 1.25rem;
-  border-radius: 25px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-/* Progress Bar */
-.video-progress-container {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 0.75rem 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.video-progress-bar {
-  flex: 1;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 3px;
-  cursor: pointer;
-  position: relative;
-  transition: all 0.2s ease;
-}
-
-.video-progress-bar:hover {
-  height: 8px;
-}
-
-.video-progress-fill {
-  height: 100%;
-  background: #ffffff;
-  border-radius: 3px;
-  transition: width 0.1s ease;
-  position: relative;
-}
-
-.video-progress-fill::after {
-  content: '';
-  position: absolute;
-  right: -6px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 12px;
-  height: 12px;
-  background: #ffffff;
-  border-radius: 50%;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.video-progress-bar:hover .video-progress-fill::after {
-  opacity: 1;
-}
-
-.video-time-display {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: #ffffff;
-  font-size: 0.75rem;
-  font-weight: 500;
-  min-width: 80px;
-  justify-content: center;
-}
-
-/* Video Navigation Controls */
-.video-navigation {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  background: #f8f9fa;
-  padding: 1rem 1.25rem;
-  border-radius: 12px;
-  border: 1px solid #e9ecef;
-}
-
-.nav-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  padding: 0.6rem 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-}
-
-.nav-btn:hover {
-  background: #f3f4f6;
-  border-color: #9ca3af;
-  transform: translateY(-1px);
-}
-
-.play-pause-main {
-  background: #1d1d1f;
-  color: #ffffff;
-  border-color: #1d1d1f;
-  padding: 0.75rem 1.25rem;
-  font-weight: 600;
-}
-
-.play-pause-main:hover {
-  background: #000000;
-  border-color: #000000;
 }
 
 /* Volume Controls */
@@ -481,36 +353,8 @@
     max-height: 35vh;
   }
   
-  .volume-controls, .video-navigation {
+  .volume-controls {
     padding: 0.75rem 1rem;
-  }
-  
-  .video-navigation {
-    flex-direction: row;
-    gap: 0.5rem;
-  }
-  
-  .nav-btn {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-  }
-  
-  .play-pause-main {
-    padding: 0.6rem 1rem;
-  }
-  
-  .click-hint {
-    font-size: 0.8rem;
-    padding: 0.6rem 1rem;
-  }
-  
-  .video-progress-container {
-    padding: 0.5rem 0.75rem;
-  }
-  
-  .video-time-display {
-    font-size: 0.7rem;
-    min-width: 70px;
   }
   
   .publish-textarea {
