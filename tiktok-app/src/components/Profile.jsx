@@ -11,6 +11,7 @@ import BloomLogo from '../assets/Bloom_LOGO.jpg';
 import { FaTelegramPlane } from 'react-icons/fa';
 
 import './Profile.css';
+import './VideoCatalog.css'; // Pour les styles de la modal vidéo
 import { 
   RefreshCw, 
   Play, 
@@ -50,6 +51,9 @@ const Profile = () => {
   const [contentType, setContentType] = useState('videos'); // 'videos' or 'images'
   const [videoTypeFilter, setVideoTypeFilter] = useState('all');
   const [deleteConfirmation, setDeleteConfirmation] = useState(null);
+  
+  // Ajout des états pour la modal vidéo
+  const [selectedVideo, setSelectedVideo] = useState(null);
 
   // Token states (from RewardsHub)
   const [walletBalance, setWalletBalance] = useState(null);
@@ -904,8 +908,8 @@ const Profile = () => {
     };
 
     const handleVideoClick = () => {
-      // Logique pour ouvrir/jouer la vidéo
-      console.log('Video clicked:', video._id);
+      // Ouvrir la modal de lecture vidéo
+      openVideoPlayer(video);
     };
 
     // Fonction améliorée pour générer une miniature à partir de la vidéo
@@ -1288,6 +1292,39 @@ const Profile = () => {
     } finally {
       console.log('🔄 [PROFILE FETCH CREDITS] 🏁 Fetch credits ended');
     }
+  };
+
+  // Fonctions pour la modal vidéo
+  const openVideoPlayer = (video) => {
+    setSelectedVideo(video);
+  };
+
+  const closeVideoPlayer = () => {
+    setSelectedVideo(null);
+  };
+
+  // Format functions (copiées depuis VideoCatalog)
+  const formatCategory = (category) => {
+    const categoryNames = {
+      'education': 'Education',
+      'entertainment': 'Entertainment',
+      'music': 'Music',
+      'gaming': 'Gaming',
+      'sports': 'Sports',
+      'technology': 'Technology',
+      'lifestyle': 'Lifestyle',
+      'travel': 'Travel',
+      'food': 'Food',
+      'fashion': 'Fashion',
+      'news': 'News',
+      'comedy': 'Comedy',
+      'art': 'Art',
+      'science': 'Science',
+      'health': 'Health',
+      'business': 'Business',
+      'other': 'Other'
+    };
+    return categoryNames[category] || category;
   };
 
   useEffect(() => {
@@ -1785,12 +1822,624 @@ const Profile = () => {
           </div>
         </div>
       )}
+      
+      {/* Video player modal */}
+      {selectedVideo && (
+        <VideoPlayerModal 
+          video={selectedVideo} 
+          onClose={closeVideoPlayer}
+          formatCategory={formatCategory}
+          formatDuration={formatDuration}
+        />
+      )}
+      
       {/* Notification */}
       {notification.show && (
         <div className={`notification-profile ${notification.type}`}>
           <span>{notification.message}</span>
         </div>
       )}
+    </div>
+  );
+};
+
+// Video player modal - YouTube Mobile Style (copié depuis VideoCatalog)
+const VideoPlayerModal = ({ video, onClose, formatCategory, formatDuration }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [buffered, setBuffered] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showDescription, setShowDescription] = useState(false);
+  const [hasTrackedWatch, setHasTrackedWatch] = useState(false);
+  const [watchStartTime, setWatchStartTime] = useState(null);
+  const [isFollowing, setIsFollowing] = useState(video.isFollowing || false);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [followersCount, setFollowersCount] = useState(video.user?.followersCount || 0);
+  const [userDataLoaded, setUserDataLoaded] = useState(false);
+  
+  const videoRef = useRef(null);
+  const overlayRef = useRef(null);
+  const progressRef = useRef(null);
+  const modalRef = useRef(null);
+  const controlsTimeoutRef = useRef(null);
+  const touchStartY = useRef(null);
+
+  // Load complete user data if needed
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (!userDataLoaded && video.user?.username) {
+        try {
+          const response = await apiService.getUserProfile(video.user.username);
+          if (response.status === 'success') {
+            setFollowersCount(response.data.followersCount || 0);
+            // Update follow status if available
+            if (response.data.isFollowing !== undefined) {
+              setIsFollowing(response.data.isFollowing);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error loading user data:', error);
+          // Keep default value in case of error
+        } finally {
+          setUserDataLoaded(true);
+        }
+      }
+    };
+
+    loadUserData();
+  }, [video.user?.username, userDataLoaded]);
+
+  // Handle follow/unfollow
+  const handleFollow = async () => {
+    if (!canFollow() || isFollowLoading) {
+      if (!canFollow()) {
+        alert("You cannot follow yourself!");
+      }
+      return;
+    }
+
+    try {
+      setIsFollowLoading(true);
+      console.log(`${isFollowing ? 'Unfollow' : 'Follow'} user:`, video.user?.username);
+      
+      const response = await apiService.followUser(video.user.username);
+      
+      if (response.status === 'success') {
+        const wasFollowing = isFollowing;
+        setIsFollowing(!isFollowing);
+        
+        // Update local followers count
+        setFollowersCount(prev => wasFollowing ? prev - 1 : prev + 1);
+        
+        console.log(`✅ ${wasFollowing ? 'Unfollowed' : 'Followed'} ${video.user.username} successfully`);
+      } else {
+        throw new Error(response.message || 'Failed to update follow status');
+      }
+    } catch (error) {
+      console.error('❌ Error following/unfollowing user:', error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setIsFollowLoading(false);
+    }
+  };
+
+  // Handle swipe down to close
+  useEffect(() => {
+    const handleTouchStart = (e) => {
+      touchStartY.current = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e) => {
+      if (!touchStartY.current) return;
+      
+      const currentY = e.touches[0].clientY;
+      const deltaY = currentY - touchStartY.current;
+      
+      // If swipe down more than 100px, close modal
+      if (deltaY > 100) {
+        modalRef.current?.classList.add('closing');
+        setTimeout(onClose, 300);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      touchStartY.current = null;
+    };
+
+    const modal = modalRef.current;
+    if (modal) {
+      modal.addEventListener('touchstart', handleTouchStart);
+      modal.addEventListener('touchmove', handleTouchMove);
+      modal.addEventListener('touchend', handleTouchEnd);
+    }
+
+    return () => {
+      if (modal) {
+        modal.removeEventListener('touchstart', handleTouchStart);
+        modal.removeEventListener('touchmove', handleTouchMove);
+        modal.removeEventListener('touchend', handleTouchEnd);
+      }
+    };
+  }, [onClose]);
+
+  // Handle native browser fullscreen events
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement
+      );
+      
+      console.log('🎬 Fullscreen state changed:', isCurrentlyFullscreen);
+      setIsFullscreen(isCurrentlyFullscreen);
+    };
+
+    const handleFullscreenError = (e) => {
+      console.error('❌ Fullscreen error event:', e);
+      setIsFullscreen(false);
+    };
+
+    // Add listeners for all prefixes
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    
+    document.addEventListener('fullscreenerror', handleFullscreenError);
+    document.addEventListener('webkitfullscreenerror', handleFullscreenError);
+    document.addEventListener('mozfullscreenerror', handleFullscreenError);
+    document.addEventListener('MSFullscreenError', handleFullscreenError);
+
+    return () => {
+      // Clean up listeners
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+      
+      document.removeEventListener('fullscreenerror', handleFullscreenError);
+      document.removeEventListener('webkitfullscreenerror', handleFullscreenError);
+      document.removeEventListener('mozfullscreenerror', handleFullscreenError);
+      document.removeEventListener('MSFullscreenError', handleFullscreenError);
+    };
+  }, []);
+
+  // Hide controls after 3 seconds
+  const hideControlsTimeout = () => {
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    
+    if (isPlaying) {
+      controlsTimeoutRef.current = setTimeout(() => {
+        setShowControls(false);
+      }, 3000);
+    }
+  };
+
+  // Show controls
+  const handleShowControls = () => {
+    setShowControls(true);
+    hideControlsTimeout();
+  };
+
+  // Trigger control hiding when video starts playing
+  useEffect(() => {
+    if (isPlaying) {
+      hideControlsTimeout();
+    } else {
+      // Show controls when video is paused
+      setShowControls(true);
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    }
+  }, [isPlaying]);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Play/Pause
+  const togglePlayPause = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+        if (!watchStartTime) {
+          setWatchStartTime(Date.now());
+        }
+      }
+    }
+  };
+
+  // Update time
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+      
+      // Update buffer
+      if (videoRef.current.buffered.length > 0) {
+        const bufferedEnd = videoRef.current.buffered.end(videoRef.current.buffered.length - 1);
+        setBuffered((bufferedEnd / videoRef.current.duration) * 100);
+      }
+    }
+  };
+
+  // Handle metadata loading
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+      setIsLoading(false);
+    }
+  };
+
+  // Handle video end
+  const handleVideoEnded = async () => {
+    setIsPlaying(false);
+    
+    // Track for rewards
+    if (!hasTrackedWatch && watchStartTime) {
+      const watchDuration = (Date.now() - watchStartTime) / 1000;
+      const videoDuration = duration || 30;
+      
+      if (watchDuration >= videoDuration * 0.8) {
+        try {
+          const response = await apiService.trackVideoWatch(
+            video.id || video._id, 
+            'videos',
+            watchDuration
+          );
+          
+          if (response.status === 'success' && response.tokensEarned > 0) {
+            setHasTrackedWatch(true);
+            console.log(`✅ Earned ${response.tokensEarned} tokens`);
+          }
+        } catch (error) {
+          console.error('❌ Error tracking video:', error);
+        }
+      }
+    }
+  };
+
+  // Seek in video
+  const handleProgressClick = (e) => {
+    const rect = progressRef.current.getBoundingClientRect();
+    const pos = (e.clientX - rect.left) / rect.width;
+    
+    if (videoRef.current) {
+      videoRef.current.currentTime = pos * duration;
+    }
+  };
+
+  // Toggle mute
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  // Toggle fullscreen
+  const toggleFullscreen = async () => {
+    console.log('🎬 Toggle fullscreen clicked, current state:', isFullscreen);
+    
+    if (!modalRef.current) {
+      console.error('❌ modalRef is null');
+      return;
+    }
+
+    const element = modalRef.current;
+    
+    try {
+      if (!isFullscreen) {
+        // Enter fullscreen
+        console.log('🎬 Entering fullscreen...');
+        
+        if (element.requestFullscreen) {
+          await element.requestFullscreen();
+        } else if (element.webkitRequestFullscreen) {
+          await element.webkitRequestFullscreen();
+        } else if (element.mozRequestFullScreen) {
+          await element.mozRequestFullScreen();
+        } else if (element.msRequestFullscreen) {
+          await element.msRequestFullscreen();
+        } else {
+          console.warn('⚠️ Fullscreen API not supported, using CSS fallback');
+          setIsFullscreen(true);
+          return;
+        }
+      } else {
+        // Exit fullscreen
+        console.log('🎬 Exiting fullscreen...');
+        
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          await document.webkitExitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          await document.mozCancelFullScreen();
+        } else if (document.msExitFullscreen) {
+          await document.msExitFullscreen();
+        } else {
+          console.warn('⚠️ Exit fullscreen API not supported, using CSS fallback');
+          setIsFullscreen(false);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('❌ Fullscreen error:', error);
+      setIsFullscreen(!isFullscreen);
+    }
+  };
+
+  // Format time
+  const formatTime = (time) => {
+    if (isNaN(time)) return '0:00';
+    
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Format numbers
+  const formatNumber = (num) => {
+    if (num >= 1000000) {
+      return `${(num / 1000000).toFixed(1)}M`;
+    } else if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}K`;
+    }
+    return num?.toString() || '0';
+  };
+
+  // Check if user can follow this user
+  const canFollow = () => {
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const currentUsername = currentUser.username;
+    
+    // A user cannot follow themselves
+    return currentUsername && currentUsername !== video.user?.username;
+  };
+
+  return (
+    <div 
+      className={`video-player-modal ${isFullscreen ? 'fullscreen' : ''}`} 
+      ref={modalRef}
+    >
+      {/* Container video with 16:9 ratio */}
+      <div className="youtube-video-container" onClick={handleShowControls}>
+        <video
+          ref={videoRef}
+          src={video.videoUrl}
+          className="youtube-video"
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onEnded={handleVideoEnded}
+          onLoadStart={() => setIsLoading(true)}
+          onCanPlay={() => setIsLoading(false)}
+          playsInline
+          preload="metadata"
+        />
+
+        {/* Loading spinner */}
+        {isLoading && (
+          <div className="youtube-loading-overlay">
+            <div className="youtube-loading-spinner"></div>
+          </div>
+        )}
+
+        {/* Overlay with controls */}
+        <div 
+          className={`youtube-video-overlay ${showControls ? 'visible' : ''}`}
+          ref={overlayRef}
+        >
+          {/* Player header */}
+          <div className="youtube-player-header">
+            <button className="youtube-close-btn" onClick={onClose}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+              </svg>
+            </button>
+            <h3 className="youtube-player-title">{video.title || video.description}</h3>
+          </div>
+
+          {/* Central controls */}
+          <div className="youtube-center-controls">
+            <button className="youtube-control-btn youtube-play-pause" onClick={togglePlayPause}>
+              {isPlaying ? (
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                </svg>
+              ) : (
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              )}
+            </button>
+          </div>
+
+          {/* Bottom controls */}
+          <div className="youtube-bottom-controls">
+            {/* Progress bar */}
+            <div className="youtube-progress-container" onClick={handleProgressClick}>
+              <span className="youtube-time">{formatTime(currentTime)}</span>
+              <div className="youtube-progress-bar" ref={progressRef}>
+                <div 
+                  className="youtube-progress-buffered" 
+                  style={{ width: `${buffered}%` }}
+                />
+                <div 
+                  className="youtube-progress-played" 
+                  style={{ width: `${(currentTime / duration) * 100}%` }}
+                />
+                <div 
+                  className="youtube-progress-handle" 
+                  style={{ left: `${(currentTime / duration) * 100}%` }}
+                />
+              </div>
+              <span className="youtube-time">{formatTime(duration)}</span>
+            </div>
+
+            {/* Additional controls */}
+            <div className="youtube-extra-controls">
+              <div className="youtube-left-controls">
+                <button className="youtube-control-icon" onClick={toggleMute}>
+                  {isMuted ? (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                    </svg>
+                  ) : (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+
+              <div className="youtube-right-controls">
+                <button className="youtube-control-icon" onClick={toggleFullscreen}>
+                  {isFullscreen ? (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+                    </svg>
+                  ) : (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Container scrollable for details */}
+      <div className="youtube-details-container">
+        {/* Video information */}
+        <div className="youtube-video-info">
+          <h1 className="youtube-video-title">{video.title || video.description}</h1>
+          <div className="youtube-video-meta">
+            <span>{formatNumber(video.viewsCount || video.views || 0)} views</span>
+            <span>{video.user?.username || 'Unknown'}</span>
+            <span>{video.createdAt || video.uploadDate}</span>
+          </div>
+        </div>
+
+        {/* Video actions */}
+        <div className="youtube-video-actions">
+          <button className={`youtube-action-btn ${video.isLiked ? 'active' : ''}`}>
+            <span className="youtube-action-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+              </svg>
+            </span>
+            <span className="youtube-action-label">{formatNumber(video.likesCount || video.likes || 0)}</span>
+          </button>
+          
+          <button className="youtube-action-btn">
+            <span className="youtube-action-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="18" cy="5" r="3"/>
+                <circle cx="6" cy="12" r="3"/>
+                <circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+            </span>
+            <span className="youtube-action-label">Share</span>
+          </button>
+          
+          <button className="youtube-action-btn">
+            <span className="youtube-action-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7,10 12,15 17,10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            </span>
+            <span className="youtube-action-label">Download</span>
+          </button>
+        </div>
+
+        {/* Channel section */}
+        {video.user && (
+          <div className="youtube-channel-section">
+            <div className="youtube-channel-header">
+              <div className="youtube-channel-info">
+                <img 
+                  src={video.user.avatar || '/default-avatar.png'} 
+                  alt={video.user.username} 
+                  className="youtube-channel-avatar"
+                />
+                <div className="youtube-channel-details">
+                  <div className="youtube-channel-name">
+                    {video.user.username}
+                  </div>
+                  <div className="youtube-channel-subs">
+                    {formatNumber(followersCount)} subscribers
+                  </div>
+                </div>
+              </div>
+              <button 
+                className={`youtube-subscribe-btn ${isFollowing ? 'subscribed' : ''}`}
+                onClick={handleFollow}
+                disabled={!canFollow() || isFollowLoading}
+                style={{ 
+                  opacity: !canFollow() ? 0.5 : 1,
+                  cursor: !canFollow() ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isFollowLoading ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{
+                      width: '12px',
+                      height: '12px',
+                      border: '2px solid transparent',
+                      borderTop: '2px solid currentColor',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
+                    {isFollowing ? 'Unfollowing...' : 'Following...'}
+                  </span>
+                ) : !canFollow() ? (
+                  'You'
+                ) : (
+                  isFollowing ? 'Following' : 'Follow'
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Comments section */}
+        <div className="youtube-comments-section">
+          <div className="youtube-comments-header">
+            <h2 className="youtube-comments-title">
+              Comments
+              <span className="youtube-comments-count">{formatNumber(video.comments || 0)}</span>
+            </h2>
+          </div>
+          <p style={{ color: '#aaa', fontSize: '14px', textAlign: 'center', padding: '20px' }}>
+            Comments are temporarily disabled
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
