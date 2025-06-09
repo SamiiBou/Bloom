@@ -23,7 +23,6 @@ import {
   Check
 } from 'lucide-react';
 import apiService from '../services/api';
-import PublishModal from './PublishModal';
 import axios from "axios";
 import { MiniKit, ResponseEvent } from "@worldcoin/minikit-js";
 import './FluxImageGenerator.css';
@@ -66,6 +65,10 @@ const FluxImageGenerator = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  
+  // NOUVEAU: States pour les champs de publication intégrés
+  const [publishDescription, setPublishDescription] = useState('');
+  const [publishHashtags, setPublishHashtags] = useState('');
 
   // NOUVEAU: States pour les crédits
   const [credits, setCredits] = useState(0);
@@ -571,13 +574,7 @@ const FluxImageGenerator = () => {
     reader.readAsDataURL(file);
   };
 
-  const publishImage = () => {
-    if (!generatedImage?.id) return;
-    setShowPublishModal(true);
-  };
-
-  // Handle publish from modal
-  const handlePublishImage = async (publishData) => {
+  const publishImage = async () => {
     if (!generatedImage?.id) return;
 
     try {
@@ -585,17 +582,18 @@ const FluxImageGenerator = () => {
       
       const imageData = {
         title: '', // No title to avoid duplication with description
-        description: publishData.caption || `Generated with ${generatedImage.model}: ${activeTab === 'generate' ? prompt : editPrompt}`,
-        hashtags: publishData.hashtags.length > 0 ? publishData.hashtags : ['ai', 'flux', 'generated', 'art']
+        description: publishDescription || `Generated with ${generatedImage.model}: ${activeTab === 'generate' ? prompt : editPrompt}`,
+        hashtags: publishHashtags ? publishHashtags.split('#').filter(tag => tag.trim()).map(tag => tag.trim()) : ['ai', 'flux', 'generated', 'art']
       };
 
       const response = await apiService.publishFluxImage(generatedImage.id, imageData);
       
       if (response.status === 'success') {
         showMessage('✅ Image published successfully!', 'success');
-        setShowPublishModal(false);
         setShowPreview(false);
         setGeneratedImage(null);
+        setPublishDescription('');
+        setPublishHashtags('');
         loadHistory();
       } else {
         throw new Error(response.message || 'Publish failed');
@@ -606,10 +604,6 @@ const FluxImageGenerator = () => {
     } finally {
       setPublishing(false);
     }
-  };
-
-  const handleCancelPublish = () => {
-    setShowPublishModal(false);
   };
 
   const rejectImage = async () => {
@@ -1110,6 +1104,34 @@ const FluxImageGenerator = () => {
                     <strong>Prompt:</strong> "{activeTab === 'generate' ? prompt : editPrompt}"
                   </div>
                 </div>
+                
+                {/* NOUVEAU: Champs de publication intégrés */}
+                <div className="publish-fields">
+                  <div className="field-group">
+                    <label htmlFor="description">Description (optional)</label>
+                    <textarea
+                      id="description"
+                      value={publishDescription}
+                      onChange={(e) => setPublishDescription(e.target.value)}
+                      placeholder="Add a description for your image..."
+                      rows={3}
+                      className="publish-textarea"
+                    />
+                  </div>
+                  
+                  <div className="field-group">
+                    <label htmlFor="hashtags">Hashtags (optional)</label>
+                    <input
+                      id="hashtags"
+                      type="text"
+                      value={publishHashtags}
+                      onChange={(e) => setPublishHashtags(e.target.value)}
+                      placeholder="#ai #art #generated"
+                      className="publish-input"
+                    />
+                    <span className="field-hint">Separate hashtags with # (e.g. #ai #art #digital)</span>
+                  </div>
+                </div>
               </div>
               
               <div className="preview-actions">
@@ -1140,9 +1162,19 @@ const FluxImageGenerator = () => {
                   className="action-button publish-button"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  disabled={publishing}
                 >
-                  <Share size={16} />
-                  Publish
+                  {publishing ? (
+                    <>
+                      <RefreshCw size={16} className="spinning" />
+                      Publishing...
+                    </>
+                  ) : (
+                    <>
+                      <Share size={16} />
+                      Publish
+                    </>
+                  )}
                 </motion.button>
               </div>
             </motion.div>
@@ -1173,16 +1205,6 @@ const FluxImageGenerator = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Publish Modal */}
-      <PublishModal
-        isOpen={showPublishModal}
-        onClose={handleCancelPublish}
-        onPublish={handlePublishImage}
-        imagePreview={generatedImage?.imageUrl}
-        isPublishing={publishing}
-        initialText={activeTab === 'generate' ? prompt : editPrompt}
-      />
 
       {/* NOUVEAU: Notification pour les crédits - EXACTEMENT COMME DANS PROFILE */}
       {notification.show && (
