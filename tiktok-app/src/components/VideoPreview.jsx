@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Play, Pause, Download, Trash2, Volume2, VolumeX, RefreshCw } from 'lucide-react';
+import { X, Play, Pause, Download, Trash2, Volume2, VolumeX } from 'lucide-react';
 import './VideoPreview.css';
 
 const VideoPreview = ({ 
@@ -64,37 +64,69 @@ const VideoPreview = ({
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  const modalVariants = {
+    hidden: { 
+      opacity: 0, 
+      scale: 0.9,
+      y: 20
+    },
+    visible: { 
+      opacity: 1, 
+      scale: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 400,
+        damping: 25
+      }
+    },
+    exit: { 
+      opacity: 0, 
+      scale: 0.9,
+      y: 20,
+      transition: {
+        duration: 0.2,
+        ease: "easeOut"
+      }
+    }
+  };
+
+  const overlayVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { duration: 0.3 }
+    },
+    exit: { 
+      opacity: 0,
+      transition: { duration: 0.2 }
+    }
+  };
+
   if (!videoData) return null;
 
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div 
-          className="preview-modal-overlay"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          className="video-preview-overlay"
+          variants={overlayVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
           onClick={onClose}
         >
           <motion.div 
-            className="preview-modal"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
+            className="video-preview-modal"
+            variants={modalVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="preview-header">
-              <h3>Generated video preview</h3>
-              <button 
-                className="close-button"
-                onClick={onClose}
-              >
-                ×
-              </button>
-            </div>
-            
-            <div className="preview-content">
-              <div className="video-container">
+            {/* Video Container */}
+            <div className="preview-video-container">
+              <div className="video-wrapper">
                 <video
                   ref={videoRef}
                   src={videoData.videoUrl}
@@ -118,7 +150,7 @@ const VideoPreview = ({
                   </motion.div>
                 </div>
 
-                {/* Video Controls */}
+                {/* Bottom Controls */}
                 <div className="video-controls">
                   <div className="controls-left">
                     <button className="control-btn" onClick={togglePlay}>
@@ -132,6 +164,9 @@ const VideoPreview = ({
                     <button className="control-btn" onClick={toggleMute}>
                       {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
                     </button>
+                    <button className="control-btn preview-close-btn" onClick={onClose}>
+                      <X size={16} />
+                    </button>
                   </div>
                 </div>
 
@@ -144,49 +179,29 @@ const VideoPreview = ({
                 </div>
               </div>
             </div>
-            
+
+            {/* Actions */}
             <div className="preview-actions">
-              <motion.button
-                onClick={onReject}
-                className="action-button reject-button"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <motion.button 
+                className="action-button reject-button compact"
+                onClick={() => onReject(videoData.taskId)}
                 disabled={isRejecting || isPublishing}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <Trash2 size={16} />
+                <Trash2 size={14} />
                 {isRejecting ? 'Deleting...' : 'Delete'}
               </motion.button>
               
-              <motion.a
-                href={videoData.videoUrl}
-                download={`ai-video-${videoData.taskId}.mp4`}
-                className="action-button download-button"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                title="Download video"
-              >
-                <Download size={16} />
-                Download
-              </motion.a>
-              
-              <motion.button
-                onClick={onPublish}
-                className="action-button publish-button"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <motion.button 
+                className="action-button publish-button compact"
+                onClick={() => onPublish(videoData.taskId)}
                 disabled={isPublishing || isRejecting}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                {isPublishing ? (
-                  <>
-                    <RefreshCw size={16} className="spinning" />
-                    Publishing...
-                  </>
-                ) : (
-                  <>
-                    <Download size={16} />
-                    Publish
-                  </>
-                )}
+                <Download size={14} />
+                {isPublishing ? 'Publishing...' : 'Publish'}
               </motion.button>
             </div>
           </motion.div>
