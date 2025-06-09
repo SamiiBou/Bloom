@@ -68,7 +68,6 @@ const FluxImageGenerator = () => {
   
   // NOUVEAU: States pour les champs de publication intégrés
   const [publishDescription, setPublishDescription] = useState('');
-  const [publishHashtags, setPublishHashtags] = useState('');
 
   // NOUVEAU: States pour les crédits
   const [credits, setCredits] = useState(0);
@@ -583,7 +582,7 @@ const FluxImageGenerator = () => {
       const imageData = {
         title: '', // No title to avoid duplication with description
         description: publishDescription || `Generated with ${generatedImage.model}: ${activeTab === 'generate' ? prompt : editPrompt}`,
-        hashtags: publishHashtags ? publishHashtags.split('#').filter(tag => tag.trim()).map(tag => tag.trim()) : ['ai', 'flux', 'generated', 'art']
+        hashtags: ['ai', 'flux', 'generated', 'art'] // SIMPLIFIÉ: Hashtags par défaut seulement
       };
 
       const response = await apiService.publishFluxImage(generatedImage.id, imageData);
@@ -593,7 +592,6 @@ const FluxImageGenerator = () => {
         setShowPreview(false);
         setGeneratedImage(null);
         setPublishDescription('');
-        setPublishHashtags('');
         loadHistory();
       } else {
         throw new Error(response.message || 'Publish failed');
@@ -1093,19 +1091,9 @@ const FluxImageGenerator = () => {
                   className="preview-image" 
                 />
                 
-                <div className="preview-info">
-                  <div className="info-grid">
-                    <div className="info-item">
-                      <span>Dimensions:</span>
-                      <span>{generatedImage.dimensions?.width}×{generatedImage.dimensions?.height}</span>
-                    </div>
-                  </div>
-                  <div className="preview-prompt">
-                    <strong>Prompt:</strong> "{activeTab === 'generate' ? prompt : editPrompt}"
-                  </div>
-                </div>
+                {/* SIMPLIFIÉ: Plus de sections info, dimensions ou prompt */}
                 
-                {/* NOUVEAU: Champs de publication intégrés */}
+                {/* NOUVEAU: Seulement le champ de description */}
                 <div className="publish-fields">
                   <div className="field-group">
                     <label htmlFor="description">Description (optional)</label>
@@ -1117,19 +1105,6 @@ const FluxImageGenerator = () => {
                       rows={3}
                       className="publish-textarea"
                     />
-                  </div>
-                  
-                  <div className="field-group">
-                    <label htmlFor="hashtags">Hashtags (optional)</label>
-                    <input
-                      id="hashtags"
-                      type="text"
-                      value={publishHashtags}
-                      onChange={(e) => setPublishHashtags(e.target.value)}
-                      placeholder="#ai #art #generated"
-                      className="publish-input"
-                    />
-                    <span className="field-hint">Separate hashtags with # (e.g. #ai #art #digital)</span>
                   </div>
                 </div>
               </div>
