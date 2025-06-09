@@ -1121,7 +1121,7 @@
 }
 
 .preset-btn.active .preset-price {
-  color: #ffffff;
+  color: #000000 !important;
 }
 
 .purchase-btn {
