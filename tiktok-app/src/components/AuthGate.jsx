@@ -24,7 +24,7 @@ const AuthGate = ({ children }) => {
           // Charger le profil utilisateur complet pour vérifier humanVerified
           const response = await apiService.getUserProfile();
           if (response.status === 'success') {
-            const profile = response.data;
+            const profile = response.data?.user || response.data;
             setUserProfile(profile);
           }
         } catch (error) {
