@@ -577,3 +577,81 @@
     font-size: 11px;
   }
 }
+
+/* Join Us button for home page - Transparent theme */
+.join-us-home-button {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.telegram-btn-home {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 136, 204, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 136, 204, 0.3);
+  color: rgba(0, 136, 204, 0.9);
+  border-radius: 20px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.telegram-btn-home:hover {
+  background: rgba(0, 136, 204, 0.25);
+  border-color: rgba(0, 136, 204, 0.5);
+  color: rgba(0, 136, 204, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.telegram-btn-home:active {
+  transform: translateY(0);
+}
+
+.telegram-btn-home span {
+  font-size: 14px;
+  line-height: 1;
+  letter-spacing: -0.2px;
+}
+
+/* Responsive adjustments for Join Us button */
+@media (max-width: 768px) {
+  .join-us-home-button {
+    top: 70px;
+  }
+  
+  .telegram-btn-home {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  
+  .telegram-btn-home span {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .join-us-home-button {
+    top: 60px;
+  }
+  
+  .telegram-btn-home {
+    padding: 5px 10px;
+    font-size: 12px;
+    gap: 6px;
+  }
+  
+  .telegram-btn-home span {
+    font-size: 12px;
+  }
+}
