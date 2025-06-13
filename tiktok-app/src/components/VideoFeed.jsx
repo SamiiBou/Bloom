@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { Plus, Sparkles } from 'lucide-react';
+import { FaTelegramPlane } from 'react-icons/fa';
 import VideoCard from './VideoCard';
 import apiService from '../services/api';
 import UploadModal from './UploadModal';
@@ -46,6 +47,11 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
   const observerRef = useRef(null);
   const pollIntervalRef = useRef(null);
   const uploadPollIntervalRef = useRef(null);
+
+  // Fonction pour ouvrir le groupe Telegram
+  const openTelegramGroup = () => {
+    window.open('https://t.me/+X5ymk_jSYKk0Mjdk', '_blank');
+  };
 
   // Function to load videos from API
   const loadVideos = async (pageNum = 1, append = false) => {
@@ -686,6 +692,14 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
       ref={containerRef}
       onScroll={handleScroll}
     >
+      {/* Join Us button - Transparent theme for home page */}
+      <div className="join-us-home-button">
+        <div className="social-btn telegram-btn-home" onClick={openTelegramGroup}>
+          <FaTelegramPlane size={18} />
+          <span>Join Us</span>
+        </div>
+      </div>
+
       {/* Rewards info banner */}
       {showRewardsBanner && (
         <div className="rewards-info-banner">
