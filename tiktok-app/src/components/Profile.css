@@ -42,7 +42,7 @@
 
 /* Section Telegram sous le header */
 .telegram-section {
-  padding: 76px 24px 0;
+  padding: 16px 24px 0;
   display: flex;
   justify-content: flex-start;
 }
@@ -68,6 +68,7 @@
   background-color: rgba(0, 136, 204, 0.08);
   border: 1px solid rgba(0, 136, 204, 0.2);
   color: #0088cc;
+  margin-top: 60px;
 }
 
 .telegram-btn:hover {
@@ -821,7 +822,11 @@
   }
   
   .telegram-section {
-    padding: 72px 16px 0;
+    padding: 12px 16px 0;
+  }
+  
+  .telegram-btn {
+    margin-top: 50px;
   }
   
   .header-title {
@@ -893,7 +898,11 @@
   }
   
   .telegram-section {
-    padding: 68px 12px 0;
+    padding: 8px 12px 0;
+  }
+  
+  .telegram-btn {
+    margin-top: 45px;
   }
   
   .header-title {
