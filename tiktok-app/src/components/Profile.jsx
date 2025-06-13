@@ -1390,16 +1390,16 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Section bouton Telegram sous le header */}
-      <div className="telegram-section">
-        <div className="social-btn telegram-btn" onClick={openTelegramGroup}>
-          <FaTelegramPlane size={18} />
-          <span>Join Us</span>
-        </div>
-      </div>
-
       {/* Main profile section */}
       <div className="profile-hero-section">
+        {/* Telegram button at top of grey section */}
+        <div className="telegram-section-in-hero">
+          <div className="social-btn telegram-btn" onClick={openTelegramGroup}>
+            <FaTelegramPlane size={18} />
+            <span>Join Us</span>
+          </div>
+        </div>
+
         {/* Profile avatar centrally */}
         <div className="profile-avatar-container">
           {allUserData.avatar || allUserData.profilePictureUrl ? (

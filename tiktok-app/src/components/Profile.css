@@ -47,6 +47,14 @@
   justify-content: flex-start;
 }
 
+/* Section Telegram dans la zone grise */
+.telegram-section-in-hero {
+  padding: 0 0 20px 0;
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 20px;
+}
+
 /* Bouton social Telegram */
 .social-btn {
   display: flex;
@@ -68,7 +76,7 @@
   background-color: rgba(0, 136, 204, 0.08);
   border: 1px solid rgba(0, 136, 204, 0.2);
   color: #0088cc;
-  margin-top: 100px;
+  margin-top: 0;
 }
 
 .telegram-btn:hover {
@@ -826,7 +834,7 @@
   }
   
   .telegram-btn {
-    margin-top: 90px;
+    margin-top: 0;
   }
   
   .header-title {
@@ -902,7 +910,7 @@
   }
   
   .telegram-btn {
-    margin-top: 80px;
+    margin-top: 0;
   }
   
   .header-title {
