@@ -68,7 +68,7 @@
   background-color: rgba(0, 136, 204, 0.08);
   border: 1px solid rgba(0, 136, 204, 0.2);
   color: #0088cc;
-  margin-top: 60px;
+  margin-top: 80px;
 }
 
 .telegram-btn:hover {
@@ -826,7 +826,7 @@
   }
   
   .telegram-btn {
-    margin-top: 50px;
+    margin-top: 70px;
   }
   
   .header-title {
@@ -902,7 +902,7 @@
   }
   
   .telegram-btn {
-    margin-top: 45px;
+    margin-top: 60px;
   }
   
   .header-title {
