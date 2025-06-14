@@ -141,11 +141,6 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
       
       const scrollTop = containerRef.current.scrollTop;
       const videoHeight = containerRef.current.clientHeight;
-      const newIndex = Math.round(scrollTop / videoHeight);
-      
-      if (newIndex !== currentVideoIndex && newIndex >= 0 && newIndex < videos.length) {
-        setCurrentVideoIndex(newIndex);
-      }
 
       // Load more videos when approaching the end
       const scrollHeight = containerRef.current.scrollHeight;
@@ -686,6 +681,28 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
     );
   }
 
+  const ObservedVideoCard = ({ video, index }) => {
+    const { ref, inView } = useInView({ threshold: 0.6 });
+
+    useEffect(() => {
+      if (inView) {
+        setCurrentVideoIndex(index);
+      }
+    }, [inView, index]);
+
+    return (
+      <div ref={ref}>
+        <VideoCard
+          key={video.id}
+          video={video}
+          isActive={index === currentVideoIndex}
+          onUpdateVideo={updateVideoData}
+          section="home"
+        />
+      </div>
+    );
+  };
+
   return (
     <div 
       className="video-feed" 
@@ -710,13 +727,7 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
       )}
 
       {videos.map((video, index) => (
-        <VideoCard
-          key={video.id}
-          video={video}
-          isActive={index === currentVideoIndex}
-          onUpdateVideo={updateVideoData}
-          section="home"
-        />
+        <ObservedVideoCard key={video.id} video={video} index={index} />
       ))}
       
       {/* Loading indicator for pagination */}

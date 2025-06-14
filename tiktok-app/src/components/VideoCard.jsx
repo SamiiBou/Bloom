@@ -413,7 +413,7 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
             muted={isMuted}
             loop
             playsInline
-            preload="auto"
+          preload="metadata"
             className="video-player"
             onPlay={handleVideoPlay}
             onPause={handleVideoPause}
@@ -646,7 +646,7 @@ const VideoCard = ({ video, isActive, onUpdateVideo, section = 'home' }) => {
           ref={audioRef}
           src={video.music.url}
           loop
-          preload="auto"
+          preload="metadata"
           volume={video.metadata?.musicMetadata?.volume || 0.3}
         />
       )}
