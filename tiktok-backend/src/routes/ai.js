@@ -18,7 +18,7 @@ const Image = require('../models/Image');
 
 const router = express.Router();
 
-// Configure DNS to use Google's public DNS as fallback
+// Configure DNS, to use Google's public DNS as fallback
 dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1', '1.0.0.1']);
 
 // Configure axios defaults for better reliability
