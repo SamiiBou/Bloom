@@ -1466,6 +1466,7 @@ const Profile = () => {
           </div>
 
           {/* Quick credit purchase section */}
+          {/*
           <div className="quick-purchase-section">
             <button 
               className="quick-purchase-trigger"
@@ -1475,10 +1476,12 @@ const Profile = () => {
               <span>Buy credits</span>
             </button>
           </div>
+          */}
         </div>
       </div>
 
       {/* Quick purchase modal - Displayed above everything */}
+      {/*
       {showQuickPurchase && (
         <div 
           className="quick-purchase-overlay"
@@ -1540,6 +1543,7 @@ const Profile = () => {
           </div>
         </div>
       )}
+      */}
 
       {/* Navigation - MODIFIED to remove Staking */}
       <div className="bottom-navigation">
@@ -1747,6 +1751,7 @@ const Profile = () => {
                 <span>{tokensEarnedFromVideos.toFixed(2)} BLOOM</span>
               </div>
             </div>
+            {/*
             <div className="detail-card">
               <h4>💳 Credits</h4>
               <div className="detail-item-new">
@@ -1807,6 +1812,7 @@ const Profile = () => {
                 </button>
               </div>
             </div>
+            */}
           </div>
         </div>
       )}

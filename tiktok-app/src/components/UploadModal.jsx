@@ -28,7 +28,7 @@ const UploadModal = ({
   uploadProgress 
 }) => {
   const { user } = useAuth();
-  const [selectedOption, setSelectedOption] = useState(null);
+  const [selectedOption, setSelectedOption] = useState('upload');
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState(5); // 5 or 10 seconds
@@ -556,21 +556,11 @@ const UploadModal = ({
             {/* Header */}
             <div className="upload-modal-header-apple" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', minHeight: 56 }}>
               <div style={{ width: 48, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
-                {selectedOption && (
-                  <button 
-                    className="back-button-apple" 
-                    onClick={() => setSelectedOption(null)}
-                    style={{ position: 'static' }}
-                  >
-                    <ArrowLeft size={20} />
-                  </button>
-                )}
+                
               </div>
               <div style={{ flex: 1, textAlign: 'center' }}>
                 <h2 className="modal-title-apple" style={{ margin: 0 }}>
-                  {!selectedOption ? 'Create a video' : 
-                    selectedOption === 'upload' ? 'Upload a video' : 
-                    'Generate with AI'}
+                  Upload a video
                 </h2>
               </div>
               <div style={{ width: 48, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
@@ -590,52 +580,6 @@ const UploadModal = ({
               {!selectedOption ? (
                 /* Option Selection */
                 <div className="upload-options-apple">
-                  <motion.div 
-                    className="upload-option-apple upload-option-camera"
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
-                    onClick={() => setSelectedOption('upload')}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                  >
-                    <div className="option-visual">
-                      <div className="option-icon-apple camera-icon">
-                        <Camera size={24} />
-                      </div>
-                      <div className="option-glow camera-glow"></div>
-                    </div>
-                    <div className="option-content-apple">
-                      <h3>Upload a video</h3>
-                      <p>Select from your device</p>
-                    </div>
-                    <div className="option-arrow">→</div>
-                  </motion.div>
-
-                  <motion.div 
-                    className="upload-option-apple upload-option-ai"
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
-                    onClick={() => setSelectedOption('ai')}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                  >
-                    <div className="option-visual">
-                      <div className="option-icon-apple ai-icon">
-                        <Sparkles size={24} />
-                      </div>
-                      <div className="option-glow ai-glow"></div>
-                    </div>
-                    <div className="option-content-apple">
-                      <h3>Generate with AI</h3>
-                      <p>Create from a description</p>
-                      <div className="ai-pricing">
-                        <span>21 credits (5s) • 42 credits (10s)</span>
-                      </div>
-                    </div>
-                    <div className="option-arrow">→</div>
-                  </motion.div>
                 </div>
               ) : selectedOption === 'upload' ? (
                 selectedFile && videoPreview ? (
@@ -668,113 +612,7 @@ const UploadModal = ({
                 )
               ) : (
                 /* AI Generation with new design */
-                <motion.div 
-                  className="ai-section-apple-refined"
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {/* Credits section - Profile style */}
-                  <div className="ai-credits-section" style={{ marginBottom: 16 }}>
-                    <div className="detail-item-new" style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 16, fontWeight: 500, color: '#1d1d1f' }}>
-                      <span>Available credits :</span>
-                      <span style={{ fontWeight: 700, fontSize: 18 }}>{loadingCredits ? '...' : (credits ?? 0)}</span>
-                      <span>credits</span>
-                      <button
-                        className={`refresh-credits-btn${loadingCredits ? ' spinning' : ''}`}
-                        onClick={fetchCredits}
-                        disabled={loadingCredits}
-                        title="Refresh credits"
-                        style={{ marginLeft: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                      >
-                        <RefreshCw size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Duration selection - Simplified Apple design */}
-                  <div className="duration-selector-refined">
-                    <label className="selector-label">Duration</label>
-                    <div className="duration-options-refined">
-                      <motion.button
-                        className={`duration-option ${selectedDuration === 5 ? 'selected' : ''}`}
-                        onClick={() => setSelectedDuration(5)}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <span className="duration-value">5</span>
-                        <span className="duration-unit">sec</span>
-                        <span className="duration-price">21 credits</span>
-                      </motion.button>
-                      <motion.button
-                        className={`duration-option ${selectedDuration === 10 ? 'selected' : ''}`}
-                        onClick={() => setSelectedDuration(10)}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <span className="duration-value">10</span>
-                        <span className="duration-unit">sec</span>
-                        <span className="duration-price">42 credits</span>
-                      </motion.button>
-                    </div>
-                  </div>
-
-                  {/* Prompt area - Clean design */}
-                  <div className="prompt-section-refined">
-                    <label className="prompt-label">Description</label>
-                    <div className="prompt-container-refined">
-                      <textarea
-                        value={aiPrompt}
-                        onChange={handleTextInput}
-                        onInput={handleTextInput}
-                        onKeyDown={handleTextKeyDown}
-                        placeholder="Describe the video you want to create..."
-                        rows={4}
-                        maxLength={1000}
-                        className="prompt-textarea-simplified"
-                        disabled={isGenerating}
-                      />
-                      <div className="prompt-footer">
-                        <span className="character-count">
-                          {aiPrompt.length}/1000
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Generation button - Apple style */}
-                  <motion.button 
-                    className={`generate-button-refined ${!aiPrompt.trim() || isGenerating || credits < getGenerationCost(selectedDuration) ? 'disabled' : ''}`}
-                    onClick={handleAIGenerate}
-                    disabled={!aiPrompt.trim() || isGenerating || credits < getGenerationCost(selectedDuration)}
-                    whileHover={!isGenerating && aiPrompt.trim() && credits >= getGenerationCost(selectedDuration) ? { scale: 1.01 } : {}}
-                    whileTap={!isGenerating && aiPrompt.trim() && credits >= getGenerationCost(selectedDuration) ? { scale: 0.99 } : {}}
-                  >
-                    {isGenerating ? (
-                      <>
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                          className="generating-icon"
-                        >
-                          <Sparkles size={18} />
-                        </motion.div>
-                        <span>Generating...</span>
-                      </>
-                    ) : credits < getGenerationCost(selectedDuration) ? (
-                      <>
-                        <Coins size={18} />
-                        <span>Insufficient credits</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={18} />
-                        <span>Generate video</span>
-                        <span className="button-cost">{getGenerationCost(selectedDuration)} credits</span>
-                      </>
-                    )}
-                  </motion.button>
-                </motion.div>
+                null
               )}
             </motion.div>
 

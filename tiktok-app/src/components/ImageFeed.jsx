@@ -33,7 +33,6 @@ const ImageFeed = () => {
   const [likingStatus, setLikingStatus] = useState({});
   
   // Modal states
-  const [showAddModal, setShowAddModal] = useState(false);
   const [showFluxModal, setShowFluxModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
@@ -252,6 +251,8 @@ const ImageFeed = () => {
           ...prev,
           [currentImageId]: (prev[currentImageId] || 0) + 1
         }));
+      } else {
+        throw new Error(response.message || 'Error adding comment');
       }
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -260,22 +261,6 @@ const ImageFeed = () => {
       setAddingComment(false);
     }
   }, [newComment, currentImageId, addingComment]);
-
-  // Handle add image actions
-  const handleAddFromDevice = useCallback(() => {
-    console.log('📱 [COMPONENT] handleAddFromDevice called');
-    setShowAddModal(false);
-    setUploadError('');
-    setShowUploadModal(true);
-    console.log('📱 [COMPONENT] Modals updated: showAddModal=false, showUploadModal=true');
-  }, []);
-
-  const handleAddWithAI = useCallback(() => {
-    console.log('🤖 [COMPONENT] handleAddWithAI called');
-    setShowAddModal(false);
-    setShowFluxModal(true);
-    console.log('🤖 [COMPONENT] Modals updated: showAddModal=false, showFluxModal=true');
-  }, []);
 
   // Handle modal close
   const handleCloseUploadModal = useCallback(() => {
@@ -716,7 +701,7 @@ const ImageFeed = () => {
       <div className="create-image-fab">
         <button 
           className="fab-button-dark"
-          onClick={() => setShowAddModal(true)}
+          onClick={() => setShowUploadModal(true)}
           aria-label="Create an image"
         >
           <Plus size={20} strokeWidth={2} />
@@ -724,57 +709,6 @@ const ImageFeed = () => {
         </button>
         <div className="fab-label-dark">New image</div>
       </div>
-
-      {/* Add Image Modal */}
-      <AnimatePresence>
-        {showAddModal && (
-          <motion.div
-            className="modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowAddModal(false)}
-          >
-            <motion.div
-              className="add-modal"
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3>Add an image</h3>
-              <p>How would you like to add your image?</p>
-              
-              <div className="add-options">
-                <button 
-                  className="option-button"
-                  onClick={handleAddFromDevice}
-                >
-                  <Upload size={32} />
-                  <span>From device</span>
-                  <p>Upload an image from your gallery</p>
-                </button>
-                
-                <button 
-                  className="option-button ai-option"
-                  onClick={handleAddWithAI}
-                >
-                  <Sparkles size={32} />
-                  <span>Generate with AI</span>
-                  <p>Create an image with FLUX AI</p>
-                </button>
-              </div>
-              
-              <button 
-                className="cancel-button"
-                onClick={() => setShowAddModal(false)}
-              >
-                Cancel
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Upload Modal */}
       <AnimatePresence>
