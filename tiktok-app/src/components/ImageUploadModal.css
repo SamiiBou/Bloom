@@ -1,0 +1,579 @@
+/* ==========================================
+   IMAGE UPLOAD MODAL - MODERN DESIGN
+   ========================================== */
+
+.image-upload-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.image-upload-modal {
+  background: linear-gradient(145deg, rgba(20, 20, 30, 0.95), rgba(30, 30, 40, 0.98));
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================
+   HEADER
+   ========================================== */
+
+.image-upload-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 32px 32px 24px 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 100%);
+}
+
+.header-content {
+  flex: 1;
+}
+
+.modal-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #ffffff, #a8a8a8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.modal-subtitle {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  font-weight: 400;
+}
+
+.close-button {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.close-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.close-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==========================================
+   CONTENT
+   ========================================== */
+
+.image-upload-content {
+  padding: 24px 32px;
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(90vh - 200px);
+}
+
+/* ==========================================
+   DROP ZONE
+   ========================================== */
+
+.drop-zone {
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 60px 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.02);
+  position: relative;
+  overflow: hidden;
+}
+
+.drop-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.drop-zone:hover::before {
+  opacity: 1;
+}
+
+.drop-zone-content {
+  position: relative;
+  z-index: 1;
+}
+
+.upload-icon {
+  color: #6366f1;
+  margin-bottom: 24px;
+  display: inline-block;
+  padding: 20px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 20px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.drop-zone-text h3 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.3px;
+}
+
+.drop-zone-text p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+.format-info {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ==========================================
+   PREVIEW SECTION
+   ========================================== */
+
+.preview-section {
+  margin-top: 24px;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.preview-header h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.add-more-button {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 12px;
+  padding: 8px 16px;
+  color: #6366f1;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.add-more-button:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.2);
+  transform: translateY(-1px);
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.preview-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.preview-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 8px 25px -5px rgba(99, 102, 241, 0.2);
+}
+
+.preview-image-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.preview-item:hover .preview-image {
+  transform: scale(1.05);
+}
+
+.status-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.preview-item .status-overlay {
+  opacity: 0;
+}
+
+.preview-item[data-status="uploading"] .status-overlay,
+.preview-item[data-status="uploaded"] .status-overlay {
+  opacity: 1;
+}
+
+.upload-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #6366f1;
+}
+
+.upload-success {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.2);
+  border-radius: 50%;
+  padding: 12px;
+}
+
+.preview-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.preview-item:hover .preview-actions {
+  opacity: 1;
+}
+
+.action-button {
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  border-radius: 8px;
+  padding: 6px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.action-button.remove:hover {
+  background: rgba(239, 68, 68, 0.8);
+  transform: scale(1.1);
+}
+
+.preview-info {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.file-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-size {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.progress-bar {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0 0 16px 16px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  border-radius: 0 0 16px 16px;
+}
+
+/* ==========================================
+   ERROR & STATUS SECTIONS
+   ========================================== */
+
+.error-section {
+  margin-top: 20px;
+  padding: 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 12px;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f87171;
+  font-size: 14px;
+  margin: 4px 0;
+}
+
+.upload-status {
+  margin-top: 20px;
+  padding: 16px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
+}
+
+.status-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6366f1;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ==========================================
+   FOOTER
+   ========================================== */
+
+.image-upload-footer {
+  padding: 24px 32px 32px 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.1) 100%);
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+}
+
+.cancel-button, .upload-button {
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.cancel-button {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.cancel-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.upload-button {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border: none;
+  color: #ffffff;
+  box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.3);
+}
+
+.upload-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(99, 102, 241, 0.4);
+}
+
+.upload-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cancel-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==========================================
+   ANIMATIONS
+   ========================================== */
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ==========================================
+   RESPONSIVE DESIGN
+   ========================================== */
+
+@media (max-width: 640px) {
+  .image-upload-overlay {
+    padding: 12px;
+  }
+  
+  .image-upload-modal {
+    border-radius: 20px;
+    max-height: 95vh;
+  }
+  
+  .image-upload-header {
+    padding: 24px 20px 20px 20px;
+  }
+  
+  .modal-title {
+    font-size: 24px;
+  }
+  
+  .image-upload-content {
+    padding: 20px;
+  }
+  
+  .drop-zone {
+    padding: 40px 20px;
+  }
+  
+  .drop-zone-text h3 {
+    font-size: 20px;
+  }
+  
+  .preview-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+  }
+  
+  .image-upload-footer {
+    padding: 20px;
+    flex-direction: column-reverse;
+  }
+  
+  .cancel-button, .upload-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .image-upload-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  
+  .close-button {
+    align-self: flex-end;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+  }
+  
+  .preview-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+}
+
+/* ==========================================
+   ACCESSIBILITY
+   ========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.image-upload-modal:focus {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+/* ==========================================
+   HIGH CONTRAST MODE
+   ========================================== */
+
+@media (prefers-contrast: high) {
+  .image-upload-modal {
+    border: 2px solid #ffffff;
+  }
+  
+  .drop-zone {
+    border-color: #ffffff;
+  }
+  
+  .modal-title {
+    color: #ffffff;
+    -webkit-text-fill-color: #ffffff;
+  }
+}
+
+/* ==========================================
+   DARK MODE ENHANCEMENTS
+   ========================================== */
+
+@media (prefers-color-scheme: dark) {
+  .image-upload-modal {
+    background: linear-gradient(145deg, rgba(15, 15, 25, 0.98), rgba(25, 25, 35, 0.99));
+  }
+}
