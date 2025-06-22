@@ -61,6 +61,18 @@ class ApiService {
         console.log(`🌐 [API] Response not OK, attempting to parse error...`);
         const errorData = await response.json().catch(() => ({ message: `HTTP error! status: ${response.status}` }));
         console.log(`🌐 [API] Error data:`, errorData);
+        
+        // Auto-logout si le token est invalide
+        if (response.status === 401 && (errorData.message === 'Invalid token.' || errorData.message?.includes('token'))) {
+          console.log('🔑 [API] Invalid token detected, clearing authentication...');
+          this.logout();
+          // Optionnel: rediriger vers la page de connexion
+          if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+            console.log('🔑 [API] Redirecting to login...');
+            window.location.href = '/';
+          }
+        }
+        
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 

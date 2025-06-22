@@ -315,11 +315,28 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
 
       setUploadStatus('📤 Starting upload...');
       setUploadProgress(10);
-      console.log('[UPLOAD] Sending video to apiService.uploadVideo...');
-      const uploadResponse = await apiService.uploadVideo(formData);
-      console.log('[UPLOAD] uploadResponse:', uploadResponse);
-      if (uploadResponse.status === 'accepted' && uploadResponse.data.uploadId) {
-        const uploadId = uploadResponse.data.uploadId;
+      console.log('[UPLOAD] Sending video to DIRECT URL (bypassing apiService)...');
+      
+      // BYPASS apiService temporairement et utiliser fetch directement avec l'URL correcte
+      const DIRECT_API_URL = 'https://bloom-m284.onrender.com/api/upload/video';
+      console.log('[UPLOAD] Direct API URL:', DIRECT_API_URL);
+      
+      const uploadResponse = await fetch(DIRECT_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiService.token}`
+        },
+        body: formData
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`);
+      }
+      
+      const uploadResult = await uploadResponse.json();
+      console.log('[UPLOAD] Direct upload response:', uploadResult);
+      if (uploadResult.status === 'accepted' && uploadResult.data.uploadId) {
+        const uploadId = uploadResult.data.uploadId;
         setCurrentUploadId(uploadId);
         setUploadStatus('⚙️ Processing video...');
         setUploadProgress(20);
@@ -362,8 +379,8 @@ const VideoFeed = ({ feedType = 'forYou' }) => {
           }
         }, 3000);
       } else {
-        console.error('[UPLOAD] Upload response not accepted:', uploadResponse);
-        throw new Error(uploadResponse.message || 'Upload failed');
+        console.error('[UPLOAD] Upload response not accepted:', uploadResult);
+        throw new Error(uploadResult.message || 'Upload failed');
       }
     } catch (error) {
       console.error('[UPLOAD] Upload error:', error);

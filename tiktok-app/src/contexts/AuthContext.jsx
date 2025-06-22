@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { MiniKit } from '@worldcoin/minikit-js';
 
+// Version du cache - Changer cette valeur pour forcer le vidage du cache lors de la prochaine connexion
+const CACHE_VERSION = '1.0.1'; // Incrémentez cette valeur pour forcer le vidage du cache
+
 const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -15,8 +18,48 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [cacheCleared, setCacheCleared] = useState(false); // Flag pour éviter les boucles
+
+  // Vérifier et vider le cache si nécessaire (doit être fait avant toute autre opération)
+  useEffect(() => {
+    const checkAndClearCache = () => {
+      const storedCacheVersion = localStorage.getItem('cacheClearedVersion');
+      
+      // Si la version du cache a changé ou n'existe pas, on vide tout
+      if (storedCacheVersion !== CACHE_VERSION && !cacheCleared) {
+        console.log('🧹 Cache version changed, clearing all cache...');
+        
+        // Sauvegarder temporairement la nouvelle version
+        const newVersion = CACHE_VERSION;
+        
+        // Vider complètement le localStorage
+        localStorage.clear();
+        
+        // Sauvegarder immédiatement la nouvelle version pour éviter une boucle
+        localStorage.setItem('cacheClearedVersion', newVersion);
+        
+        // Marquer que le cache a été vidé
+        setCacheCleared(true);
+        
+        console.log('✅ Cache cleared successfully. User will need to sign in again.');
+        
+        // Forcer le rafraîchissement de l'état
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsLoading(false);
+      }
+    };
+
+    checkAndClearCache();
+  }, []); // Exécuté une seule fois au montage
 
   useEffect(() => {
+    // Ne pas initialiser MiniKit si le cache vient d'être vidé
+    if (cacheCleared) {
+      setIsLoading(false);
+      return;
+    }
+
     // Initialiser MiniKit avec l'App ID
     const initializeMiniKit = () => {
       try {
@@ -58,7 +101,7 @@ export const AuthProvider = ({ children }) => {
     } else {
       setIsLoading(false);
     }
-  }, []);
+  }, [cacheCleared]);
 
   const login = (userData) => {
     setUser(userData);
@@ -96,6 +139,13 @@ export const AuthProvider = ({ children }) => {
     console.log('🔐 [AuthContext] Checking localStorage for saved session...');
     console.log('🔐 [AuthContext] isAuthenticated:', isAuthenticated);
     console.log('🔐 [AuthContext] isLoading:', isLoading);
+    console.log('🔐 [AuthContext] cacheCleared:', cacheCleared);
+    
+    // Ne pas restaurer la session si le cache vient d'être vidé
+    if (cacheCleared) {
+      console.log('🧹 [AuthContext] Skipping session restoration (cache was just cleared)');
+      return;
+    }
     
     if (!isAuthenticated && !isLoading) {
       try {
@@ -140,7 +190,7 @@ export const AuthProvider = ({ children }) => {
     } else {
       console.log('🔐 [AuthContext] Skipping localStorage check (already authenticated or still loading)');
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, cacheCleared]);
 
   const value = {
     user,
