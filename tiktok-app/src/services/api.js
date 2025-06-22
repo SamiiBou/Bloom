@@ -7,6 +7,7 @@ class ApiService {
     // URL codée en dur pour éviter les problèmes de variable d'environnement corrompue
     this.baseURL = 'https://bloom-m284.onrender.com/api';
     this.token = localStorage.getItem('authToken');
+    console.log('🔧 [API SERVICE] Constructor called - baseURL set to:', this.baseURL);
   }
 
   // Helper method to make HTTP requests
@@ -247,6 +248,10 @@ class ApiService {
 
   // Upload methods
   async uploadVideo(formData) {
+    // DEBUG: Log pour confirmer l'URL utilisée
+    console.log('🔧 [UPLOAD VIDEO] About to call this.request with baseURL:', this.baseURL);
+    console.log('🔧 [UPLOAD VIDEO] Full URL will be:', this.baseURL + '/upload/video');
+    
     // The upload now returns a task ID for tracking instead of waiting for completion
     return await this.request('/upload/video', {
       method: 'POST',
