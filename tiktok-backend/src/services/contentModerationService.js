@@ -1,29 +1,73 @@
 const video = require('@google-cloud/video-intelligence');
 const fs = require('fs').promises;
+const fsSync = require('fs');
 const path = require('path');
+const os = require('os');
 
 class ContentModerationService {
   constructor() {
     // Vérifier si Google Cloud est configuré
     this.isGoogleCloudConfigured = this.checkGoogleCloudConfiguration();
+    this.tempCredentialsFile = null;
     
     if (this.isGoogleCloudConfigured) {
       try {
+        // Préparer les options du client
+        const clientOptions = {};
+        
+        // Gérer les credentials
+        if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+          // Si on a les credentials en JSON, les utiliser directement
+          try {
+            clientOptions.credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+          } catch (parseError) {
+            console.error('❌ Erreur lors du parsing des credentials JSON:', parseError.message);
+            throw parseError;
+          }
+        } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+          // Vérifier si c'est un chemin de fichier ou du JSON
+          const credValue = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+          
+          // Si ça commence par '{', c'est probablement du JSON
+          if (credValue.trim().startsWith('{')) {
+            try {
+              // Créer un fichier temporaire avec les credentials
+              const tempDir = os.tmpdir();
+              this.tempCredentialsFile = path.join(tempDir, `google-creds-${Date.now()}.json`);
+              
+              // Écrire les credentials dans le fichier temporaire (version synchrone)
+              fsSync.writeFileSync(this.tempCredentialsFile, credValue, 'utf8');
+              
+              // Mettre à jour la variable d'environnement pour pointer vers le fichier
+              process.env.GOOGLE_APPLICATION_CREDENTIALS = this.tempCredentialsFile;
+              
+              console.log('✅ Fichier de credentials temporaire créé');
+            } catch (fileError) {
+              console.error('❌ Erreur lors de la création du fichier de credentials:', fileError.message);
+              // Essayer de parser le JSON directement
+              try {
+                clientOptions.credentials = JSON.parse(credValue);
+              } catch (parseError) {
+                throw new Error('Impossible de traiter les credentials Google Cloud');
+              }
+            }
+          }
+          // Sinon, c'est déjà un chemin de fichier, rien à faire
+        }
+        
+        // Ajouter le project ID si disponible
+        if (process.env.GOOGLE_CLOUD_PROJECT_ID) {
+          clientOptions.projectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
+        }
+        
         // Initialiser le client Google Cloud Video Intelligence
-        this.client = new video.VideoIntelligenceServiceClient({
-          // Les credentials peuvent être définies via la variable d'environnement GOOGLE_APPLICATION_CREDENTIALS
-          // ou directement via keyFilename si vous avez un fichier de clés
-          ...(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON && {
-            credentials: JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON)
-          }),
-          ...(process.env.GOOGLE_CLOUD_PROJECT_ID && {
-            projectId: process.env.GOOGLE_CLOUD_PROJECT_ID
-          })
-        });
+        this.client = new video.VideoIntelligenceServiceClient(clientOptions);
         console.log('✅ Google Cloud Video Intelligence configuré et prêt');
       } catch (error) {
         console.warn('⚠️ Erreur lors de l\'initialisation de Google Cloud:', error.message);
         this.isGoogleCloudConfigured = false;
+        // Nettoyer le fichier temporaire si créé
+        this.cleanupTempFile();
       }
     } else {
       console.log('⚠️ Google Cloud Video Intelligence non configuré - Modération de fallback activée');
@@ -42,6 +86,14 @@ class ContentModerationService {
         'SAFE_SEARCH_DETECTION'        // Détection SafeSearch
       ]
     };
+    
+    // Nettoyer le fichier temporaire quand le processus se termine
+    if (this.tempCredentialsFile) {
+      process.on('exit', () => this.cleanupTempFile());
+      process.on('SIGINT', () => this.cleanupTempFile());
+      process.on('SIGTERM', () => this.cleanupTempFile());
+      process.on('uncaughtException', () => this.cleanupTempFile());
+    }
   }
 
   /**
@@ -335,6 +387,18 @@ class ContentModerationService {
     const { adultContent, violentContent, racyContent, totalFramesAnalyzed } = result.details;
     
     return `Adult: ${(adultContent * 100).toFixed(1)}%, Violence: ${(violentContent * 100).toFixed(1)}%, Racy: ${(racyContent * 100).toFixed(1)}% (${totalFramesAnalyzed} frames)`;
+  }
+
+  /**
+   * Nettoie le fichier de credentials temporaire s'il existe
+   */
+  cleanupTempFile() {
+    if (this.tempCredentialsFile) {
+      fs.unlink(this.tempCredentialsFile).catch(error => {
+        console.error('❌ Erreur lors de la suppression du fichier de credentials temporaire:', error.message);
+      });
+      this.tempCredentialsFile = null;
+    }
   }
 }
 
