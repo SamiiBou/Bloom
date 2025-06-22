@@ -18,7 +18,7 @@ import './utils/maintenanceControl'; // Import pour rendre MaintenanceControl di
 import './App.css';
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState('home'); // Start on home page
+  const [currentPage, setCurrentPage] = useState('images'); // Start on images page instead of videos
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { isAuthenticated, isLoading } = useAuth();
   const { isMaintenanceMode } = useMaintenanceMode();
