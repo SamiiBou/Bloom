@@ -7,7 +7,7 @@ import { MiniKit } from '@worldcoin/minikit-js';
 import CreditPurchaseCard from './CreditPurchaseCard';
 import './UploadModal.css';
 
-const BACKEND_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'https://bloom-m284.onrender.com';
+const BACKEND_URL = 'https://bloom-m284.onrender.com';
 const API_TIMEOUT = 30000;
 
 // DEBUGGING: Log the backend URL being used

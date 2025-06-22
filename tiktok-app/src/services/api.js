@@ -4,7 +4,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
 
 class ApiService {
   constructor() {
-    this.baseURL = API_BASE_URL;
+    // URL codée en dur pour éviter les problèmes de variable d'environnement corrompue
+    this.baseURL = 'https://bloom-m284.onrender.com/api';
     this.token = localStorage.getItem('authToken');
   }
 
@@ -323,7 +324,7 @@ class ApiService {
   // Get current user profile
   async getUserProfile() {
     const token = localStorage.getItem('authToken');
-    const response = await axios.get(`${this.baseURL}/users/profile`, {
+    const response = await axios.get(`https://bloom-m284.onrender.com/api/users/profile`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
@@ -342,7 +343,7 @@ class ApiService {
   // Health check
   async healthCheck() {
     try {
-      const response = await fetch(`${this.baseURL.replace('/api', '')}/health`);
+      const response = await fetch(`https://bloom-m284.onrender.com/health`);
       return await response.json();
     } catch (error) {
       console.error('Health check failed:', error);
