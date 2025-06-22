@@ -12,25 +12,16 @@ import AuthGate from './components/AuthGate';
 import Profile from './components/Profile';
 import RewardsHub from './components/RewardsHub';
 import FluxImageGenerator from './components/FluxImageGenerator';
-import MaintenanceMode from './components/MaintenanceMode';
-import useMaintenanceMode from './hooks/useMaintenanceMode';
-import './utils/maintenanceControl'; // Import pour rendre MaintenanceControl disponible globalement
 import './App.css';
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState('images'); // Start on images page instead of videos
+  const [currentPage, setCurrentPage] = useState('home'); // Start on home page
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { isAuthenticated, isLoading } = useAuth();
-  const { isMaintenanceMode } = useMaintenanceMode();
   
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
-
-  // Si le mode maintenance est activé, afficher uniquement la fenêtre de maintenance
-  if (isMaintenanceMode) {
-    return <MaintenanceMode />;
-  }
   
   const renderMainContent = () => {
     switch (currentPage) {
