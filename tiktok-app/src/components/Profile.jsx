@@ -242,17 +242,22 @@ const Profile = () => {
       console.log('🔄 [Profile] Token validation result:', validation);
     }
     
-    if (isAuthenticated && token) {
-      console.log('✅ [Profile] Conditions met - starting auto-refresh...');
-      console.log('🔄 [Profile] Calling checkClaimStatus()...');
+    // Always fetch claim status if we have a token – this does not require MiniKit authentication
+    if (token) {
+      console.log('✅ [Profile] Token present - fetching claim status...');
       checkClaimStatus();
-      console.log('🔄 [Profile] Calling loadUserCredits()...');
-      loadUserCredits();
-    } else {
-      console.log('❌ [Profile] Conditions NOT met for auto-refresh');
-      if (!isAuthenticated) console.log('   - isAuthenticated is false');
-      if (!token) console.log('   - token is missing');
     }
+    
+    // Loading the user credits requires the wallet to be connected, so keep the extra guard here
+    if (isAuthenticated && token) {
+      console.log('🔄 [Profile] Authenticated - loading user credits...');
+      loadUserCredits();
+    }
+    
+    if (!token) {
+      console.log('❌ [Profile] No token available – skipping claim status and credit loading');
+    }
+    
     console.log('🔄 [Profile] === END AUTO-REFRESH USEEFFECT ===');
   }, [isAuthenticated, token]);
 
@@ -936,13 +941,15 @@ const Profile = () => {
           console.log('  - tokensEarnedFromVideos (old):', tokensEarnedFromVideos);
           
           setCanClaim(serverCanClaim);
-          setGrabBalance(userGrabBalance || 0);
+          // Ensure grabBalance is always stored as a number
+          const numericGrabBalance = parseFloat(userGrabBalance) || 0;
+          setGrabBalance(numericGrabBalance);
           setVideosWatched(userVideosWatched || 0);
           setTokensEarnedFromVideos(userTokensEarned || 0);
           
           console.log('📝 [Profile] NEW State values being set:');
           console.log('  - setCanClaim called with:', serverCanClaim);
-          console.log('  - setGrabBalance called with:', userGrabBalance || 0);
+          console.log('  - setGrabBalance called with:', numericGrabBalance);
           console.log('  - setVideosWatched called with:', userVideosWatched || 0);
           console.log('  - setTokensEarnedFromVideos called with:', userTokensEarned || 0);
           
