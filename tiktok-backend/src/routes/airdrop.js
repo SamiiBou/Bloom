@@ -385,17 +385,60 @@ router.post('/cancel', protect, async (req, res) => {
 /* ------------------------------------------------------------------ */
 router.get('/status', protect, async (req, res) => {
   console.log('[AIRDROP/status] ➡️ Entry', { userId: req.user._id });
+  console.log('[AIRDROP/status] === DETAILED DEBUG START ===');
+  
   try {
-    const user = await User.findById(req.user._id)
-      .select('claimPending lastClaimTime claimsHistory grabBalance watchedVideos');
+    console.log('[AIRDROP/status] 📋 Looking up user in database...');
+    console.log('[AIRDROP/status] 📋 User ID:', req.user._id);
+    console.log('[AIRDROP/status] 📋 User ID type:', typeof req.user._id);
     
-    console.log('[AIRDROP/status] User found:', !!user);
-    console.log('[AIRDROP/status] User grabBalance from DB:', user?.grabBalance);
-    console.log('[AIRDROP/status] User watchedVideos count:', user?.watchedVideos?.length);
-    console.log('[AIRDROP/status] User claimPending raw:', user?.claimPending);
+    const user = await User.findById(req.user._id)
+      .select('claimPending lastClaimTime claimsHistory grabBalance watchedVideos lastPeriodicTokenAt createdAt username');
+    
+    console.log('[AIRDROP/status] 📋 User found:', !!user);
     
     if (!user) {
+      console.log('[AIRDROP/status] ❌ No user found with ID:', req.user._id);
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    console.log('[AIRDROP/status] 📋 === FULL USER DATA FROM DB ===');
+    console.log('[AIRDROP/status] 📋 Username:', user.username);
+    console.log('[AIRDROP/status] 📋 grabBalance (RAW):', user.grabBalance);
+    console.log('[AIRDROP/status] 📋 grabBalance (TYPE):', typeof user.grabBalance);
+    console.log('[AIRDROP/status] 📋 grabBalance (JSON):', JSON.stringify(user.grabBalance));
+    console.log('[AIRDROP/status] 📋 watchedVideos count:', user?.watchedVideos?.length);
+    console.log('[AIRDROP/status] 📋 lastPeriodicTokenAt:', user.lastPeriodicTokenAt);
+    console.log('[AIRDROP/status] 📋 createdAt:', user.createdAt);
+    console.log('[AIRDROP/status] 📋 claimPending raw:', user?.claimPending);
+    console.log('[AIRDROP/status] 📋 === END FULL USER DATA ===');
+
+    // Check if periodic tokens should be added
+    console.log('[AIRDROP/status] 🕒 Checking periodic tokens...');
+    const now = new Date();
+    let last = user.lastPeriodicTokenAt || user.createdAt;
+    let periods = Math.floor((now - last) / (3 * 60 * 60 * 1000)); // 3 hours in ms
+    
+    console.log('[AIRDROP/status] 🕒 Now:', now);
+    console.log('[AIRDROP/status] 🕒 Last periodic token at:', last);
+    console.log('[AIRDROP/status] 🕒 Time difference (ms):', now - last);
+    console.log('[AIRDROP/status] 🕒 Calculated periods:', periods);
+    
+    if (periods > 0) {
+      console.log('[AIRDROP/status] 🕒 Adding', periods, 'periodic tokens to grabBalance');
+      const oldBalance = user.grabBalance || 0;
+      user.grabBalance = oldBalance + periods;
+      user.lastPeriodicTokenAt = new Date(last.getTime() + periods * 3 * 60 * 60 * 1000);
+      
+      console.log('[AIRDROP/status] 🕒 Old balance:', oldBalance);
+      console.log('[AIRDROP/status] 🕒 New balance:', user.grabBalance);
+      console.log('[AIRDROP/status] 🕒 New lastPeriodicTokenAt:', user.lastPeriodicTokenAt);
+      
+      // Save the updated user
+      await user.save();
+      console.log('[AIRDROP/status] 🕒 User saved with new periodic tokens');
+    } else {
+      console.log('[AIRDROP/status] 🕒 No periodic tokens to add');
     }
 
     // 🚨 RADICAL APPROACH: Ignore claimPending completely for now
@@ -404,13 +447,23 @@ router.get('/status', protect, async (req, res) => {
     
     // Simple logic: can claim if has grabBalance > 0
     // 🔧 FIXED: Since we're ignoring claimPending, always allow claims if no real pending transaction
-    const canClaim = user.grabBalance > 0;
+    const finalGrabBalance = user.grabBalance || 0;
+    const canClaim = finalGrabBalance > 0;
     
-    const tokensEarnedFromVideos = user.watchedVideos?.reduce((total, watch) => total + watch.tokensEarned, 0) || 0;
+    console.log('[AIRDROP/status] 🧮 Final calculations:');
+    console.log('[AIRDROP/status] 🧮 finalGrabBalance:', finalGrabBalance);
+    console.log('[AIRDROP/status] 🧮 canClaim:', canClaim);
+    
+    const tokensEarnedFromVideos = user.watchedVideos?.reduce((total, watch) => {
+      console.log('[AIRDROP/status] 🧮 Video watch:', watch.tokensEarned);
+      return total + watch.tokensEarned;
+    }, 0) || 0;
+    
+    console.log('[AIRDROP/status] 🧮 tokensEarnedFromVideos:', tokensEarnedFromVideos);
     
     const responseData = {
       canClaim,
-      grabBalance: user.grabBalance || 0,
+      grabBalance: finalGrabBalance,
       nextClaimTime: null,
       hasPending: false, // 🚨 ALWAYS FALSE for now
       pendingDetails: null, // 🚨 ALWAYS NULL for now  
@@ -420,11 +473,15 @@ router.get('/status', protect, async (req, res) => {
       tokensEarnedFromVideos: tokensEarnedFromVideos
     };
     
-    console.log('[AIRDROP/status] 🚨 RADICAL Response:', responseData);
+    console.log('[AIRDROP/status] 🚨 === FINAL RESPONSE DATA ===');
+    console.log('[AIRDROP/status] 🚨', JSON.stringify(responseData, null, 2));
+    console.log('[AIRDROP/status] 🚨 === END FINAL RESPONSE ===');
+    console.log('[AIRDROP/status] === DETAILED DEBUG END ===');
 
     return res.json(responseData);
   } catch (e) {
-    console.error('[AIRDROP/status] ERROR:', e);
+    console.error('[AIRDROP/status] ❌ ERROR:', e);
+    console.error('[AIRDROP/status] ❌ Error stack:', e.stack);
     return res.status(500).json({ error: 'Server error' });
   }
 });

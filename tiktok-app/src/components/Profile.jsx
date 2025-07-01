@@ -811,6 +811,17 @@ const Profile = () => {
         console.log('📡 [Profile] Response status:', statusResponse.status);
         console.log('📡 [Profile] Response headers:', statusResponse.headers);
         console.log('📡 [Profile] FULL Status response data:', JSON.stringify(statusResponse.data, null, 2));
+        console.log('📡 [Profile] === RAW RESPONSE ANALYSIS ===');
+        console.log('📡 [Profile] statusResponse.data type:', typeof statusResponse.data);
+        console.log('📡 [Profile] statusResponse.data keys:', Object.keys(statusResponse.data || {}));
+        if (statusResponse.data) {
+          console.log('📡 [Profile] grabBalance in response:', statusResponse.data.grabBalance);
+          console.log('📡 [Profile] grabBalance type:', typeof statusResponse.data.grabBalance);
+          console.log('📡 [Profile] canClaim in response:', statusResponse.data.canClaim);
+          console.log('📡 [Profile] videosWatched in response:', statusResponse.data.videosWatched);
+          console.log('📡 [Profile] tokensEarnedFromVideos in response:', statusResponse.data.tokensEarnedFromVideos);
+        }
+        console.log('📡 [Profile] === END RAW RESPONSE ANALYSIS ===');
 
         if (statusResponse.data) {
           const { 
