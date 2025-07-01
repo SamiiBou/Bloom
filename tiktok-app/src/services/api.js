@@ -340,11 +340,32 @@ class ApiService {
 
   // Get current user profile
   async getUserProfile() {
+    console.log('📡 [ApiService] === GET USER PROFILE START ===');
     const token = localStorage.getItem('authToken');
-    const response = await axios.get(`https://bloom-m284.onrender.com/api/users/profile`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
+    console.log('📡 [ApiService] Token from localStorage:', token ? 'EXISTS' : 'MISSING');
+    console.log('📡 [ApiService] Token length:', token ? token.length : 0);
+    console.log('📡 [ApiService] Token preview:', token ? token.substring(0, 20) + '...' : 'N/A');
+    
+    const url = `https://bloom-m284.onrender.com/api/users/profile`;
+    console.log('📡 [ApiService] Request URL:', url);
+    console.log('📡 [ApiService] Request headers:', { Authorization: `Bearer ${token ? token.substring(0, 10) + '...' : 'NO_TOKEN'}` });
+    
+    try {
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log('📡 [ApiService] Response status:', response.status);
+      console.log('📡 [ApiService] Response data:', response.data);
+      console.log('📡 [ApiService] === GET USER PROFILE SUCCESS ===');
+      return response.data;
+    } catch (error) {
+      console.error('📡 [ApiService] === GET USER PROFILE ERROR ===');
+      console.error('📡 [ApiService] Error message:', error.message);
+      console.error('📡 [ApiService] Error response:', error.response);
+      console.error('📡 [ApiService] Error status:', error.response?.status);
+      console.error('📡 [ApiService] Error data:', error.response?.data);
+      throw error;
+    }
   }
 
   async followUser(username) {

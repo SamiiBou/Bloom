@@ -108,6 +108,18 @@ const Profile = () => {
   // Load user data on component mount (from RewardsHub)
   useEffect(() => {
     console.log('🚀 [Profile] === COMPONENT MOUNT USEEFFECT TRIGGERED ===');
+    
+    // Debug ALL localStorage contents
+    console.log('🔍 [Profile] === FULL LOCALSTORAGE DEBUG ===');
+    console.log('  🔑 All localStorage keys:');
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      const value = localStorage.getItem(key);
+      if (key && (key.toLowerCase().includes('token') || key.toLowerCase().includes('auth') || key.toLowerCase().includes('user'))) {
+        console.log(`    - ${key}:`, value ? (value.length > 50 ? value.substring(0, 20) + '...' : value) : 'null');
+      }
+    }
+    console.log('🔍 [Profile] === END LOCALSTORAGE DEBUG ===');
     // Retrieve JWT token from localStorage
     const storedToken = localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('auth_token'); 
     console.log('🔑 [Profile] Looking for token in localStorage...');
@@ -149,12 +161,65 @@ const Profile = () => {
     console.log('🚀 [Profile] === END COMPONENT MOUNT USEEFFECT ===');
   }, []);
 
+  // Token validation helper function
+  const validateToken = (tokenToValidate) => {
+    console.log('🔐 [Profile] === TOKEN VALIDATION START ===');
+    console.log('🔐 [Profile] Token to validate:', tokenToValidate ? 'EXISTS' : 'MISSING');
+    
+    if (!tokenToValidate) {
+      console.log('❌ [Profile] Token is null or undefined');
+      return { valid: false, reason: 'Token is null or undefined' };
+    }
+    
+    console.log('🔐 [Profile] Token length:', tokenToValidate.length);
+    console.log('🔐 [Profile] Token preview:', tokenToValidate.substring(0, 30) + '...');
+    
+    // Check if it's a valid JWT format (3 parts separated by dots)
+    const parts = tokenToValidate.split('.');
+    console.log('🔐 [Profile] Token parts count:', parts.length);
+    
+    if (parts.length !== 3) {
+      console.log('❌ [Profile] Invalid JWT format - should have 3 parts');
+      return { valid: false, reason: 'Invalid JWT format' };
+    }
+    
+    try {
+      // Try to decode the payload
+      const payload = JSON.parse(atob(parts[1]));
+      console.log('🔐 [Profile] Decoded payload:', payload);
+      console.log('🔐 [Profile] Token exp:', payload.exp);
+      console.log('🔐 [Profile] Current time:', Math.floor(Date.now() / 1000));
+      
+      const isExpired = payload.exp && payload.exp < Math.floor(Date.now() / 1000);
+      console.log('🔐 [Profile] Token expired:', isExpired);
+      
+      if (isExpired) {
+        console.log('❌ [Profile] Token is expired');
+        return { valid: false, reason: 'Token is expired', payload };
+      }
+      
+      console.log('✅ [Profile] Token appears valid');
+      return { valid: true, payload };
+    } catch (error) {
+      console.log('❌ [Profile] Error decoding token:', error.message);
+      return { valid: false, reason: 'Error decoding token payload' };
+    } finally {
+      console.log('🔐 [Profile] === TOKEN VALIDATION END ===');
+    }
+  };
+
   // Auto-refresh when token becomes available (from RewardsHub)
   useEffect(() => {
     console.log('🔄 [Profile] === AUTO-REFRESH USEEFFECT TRIGGERED ===');
     console.log('🔄 [Profile] isAuthenticated:', isAuthenticated);
     console.log('🔄 [Profile] token present:', !!token);
     console.log('🔄 [Profile] token length:', token ? token.length : 0);
+    
+    // Validate token if present
+    if (token) {
+      const validation = validateToken(token);
+      console.log('🔄 [Profile] Token validation result:', validation);
+    }
     
     if (isAuthenticated && token) {
       console.log('✅ [Profile] Conditions met - starting auto-refresh...');
@@ -202,6 +267,33 @@ const Profile = () => {
     
     console.log('🔍 [Profile] === END STATE CHANGE LOG ===');
   }, [canClaim, grabBalance, videosWatched, tokensEarnedFromVideos, isLoading, walletBalance, token, isAuthenticated]);
+
+  // Global axios interceptor for debugging 401 errors
+  useEffect(() => {
+    console.log('🛡️ [Profile] Setting up axios interceptor for 401 debugging...');
+    
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          console.error('🛡️ [Profile] === GLOBAL 401 INTERCEPTED ===');
+          console.error('🛡️ [Profile] URL:', error.config?.url);
+          console.error('🛡️ [Profile] Method:', error.config?.method);
+          console.error('🛡️ [Profile] Headers:', error.config?.headers);
+          console.error('🛡️ [Profile] Response data:', error.response?.data);
+          console.error('🛡️ [Profile] Current localStorage authToken:', localStorage.getItem('authToken') ? 'EXISTS' : 'MISSING');
+          console.error('🛡️ [Profile] === END GLOBAL 401 DEBUG ===');
+        }
+        return Promise.reject(error);
+      }
+    );
+    
+    // Cleanup interceptor on unmount
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+      console.log('🛡️ [Profile] Axios interceptor cleaned up');
+    };
+  }, []);
 
   // Continuous debug logging - logs current state every 5 seconds
   useEffect(() => {
