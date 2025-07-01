@@ -127,9 +127,22 @@ const Profile = () => {
     console.log('🔑 [Profile] token:', localStorage.getItem('token') ? 'EXISTS' : 'NOT_FOUND');
     console.log('🔑 [Profile] auth_token:', localStorage.getItem('auth_token') ? 'EXISTS' : 'NOT_FOUND');
     
+    // 🚨 DEBUG: Afficher les vraies valeurs des tokens
+    console.log('🔍 [Profile] === RAW TOKEN VALUES ===');
+    console.log('🔍 [Profile] authToken raw:', localStorage.getItem('authToken'));
+    console.log('🔍 [Profile] token raw:', localStorage.getItem('token'));
+    console.log('🔍 [Profile] auth_token raw:', localStorage.getItem('auth_token'));
+    console.log('🔍 [Profile] storedToken result:', storedToken);
+    console.log('🔍 [Profile] === END RAW TOKEN VALUES ===');
+    
     if (storedToken) {
       setToken(storedToken);
       console.log('✅ [Profile] Token found and set:', storedToken.substring(0, 10) + '...');
+      
+      // 🚨 DEBUG: Vérifier immédiatement après setToken
+      setTimeout(() => {
+        console.log('🔄 [Profile] Token state after setToken (via setTimeout):', token ? token.substring(0, 10) + '...' : 'STILL_NULL');
+      }, 50);
     } else {
       console.log('❌ [Profile] NO TOKEN FOUND IN LOCALSTORAGE!');
     }
@@ -215,6 +228,14 @@ const Profile = () => {
     console.log('🔄 [Profile] token present:', !!token);
     console.log('🔄 [Profile] token length:', token ? token.length : 0);
     
+    // 🚨 DEBUG: Vérifier TOUS les tokens possibles dans localStorage
+    console.log('🔍 [Profile] === DETAILED TOKEN DEBUG ===');
+    console.log('🔍 [Profile] localStorage.authToken:', localStorage.getItem('authToken'));
+    console.log('🔍 [Profile] localStorage.token:', localStorage.getItem('token'));
+    console.log('🔍 [Profile] localStorage.auth_token:', localStorage.getItem('auth_token'));
+    console.log('🔍 [Profile] component state token:', token);
+    console.log('🔍 [Profile] === END TOKEN DEBUG ===');
+    
     // Validate token if present
     if (token) {
       const validation = validateToken(token);
@@ -254,6 +275,17 @@ const Profile = () => {
     console.log('  - token present:', !!token);
     console.log('  - isAuthenticated:', isAuthenticated);
     
+    // 🚨 DEBUG: Analyse détaillée du grabBalance dans le useEffect
+    console.log('🚨 [Profile] === GRABBALANCE STATE ANALYSIS ===');
+    console.log('🚨 [Profile] grabBalance raw value:', grabBalance);
+    console.log('🚨 [Profile] grabBalance === 0:', grabBalance === 0);
+    console.log('🚨 [Profile] grabBalance <= 0:', grabBalance <= 0);
+    console.log('🚨 [Profile] grabBalance > 0:', grabBalance > 0);
+    console.log('🚨 [Profile] Number(grabBalance):', Number(grabBalance));
+    console.log('🚨 [Profile] parseFloat(grabBalance):', parseFloat(grabBalance));
+    console.log('🚨 [Profile] typeof grabBalance:', typeof grabBalance);
+    console.log('🚨 [Profile] === END GRABBALANCE STATE ANALYSIS ===');
+    
     // Calculate button state
     const buttonDisabled = isLoading || !canClaim || grabBalance <= 0;
     const buttonClassName = `grab-button-profile ${!canClaim || grabBalance <= 0 ? 'disabled' : ''}`;
@@ -262,8 +294,22 @@ const Profile = () => {
     console.log('  - isLoading:', isLoading);
     console.log('  - !canClaim:', !canClaim);
     console.log('  - grabBalance <= 0:', grabBalance <= 0);
+    console.log('  - isLoading || !canClaim || grabBalance <= 0:', isLoading || !canClaim || grabBalance <= 0);
     console.log('  - Final buttonDisabled:', buttonDisabled);
     console.log('  - Final buttonClassName:', buttonClassName);
+    
+    // 🚨 DEBUG: Analyse du texte du bouton
+    let expectedButtonText;
+    if (isLoading) {
+      expectedButtonText = 'Processing...';
+    } else if (grabBalance <= 0) {
+      expectedButtonText = 'Watch videos to earn';
+    } else if (!canClaim) {
+      expectedButtonText = 'Transaction pending...';
+    } else {
+      expectedButtonText = `Claim ${grabBalance.toFixed(2)} BLOOM`;
+    }
+    console.log('🔘 [Profile] Expected button text:', expectedButtonText);
     
     console.log('🔍 [Profile] === END STATE CHANGE LOG ===');
   }, [canClaim, grabBalance, videosWatched, tokensEarnedFromVideos, isLoading, walletBalance, token, isAuthenticated]);
@@ -793,13 +839,41 @@ const Profile = () => {
     console.log('  - tokensEarnedFromVideos:', tokensEarnedFromVideos);
     console.log('  - isLoading:', isLoading);
     
+    // 🚨 DEBUG: Vérifier le token avant l'appel API
+    console.log('🔍 [Profile] === PRE-API TOKEN VERIFICATION ===');
+    console.log('🔍 [Profile] token from state:', token);
+    console.log('🔍 [Profile] token length:', token ? token.length : 0);
+    console.log('🔍 [Profile] authToken from localStorage:', localStorage.getItem('authToken'));
+    console.log('🔍 [Profile] walletAddress from localStorage:', localStorage.getItem('walletAddress'));
+    console.log('🔍 [Profile] username from localStorage:', localStorage.getItem('username'));
+    console.log('🔍 [Profile] isAuthenticated from localStorage:', localStorage.getItem('isAuthenticated'));
+    console.log('🔍 [Profile] === END PRE-API VERIFICATION ===');
+    
     if (token) {
       console.log('✅ [Profile] Token exists, making API request...');
       console.log('🎯 [Profile] Token (first 20 chars):', token.substring(0, 20) + '...');
       console.log('🎯 [Profile] Backend URL:', BACKEND_URL);
+      console.log('🎯 [Profile] Full API URL:', `${BACKEND_URL}/airdrop/status`);
+      
+      // 🚨 DEBUG: Tester la validité du token avant l'appel
+      try {
+        const tokenParts = token.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          console.log('🔍 [Profile] Token payload:', payload);
+          console.log('🔍 [Profile] Token userId:', payload.id);
+          console.log('🔍 [Profile] Token exp:', new Date(payload.exp * 1000));
+          console.log('🔍 [Profile] Current time:', new Date());
+          console.log('🔍 [Profile] Token expired?:', payload.exp < Math.floor(Date.now() / 1000));
+        }
+      } catch (e) {
+        console.log('⚠️ [Profile] Could not decode token:', e.message);
+      }
       
       try {
         console.log('📡 [Profile] Making request to /airdrop/status...');
+        console.log('📡 [Profile] Request headers:', { Authorization: `Bearer ${token.substring(0, 10)}...` });
+        
         const statusResponse = await axios.get(
           `${BACKEND_URL}/airdrop/status`,
           {
@@ -820,6 +894,9 @@ const Profile = () => {
           console.log('📡 [Profile] canClaim in response:', statusResponse.data.canClaim);
           console.log('📡 [Profile] videosWatched in response:', statusResponse.data.videosWatched);
           console.log('📡 [Profile] tokensEarnedFromVideos in response:', statusResponse.data.tokensEarnedFromVideos);
+          console.log('📡 [Profile] hasPending in response:', statusResponse.data.hasPending);
+          console.log('📡 [Profile] lastClaimTime in response:', statusResponse.data.lastClaimTime);
+          console.log('📡 [Profile] totalClaims in response:', statusResponse.data.totalClaims);
         }
         console.log('📡 [Profile] === END RAW RESPONSE ANALYSIS ===');
 
@@ -839,17 +916,45 @@ const Profile = () => {
           console.log('  - userVideosWatched (raw):', userVideosWatched, '(type:', typeof userVideosWatched, ')');
           console.log('  - userTokensEarned (raw):', userTokensEarned, '(type:', typeof userTokensEarned, ')');
           
+          // 🚨 DEBUG: Analyse détaillée de grabBalance
+          console.log('🚨 [Profile] === GRABBALANCE DETAILED ANALYSIS ===');
+          console.log('🚨 [Profile] userGrabBalance === undefined:', userGrabBalance === undefined);
+          console.log('🚨 [Profile] userGrabBalance === null:', userGrabBalance === null);
+          console.log('🚨 [Profile] userGrabBalance === 0:', userGrabBalance === 0);
+          console.log('🚨 [Profile] userGrabBalance === "0":', userGrabBalance === "0");
+          console.log('🚨 [Profile] isNaN(userGrabBalance):', isNaN(userGrabBalance));
+          console.log('🚨 [Profile] Number(userGrabBalance):', Number(userGrabBalance));
+          console.log('🚨 [Profile] parseFloat(userGrabBalance):', parseFloat(userGrabBalance));
+          console.log('🚨 [Profile] userGrabBalance || 0 result:', userGrabBalance || 0);
+          console.log('🚨 [Profile] === END GRABBALANCE ANALYSIS ===');
+          
           console.log('📝 [Profile] Setting state values...');
+          console.log('📝 [Profile] OLD STATE VALUES:');
+          console.log('  - canClaim (old):', canClaim);
+          console.log('  - grabBalance (old):', grabBalance);
+          console.log('  - videosWatched (old):', videosWatched);
+          console.log('  - tokensEarnedFromVideos (old):', tokensEarnedFromVideos);
+          
           setCanClaim(serverCanClaim);
           setGrabBalance(userGrabBalance || 0);
           setVideosWatched(userVideosWatched || 0);
           setTokensEarnedFromVideos(userTokensEarned || 0);
           
-          console.log('📝 [Profile] State values set:');
+          console.log('📝 [Profile] NEW State values being set:');
           console.log('  - setCanClaim called with:', serverCanClaim);
           console.log('  - setGrabBalance called with:', userGrabBalance || 0);
           console.log('  - setVideosWatched called with:', userVideosWatched || 0);
           console.log('  - setTokensEarnedFromVideos called with:', userTokensEarned || 0);
+          
+          // 🚨 DEBUG: Vérifier immédiatement après le setState
+          setTimeout(() => {
+            console.log('🔄 [Profile] === STATE AFTER SET (via setTimeout) ===');
+            console.log('  - canClaim (after):', canClaim);
+            console.log('  - grabBalance (after):', grabBalance);
+            console.log('  - videosWatched (after):', videosWatched);
+            console.log('  - tokensEarnedFromVideos (after):', tokensEarnedFromVideos);
+            console.log('🔄 [Profile] === END STATE AFTER SET ===');
+          }, 100);
           
           if (hasPending) {
             console.log('⚠️ [Profile] Transaction pending, claim disabled temporarily');
@@ -865,13 +970,42 @@ const Profile = () => {
           message: error.message,
           status: error.response?.status,
           data: error.response?.data,
-          config: error.config
+          config: error.config,
+          url: error.config?.url,
+          headers: error.config?.headers
         });
+        
+        // 🚨 DEBUG: Analyse détaillée de l'erreur
+        console.log('🚨 [Profile] === ERROR ANALYSIS ===');
+        console.log('🚨 [Profile] Error type:', error.constructor.name);
+        console.log('🚨 [Profile] Error message:', error.message);
+        console.log('🚨 [Profile] Is axios error:', error.isAxiosError);
+        console.log('🚨 [Profile] Has response:', !!error.response);
+        if (error.response) {
+          console.log('🚨 [Profile] Response status:', error.response.status);
+          console.log('🚨 [Profile] Response data:', error.response.data);
+          console.log('🚨 [Profile] Response headers:', error.response.headers);
+        }
+        console.log('🚨 [Profile] Has request:', !!error.request);
+        if (error.request) {
+          console.log('🚨 [Profile] Request details:', error.request);
+        }
+        console.log('🚨 [Profile] === END ERROR ANALYSIS ===');
+        
         console.log('🔄 [Profile] Setting canClaim to true as fallback');
         setCanClaim(true);
       }
     } else {
       console.log('❌ [Profile] NO TOKEN AVAILABLE - setting canClaim to true');
+      console.log('🔍 [Profile] === NO TOKEN DEBUG ===');
+      console.log('🔍 [Profile] token from state:', token);
+      console.log('🔍 [Profile] typeof token:', typeof token);
+      console.log('🔍 [Profile] token === null:', token === null);
+      console.log('🔍 [Profile] token === undefined:', token === undefined);
+      console.log('🔍 [Profile] token === "":', token === "");
+      console.log('🔍 [Profile] localStorage authToken:', localStorage.getItem('authToken'));
+      console.log('🔍 [Profile] localStorage token:', localStorage.getItem('token'));
+      console.log('🔍 [Profile] === END NO TOKEN DEBUG ===');
       setCanClaim(true);
     }
     console.log('🎯 [Profile] === CHECKCLAIMSTATUS FUNCTION END ===');
