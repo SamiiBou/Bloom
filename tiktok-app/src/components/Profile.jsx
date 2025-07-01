@@ -107,46 +107,140 @@ const Profile = () => {
 
   // Load user data on component mount (from RewardsHub)
   useEffect(() => {
+    console.log('🚀 [Profile] === COMPONENT MOUNT USEEFFECT TRIGGERED ===');
     // Retrieve JWT token from localStorage
     const storedToken = localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('auth_token'); 
+    console.log('🔑 [Profile] Looking for token in localStorage...');
+    console.log('🔑 [Profile] authToken:', localStorage.getItem('authToken') ? 'EXISTS' : 'NOT_FOUND');
+    console.log('🔑 [Profile] token:', localStorage.getItem('token') ? 'EXISTS' : 'NOT_FOUND');
+    console.log('🔑 [Profile] auth_token:', localStorage.getItem('auth_token') ? 'EXISTS' : 'NOT_FOUND');
+    
     if (storedToken) {
       setToken(storedToken);
-      console.log('[Profile] Token found:', storedToken.substring(0, 10) + '...');
+      console.log('✅ [Profile] Token found and set:', storedToken.substring(0, 10) + '...');
+    } else {
+      console.log('❌ [Profile] NO TOKEN FOUND IN LOCALSTORAGE!');
     }
     
     // Retrieve user ID from localStorage
     const storedUserId = localStorage.getItem('userId') || localStorage.getItem('user_id');
+    console.log('👤 [Profile] Looking for userId - found:', storedUserId ? 'YES' : 'NO');
     if (storedUserId) {
       setUserId(storedUserId);
+      console.log('✅ [Profile] UserId set:', storedUserId);
     }
     
     // Retrieve username from localStorage
     const storedUsername = localStorage.getItem('username') || localStorage.getItem('user_username');
+    console.log('👤 [Profile] Looking for username - found:', storedUsername ? 'YES' : 'NO');
     if (storedUsername) {
       setUsername(storedUsername);
+      console.log('✅ [Profile] Username set:', storedUsername);
     }
     
     // Retrieve wallet address from localStorage
     const storedWalletAddress = localStorage.getItem('walletAddress');
+    console.log('💰 [Profile] Looking for walletAddress - found:', storedWalletAddress ? 'YES' : 'NO');
     if (storedWalletAddress) {
       setWalletAddress(storedWalletAddress);
-      console.log('[Profile] Wallet address found:', storedWalletAddress);
+      console.log('✅ [Profile] Wallet address set:', storedWalletAddress);
     }
+    
+    console.log('🚀 [Profile] === END COMPONENT MOUNT USEEFFECT ===');
   }, []);
 
   // Auto-refresh when token becomes available (from RewardsHub)
   useEffect(() => {
+    console.log('🔄 [Profile] === AUTO-REFRESH USEEFFECT TRIGGERED ===');
+    console.log('🔄 [Profile] isAuthenticated:', isAuthenticated);
+    console.log('🔄 [Profile] token present:', !!token);
+    console.log('🔄 [Profile] token length:', token ? token.length : 0);
+    
     if (isAuthenticated && token) {
-      console.log('🔄 [Profile] Authenticated and token available, auto-refreshing status...');
+      console.log('✅ [Profile] Conditions met - starting auto-refresh...');
+      console.log('🔄 [Profile] Calling checkClaimStatus()...');
       checkClaimStatus();
+      console.log('🔄 [Profile] Calling loadUserCredits()...');
       loadUserCredits();
+    } else {
+      console.log('❌ [Profile] Conditions NOT met for auto-refresh');
+      if (!isAuthenticated) console.log('   - isAuthenticated is false');
+      if (!token) console.log('   - token is missing');
     }
+    console.log('🔄 [Profile] === END AUTO-REFRESH USEEFFECT ===');
   }, [isAuthenticated, token]);
 
   useEffect(() => {
+    console.log('📹 [Profile] Loading user videos and images useEffect triggered');
+    console.log('📹 [Profile] User object:', user);
     loadUserVideos();
     loadUserImages();
   }, [user]);
+
+  // Debug useEffect to track state changes
+  useEffect(() => {
+    console.log('🔍 [Profile] === STATE CHANGE DETECTED ===');
+    console.log('  - canClaim:', canClaim, '(type:', typeof canClaim, ')');
+    console.log('  - grabBalance:', grabBalance, '(type:', typeof grabBalance, ')');
+    console.log('  - videosWatched:', videosWatched, '(type:', typeof videosWatched, ')');
+    console.log('  - tokensEarnedFromVideos:', tokensEarnedFromVideos, '(type:', typeof tokensEarnedFromVideos, ')');
+    console.log('  - isLoading:', isLoading, '(type:', typeof isLoading, ')');
+    console.log('  - walletBalance:', walletBalance, '(type:', typeof walletBalance, ')');
+    console.log('  - token present:', !!token);
+    console.log('  - isAuthenticated:', isAuthenticated);
+    
+    // Calculate button state
+    const buttonDisabled = isLoading || !canClaim || grabBalance <= 0;
+    const buttonClassName = `grab-button-profile ${!canClaim || grabBalance <= 0 ? 'disabled' : ''}`;
+    
+    console.log('🔘 [Profile] Button state calculation:');
+    console.log('  - isLoading:', isLoading);
+    console.log('  - !canClaim:', !canClaim);
+    console.log('  - grabBalance <= 0:', grabBalance <= 0);
+    console.log('  - Final buttonDisabled:', buttonDisabled);
+    console.log('  - Final buttonClassName:', buttonClassName);
+    
+    console.log('🔍 [Profile] === END STATE CHANGE LOG ===');
+  }, [canClaim, grabBalance, videosWatched, tokensEarnedFromVideos, isLoading, walletBalance, token, isAuthenticated]);
+
+  // Continuous debug logging - logs current state every 5 seconds
+  useEffect(() => {
+    const logCurrentState = () => {
+      console.log('⏰ [Profile] === PERIODIC STATE LOG (every 5s) ===');
+      console.log('  🔑 Authentication:');
+      console.log('    - isAuthenticated:', isAuthenticated);
+      console.log('    - token present:', !!token);
+      console.log('    - token length:', token ? token.length : 0);
+      console.log('    - userId:', userId);
+      console.log('    - username:', username);
+      console.log('  💰 Claim Status:');
+      console.log('    - canClaim:', canClaim, '(type:', typeof canClaim, ')');
+      console.log('    - grabBalance:', grabBalance, '(type:', typeof grabBalance, ')');
+      console.log('    - isLoading:', isLoading, '(type:', typeof isLoading, ')');
+      console.log('    - videosWatched:', videosWatched);
+      console.log('    - tokensEarnedFromVideos:', tokensEarnedFromVideos);
+      console.log('  💎 Wallet:');
+      console.log('    - walletAddress:', walletAddress);
+      console.log('    - walletBalance:', walletBalance);
+      console.log('  🔘 Button State:');
+      const buttonDisabled = isLoading || !canClaim || grabBalance <= 0;
+      console.log('    - Button would be disabled:', buttonDisabled);
+      console.log('    - Reasons:');
+      console.log('      - isLoading:', isLoading);
+      console.log('      - !canClaim:', !canClaim);
+      console.log('      - grabBalance <= 0:', grabBalance <= 0);
+      console.log('⏰ [Profile] === END PERIODIC STATE LOG ===');
+    };
+
+    // Log immediately
+    logCurrentState();
+    
+    // Set up interval to log every 5 seconds
+    const interval = setInterval(logCurrentState, 5000);
+    
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
+  }, []); // Empty dependency array so it only runs once
 
   // Récupérer l'adresse de paiement depuis le backend au montage
   useEffect(() => {
@@ -236,8 +330,21 @@ const Profile = () => {
 
   // Function to claim tokens (from RewardsHub)
   const claimTokens = async () => {
-    if (isLoading) return;
+    console.log('🚀 [Profile] === CLAIM TOKENS FUNCTION CALLED ===');
+    console.log('🚀 [Profile] Function triggered by user click');
+    console.log('🚀 [Profile] Current state at function start:');
+    console.log('  - isLoading:', isLoading);
+    console.log('  - canClaim:', canClaim);
+    console.log('  - grabBalance:', grabBalance);
+    console.log('  - token present:', !!token);
+    console.log('  - walletAddress:', localStorage.getItem("walletAddress"));
     
+    if (isLoading) {
+      console.log('❌ [Profile] Already loading, returning early');
+      return;
+    }
+    
+    console.log('✅ [Profile] Starting claim process...');
     setIsLoading(true);
     setNotification({ show: true, message: "Preparing claim…", type: "info" });
 
@@ -586,11 +693,21 @@ const Profile = () => {
 
   // Check if user can claim (depuis RewardsHub)
   const checkClaimStatus = async () => {
-    console.log('🎯 [Profile] checkClaimStatus called');
+    console.log('🎯 [Profile] === CHECKCLAIMSTATUS FUNCTION START ===');
+    console.log('🎯 [Profile] Current state before API call:');
+    console.log('  - canClaim:', canClaim);
+    console.log('  - grabBalance:', grabBalance);
+    console.log('  - videosWatched:', videosWatched);
+    console.log('  - tokensEarnedFromVideos:', tokensEarnedFromVideos);
+    console.log('  - isLoading:', isLoading);
     
     if (token) {
+      console.log('✅ [Profile] Token exists, making API request...');
+      console.log('🎯 [Profile] Token (first 20 chars):', token.substring(0, 20) + '...');
+      console.log('🎯 [Profile] Backend URL:', BACKEND_URL);
+      
       try {
-        console.log('🎯 [Profile] Making request to /airdrop/status...');
+        console.log('📡 [Profile] Making request to /airdrop/status...');
         const statusResponse = await axios.get(
           `${BACKEND_URL}/airdrop/status`,
           {
@@ -599,7 +716,9 @@ const Profile = () => {
           }
         );
 
-        console.log('🎯 [Profile] Status response:', statusResponse.data);
+        console.log('📡 [Profile] Response status:', statusResponse.status);
+        console.log('📡 [Profile] Response headers:', statusResponse.headers);
+        console.log('📡 [Profile] FULL Status response data:', JSON.stringify(statusResponse.data, null, 2));
 
         if (statusResponse.data) {
           const { 
@@ -610,22 +729,49 @@ const Profile = () => {
             tokensEarnedFromVideos: userTokensEarned
           } = statusResponse.data;
           
+          console.log('🔍 [Profile] Destructured values from response:');
+          console.log('  - serverCanClaim (raw):', serverCanClaim, '(type:', typeof serverCanClaim, ')');
+          console.log('  - hasPending (raw):', hasPending, '(type:', typeof hasPending, ')');
+          console.log('  - userGrabBalance (raw):', userGrabBalance, '(type:', typeof userGrabBalance, ')');
+          console.log('  - userVideosWatched (raw):', userVideosWatched, '(type:', typeof userVideosWatched, ')');
+          console.log('  - userTokensEarned (raw):', userTokensEarned, '(type:', typeof userTokensEarned, ')');
+          
+          console.log('📝 [Profile] Setting state values...');
           setCanClaim(serverCanClaim);
           setGrabBalance(userGrabBalance || 0);
           setVideosWatched(userVideosWatched || 0);
           setTokensEarnedFromVideos(userTokensEarned || 0);
           
+          console.log('📝 [Profile] State values set:');
+          console.log('  - setCanClaim called with:', serverCanClaim);
+          console.log('  - setGrabBalance called with:', userGrabBalance || 0);
+          console.log('  - setVideosWatched called with:', userVideosWatched || 0);
+          console.log('  - setTokensEarnedFromVideos called with:', userTokensEarned || 0);
+          
           if (hasPending) {
-            console.log('[Profile] Transaction pending, claim disabled temporarily');
+            console.log('⚠️ [Profile] Transaction pending, claim disabled temporarily');
+          } else {
+            console.log('✅ [Profile] No pending transaction');
           }
+        } else {
+          console.log('❌ [Profile] No data in response!');
         }
       } catch (error) {
-        console.error('🎯 [Profile] Failed to check server status:', error);
+        console.error('❌ [Profile] Failed to check server status:', error);
+        console.error('❌ [Profile] Error details:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+          config: error.config
+        });
+        console.log('🔄 [Profile] Setting canClaim to true as fallback');
         setCanClaim(true);
       }
     } else {
+      console.log('❌ [Profile] NO TOKEN AVAILABLE - setting canClaim to true');
       setCanClaim(true);
     }
+    console.log('🎯 [Profile] === CHECKCLAIMSTATUS FUNCTION END ===');
   };
 
   // Fetch token balance (depuis RewardsHub)
@@ -1442,6 +1588,37 @@ const Profile = () => {
           </div>
 
           {/* Grab Tokens button */}
+          {(() => {
+            // Debug logs right before rendering the button
+            console.log('🔘 [Profile] === BUTTON RENDER DEBUG ===');
+            console.log('  - canClaim:', canClaim);
+            console.log('  - grabBalance:', grabBalance);
+            console.log('  - isLoading:', isLoading);
+            console.log('  - grabBalance <= 0:', grabBalance <= 0);
+            console.log('  - !canClaim:', !canClaim);
+            console.log('  - isLoading || !canClaim || grabBalance <= 0:', isLoading || !canClaim || grabBalance <= 0);
+            
+            const buttonClass = `grab-button-profile ${!canClaim || grabBalance <= 0 ? 'disabled' : ''}`;
+            const buttonDisabled = isLoading || !canClaim || grabBalance <= 0;
+            
+            console.log('  - buttonClass:', buttonClass);
+            console.log('  - buttonDisabled:', buttonDisabled);
+            
+            let buttonText;
+            if (isLoading) {
+              buttonText = 'Processing...';
+            } else if (grabBalance <= 0) {
+              buttonText = 'Watch videos to earn';
+            } else if (!canClaim) {
+              buttonText = 'Transaction pending...';
+            } else {
+              buttonText = `Claim ${grabBalance.toFixed(2)} BLOOM`;
+            }
+            console.log('  - buttonText:', buttonText);
+            console.log('🔘 [Profile] === END BUTTON RENDER DEBUG ===');
+            
+            return null; // This function just logs, doesn't render anything
+          })()}
           <button
             className={`grab-button-profile ${!canClaim || grabBalance <= 0 ? 'disabled' : ''}`}
             disabled={isLoading || !canClaim || grabBalance <= 0}
