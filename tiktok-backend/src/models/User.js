@@ -128,6 +128,10 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  refreshToken: {
+    type: String,
+    select: false, // Don't include refresh token in queries by default
+  },
   // Champs pour l'airdrop de tokens
   claimPending: {
     amount: { type: Number },

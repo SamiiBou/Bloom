@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Protect routes - require authentication
+// Enhanced protect middleware with better error handling
 const protect = async (req, res, next) => {
   console.log('🔐 [AUTH MIDDLEWARE] =================================');
   console.log('🔐 [AUTH MIDDLEWARE] Request URL:', req.originalUrl);
@@ -28,6 +28,7 @@ const protect = async (req, res, next) => {
       return res.status(401).json({
         status: 'error',
         message: 'Access denied. No token provided.',
+        code: 'NO_TOKEN'
       });
     }
 
@@ -43,6 +44,16 @@ const protect = async (req, res, next) => {
       console.log('🔐 [AUTH MIDDLEWARE] ✅ Token verified successfully');
       console.log('🔐 [AUTH MIDDLEWARE] Decoded payload:', decoded);
 
+      // Check if this is a refresh token being used as access token
+      if (decoded.type === 'refresh') {
+        console.log('🔐 [AUTH MIDDLEWARE] ❌ Refresh token used as access token');
+        return res.status(401).json({
+          status: 'error',
+          message: 'Invalid token type. Use access token for API calls.',
+          code: 'WRONG_TOKEN_TYPE'
+        });
+      }
+
       // Get user from token
       console.log('🔐 [AUTH MIDDLEWARE] Looking for user with ID:', decoded.id);
       const user = await User.findById(decoded.id);
@@ -52,6 +63,7 @@ const protect = async (req, res, next) => {
         return res.status(401).json({
           status: 'error',
           message: 'Token is valid but user no longer exists.',
+          code: 'USER_NOT_FOUND'
         });
       }
 
@@ -63,6 +75,7 @@ const protect = async (req, res, next) => {
         return res.status(401).json({
           status: 'error',
           message: 'User account is deactivated.',
+          code: 'USER_INACTIVE'
         });
       }
 
@@ -76,14 +89,43 @@ const protect = async (req, res, next) => {
       console.log('🔐 [AUTH MIDDLEWARE] Error message:', error.message);
       console.log('🔐 [AUTH MIDDLEWARE] Error stack:', error.stack);
       
+      // Enhanced error handling for different JWT errors
+      let errorCode = 'INVALID_TOKEN';
+      let errorMessage = 'Invalid token.';
+      
+      switch (error.name) {
+        case 'TokenExpiredError':
+          errorCode = 'TOKEN_EXPIRED';
+          errorMessage = 'Token has expired. Please refresh your token.';
+          break;
+        case 'JsonWebTokenError':
+          if (error.message.includes('invalid signature')) {
+            errorCode = 'INVALID_SIGNATURE';
+            errorMessage = 'Token signature is invalid. Please login again.';
+          } else if (error.message.includes('malformed')) {
+            errorCode = 'MALFORMED_TOKEN';
+            errorMessage = 'Token is malformed. Please login again.';
+          }
+          break;
+        case 'NotBeforeError':
+          errorCode = 'TOKEN_NOT_ACTIVE';
+          errorMessage = 'Token is not active yet.';
+          break;
+        default:
+          errorCode = 'INVALID_TOKEN';
+          errorMessage = 'Invalid token.';
+      }
+      
       return res.status(401).json({
         status: 'error',
-        message: 'Invalid token.',
+        message: errorMessage,
+        code: errorCode,
         debug: {
           errorName: error.name,
           errorMessage: error.message,
           tokenPreview: token ? token.substring(0, 30) + '...' : 'no token',
-          jwtSecretConfigured: !!process.env.JWT_SECRET
+          jwtSecretConfigured: !!process.env.JWT_SECRET,
+          timestamp: new Date().toISOString()
         }
       });
     }
@@ -93,11 +135,12 @@ const protect = async (req, res, next) => {
     res.status(500).json({
       status: 'error',
       message: 'Server error in authentication middleware.',
+      code: 'SERVER_ERROR'
     });
   }
 };
 
-// Optional authentication - doesn't fail if no token
+// Enhanced optional authentication with better error handling
 const optionalAuth = async (req, res, next) => {
   try {
     let token;
@@ -115,7 +158,14 @@ const optionalAuth = async (req, res, next) => {
 
     try {
       // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
+      const decoded = jwt.verify(token, jwtSecret);
+
+      // Skip refresh tokens
+      if (decoded.type === 'refresh') {
+        req.user = null;
+        return next();
+      }
 
       // Get user from token
       const user = await User.findById(decoded.id);
@@ -127,14 +177,17 @@ const optionalAuth = async (req, res, next) => {
       }
     } catch (error) {
       // Invalid token, continue without user
+      console.log('🔐 [OPTIONAL AUTH] Token verification failed, continuing without user:', error.message);
       req.user = null;
     }
 
     next();
   } catch (error) {
+    console.error('🔐 [OPTIONAL AUTH] Server error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Server error in optional authentication middleware.',
+      code: 'SERVER_ERROR'
     });
   }
 };
@@ -145,6 +198,7 @@ const adminOnly = (req, res, next) => {
     return res.status(401).json({
       status: 'error',
       message: 'Access denied. Authentication required.',
+      code: 'NO_AUTH'
     });
   }
 
@@ -152,6 +206,7 @@ const adminOnly = (req, res, next) => {
     return res.status(403).json({
       status: 'error',
       message: 'Access denied. Admin privileges required.',
+      code: 'ADMIN_REQUIRED'
     });
   }
 
@@ -166,6 +221,7 @@ const ownerOrAdmin = (Model, resourceIdParam = 'id') => {
         return res.status(401).json({
           status: 'error',
           message: 'Access denied. Authentication required.',
+          code: 'NO_AUTH'
         });
       }
 
@@ -176,6 +232,7 @@ const ownerOrAdmin = (Model, resourceIdParam = 'id') => {
         return res.status(404).json({
           status: 'error',
           message: 'Resource not found.',
+          code: 'RESOURCE_NOT_FOUND'
         });
       }
 
@@ -184,21 +241,24 @@ const ownerOrAdmin = (Model, resourceIdParam = 'id') => {
         return res.status(403).json({
           status: 'error',
           message: 'Access denied. You can only access your own resources.',
+          code: 'INSUFFICIENT_PERMISSIONS'
         });
       }
 
       req.resource = resource;
       next();
     } catch (error) {
+      console.error('🔐 [OWNER CHECK] Error:', error);
       res.status(500).json({
         status: 'error',
         message: 'Server error in ownership check.',
+        code: 'SERVER_ERROR'
       });
     }
   };
 };
 
-// Rate limiting by user
+// Rate limiting by user with enhanced logging
 const userRateLimit = (maxRequests = 100, windowMs = 15 * 60 * 1000) => {
   const requests = new Map();
 
@@ -222,9 +282,12 @@ const userRateLimit = (maxRequests = 100, windowMs = 15 * 60 * 1000) => {
     requests.set(userId, validRequests);
 
     if (validRequests.length >= maxRequests) {
+      console.log('🔐 [RATE LIMIT] User exceeded rate limit:', req.user.username);
       return res.status(429).json({
         status: 'error',
         message: 'Rate limit exceeded. Too many requests.',
+        code: 'RATE_LIMIT_EXCEEDED',
+        retryAfter: Math.ceil(windowMs / 1000)
       });
     }
 

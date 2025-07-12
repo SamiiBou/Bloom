@@ -5,10 +5,17 @@ const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Generate JWT Token
+// Generate JWT Token with enhanced security
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'your-secret-key', {
     expiresIn: '30d',
+  });
+};
+
+// Generate Refresh Token
+const generateRefreshToken = (id) => {
+  return jwt.sign({ id, type: 'refresh' }, process.env.JWT_SECRET || 'your-secret-key', {
+    expiresIn: '90d',
   });
 };
 
@@ -40,14 +47,22 @@ router.post('/register', async (req, res, next) => {
       displayName: displayName || username,
     });
 
-    // Generate token
+    // Generate both tokens
     const token = generateToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    // Save refresh token to user (optional, for token revocation)
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    console.log('✅ New user registered and tokens generated:', user.username);
 
     res.status(201).json({
       status: 'success',
       message: 'User registered successfully',
       data: {
         token,
+        refreshToken,
         user: user.getPublicProfile(),
       },
     });
@@ -64,7 +79,7 @@ router.post('/register', async (req, res, next) => {
   }
 });
 
-// Login user
+// Enhanced Login - Always generate NEW tokens
 router.post('/login', async (req, res, next) => {
   try {
     const { email, password, username } = req.body;
@@ -94,19 +109,99 @@ router.post('/login', async (req, res, next) => {
 
     // Update last login
     user.lastLogin = new Date();
+    
+    // ALWAYS generate NEW tokens on login
+    const token = generateToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+    
+    // Save new refresh token to user
+    user.refreshToken = refreshToken;
     await user.save();
 
-    // Generate token
-    const token = generateToken(user._id);
+    console.log('✅ User login successful with NEW tokens:', user.username);
+    console.log('🔄 New JWT Token generated for user:', user._id);
 
     res.status(200).json({
       status: 'success',
-      message: 'Login successful',
+      message: 'Login successful - New tokens generated',
       data: {
         token,
+        refreshToken,
         user: user.getPublicProfile(),
       },
     });
+  } catch (error) {
+    console.error('❌ Login error:', error);
+    next(error);
+  }
+});
+
+// Token Refresh Endpoint
+router.post('/refresh-token', async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Refresh token required',
+      });
+    }
+
+    try {
+      // Verify refresh token
+      const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET || 'your-secret-key');
+      
+      if (decoded.type !== 'refresh') {
+        return res.status(401).json({
+          status: 'error',
+          message: 'Invalid refresh token type',
+        });
+      }
+
+      // Find user
+      const user = await User.findById(decoded.id);
+      if (!user || !user.isActive) {
+        return res.status(401).json({
+          status: 'error',
+          message: 'User not found or inactive',
+        });
+      }
+
+      // Verify this is the current refresh token
+      if (user.refreshToken !== refreshToken) {
+        return res.status(401).json({
+          status: 'error',
+          message: 'Invalid refresh token',
+        });
+      }
+
+      // Generate new tokens
+      const newToken = generateToken(user._id);
+      const newRefreshToken = generateRefreshToken(user._id);
+
+      // Update refresh token
+      user.refreshToken = newRefreshToken;
+      await user.save();
+
+      console.log('✅ Tokens refreshed successfully for user:', user.username);
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Tokens refreshed successfully',
+        data: {
+          token: newToken,
+          refreshToken: newRefreshToken,
+          user: user.getPublicProfile(),
+        },
+      });
+    } catch (error) {
+      console.error('❌ Token refresh error:', error);
+      return res.status(401).json({
+        status: 'error',
+        message: 'Invalid or expired refresh token',
+      });
+    }
   } catch (error) {
     next(error);
   }
@@ -188,23 +283,46 @@ router.put('/change-password', protect, async (req, res, next) => {
     }
 
     user.password = newPassword;
+    
+    // Generate new tokens after password change
+    const token = generateToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+    user.refreshToken = refreshToken;
+    
     await user.save();
+
+    console.log('✅ Password changed and new tokens generated for user:', user.username);
 
     res.status(200).json({
       status: 'success',
-      message: 'Password changed successfully',
+      message: 'Password changed successfully - New tokens generated',
+      data: {
+        token,
+        refreshToken,
+      },
     });
   } catch (error) {
     next(error);
   }
 });
 
-// Logout (invalidate token - in a real app, you'd use a blacklist)
-router.post('/logout', protect, (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    message: 'Logged out successfully',
-  });
+// Enhanced Logout - invalidate refresh token
+router.post('/logout', protect, async (req, res, next) => {
+  try {
+    // Clear refresh token from user
+    await User.findByIdAndUpdate(req.user._id, { 
+      $unset: { refreshToken: "" } 
+    });
+
+    console.log('✅ User logged out and refresh token cleared:', req.user.username);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Logged out successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 // World ID verification endpoint
