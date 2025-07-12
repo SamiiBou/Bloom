@@ -96,12 +96,12 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
     trustProxy: app.get('trust proxy'),
-    // Debug des variables d'environnement AWS (sans exposer les clés secrètes)
-    awsConfig: {
-      region: process.env.AWS_REGION,
-      bucketName: process.env.AWS_S3_BUCKET_NAME,
-      hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
-      hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY
+    // Debug des variables d'environnement Bunny CDN (sans exposer les clés secrètes)
+    bunnyCdnConfig: {
+      storageZoneName: process.env.BUNNY_STORAGE_ZONE_NAME,
+      cdnUrl: process.env.BUNNY_CDN_URL,
+      region: process.env.BUNNY_STORAGE_REGION || 'Frankfurt (default)',
+      hasAccessKey: !!process.env.BUNNY_STORAGE_ACCESS_KEY
     }
   });
 });

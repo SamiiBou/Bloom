@@ -89,7 +89,7 @@ async function createTestUser() {
   }
 }
 
-// Test video upload to S3
+// Test video upload to Bunny CDN
 async function testVideoUpload(token) {
   try {
     const videoPath = path.join(__dirname, 'file.mp4'); 
@@ -106,7 +106,7 @@ async function testVideoUpload(token) {
       filename: 'test-thumbnail.jpg',
       contentType: 'image/jpeg'
     });
-    formData.append('description', 'Test video upload to S3');
+    formData.append('description', 'Test video upload to Bunny CDN');
     formData.append('music', JSON.stringify({ title: 'Test Music', artist: 'Test Artist' }));
     
     const response = await axios.post(`${BASE_URL}/api/upload/video`, formData, {
@@ -118,7 +118,7 @@ async function testVideoUpload(token) {
       maxBodyLength: Infinity
     });
     
-    log('✅ Video uploaded to S3 successfully!', 'green');
+    log('✅ Video uploaded to Bunny CDN successfully!', 'green');
     log(`   Video URL: ${response.data.data.video.videoUrl}`, 'blue');
     log(`   Thumbnail URL: ${response.data.data.video.thumbnailUrl}`, 'blue');
     log(`   Video ID: ${response.data.data.video._id}`, 'blue');

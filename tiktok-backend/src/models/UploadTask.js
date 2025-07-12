@@ -26,7 +26,7 @@ const uploadTaskSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['UPLOADED', 'VALIDATING', 'CONVERTING', 'GENERATING_THUMBNAIL', 'UPLOADING_TO_S3', 'MODERATING', 'SUCCEEDED', 'FAILED'],
+    enum: ['UPLOADED', 'VALIDATING', 'CONVERTING', 'GENERATING_THUMBNAIL', 'UPLOADING_TO_S3', 'UPLOADING_TO_BUNNY', 'MODERATING', 'SUCCEEDED', 'FAILED'],
     default: 'UPLOADED',
   },
   progress: {
@@ -145,6 +145,7 @@ uploadTaskSchema.methods.updateProgress = function(status, progress, currentStep
       }
       break;
     case 'UPLOADING_TO_S3':
+    case 'UPLOADING_TO_BUNNY':
       if (!this.processing.s3UploadStarted) {
         this.processing.s3UploadStarted = new Date();
       }
@@ -208,6 +209,7 @@ uploadTaskSchema.statics.getProgressMapping = function() {
     'CONVERTING': { progress: 30, step: '🔄 Converting video...' },
     'GENERATING_THUMBNAIL': { progress: 60, step: '🖼️ Generating thumbnail...' },
     'UPLOADING_TO_S3': { progress: 80, step: '☁️ Uploading to cloud...' },
+    'UPLOADING_TO_BUNNY': { progress: 80, step: '🐰 Uploading to Bunny CDN...' },
     'MODERATING': { progress: 90, step: '🛡️ Content moderation...' },
     'SUCCEEDED': { progress: 100, step: '✅ Upload completed!' },
     'FAILED': { progress: 0, step: '❌ Upload failed' }

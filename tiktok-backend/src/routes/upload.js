@@ -2,7 +2,6 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
-const AWS = require('aws-sdk');
 const rateLimit = require('express-rate-limit');
 const { protect } = require('../middleware/auth');
 const Video = require('../models/Video');
@@ -13,6 +12,7 @@ const UploadTask = require('../models/UploadTask');
 const videoConverter = require('../services/videoConverter');
 const contentModerationService = require('../services/contentModerationService');
 const imageModerationService = require('../services/imageModerationService');
+const { uploadToBunny } = require('../config/bunny');
 
 const router = express.Router();
 
@@ -32,12 +32,7 @@ const uploadProgressLimiter = rateLimit({
 // Appliquer le rate limiting permissif aux routes de progress
 router.use('/progress', uploadProgressLimiter);
 
-// Configuration AWS S3
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION,
-});
+// Configuration is now handled by Bunny CDN service
 
 // Configuration Multer pour stockage temporaire local
 const tempStorage = multer.diskStorage({
@@ -100,30 +95,23 @@ const tempUpload = multer({
 });
 
 /**
- * Upload un fichier vers S3 depuis le système de fichiers local
+ * Upload un fichier vers Bunny CDN depuis le système de fichiers local
  */
-async function uploadFileToS3(filePath, s3Key, contentType) {
+async function uploadFileToBunny(filePath, fileName, folder = 'files', contentType = 'application/octet-stream') {
   const fileContent = await fs.readFile(filePath);
   
-  const uploadParams = {
-    Bucket: process.env.AWS_S3_BUCKET_NAME,
-    Key: s3Key,
-    Body: fileContent,
-    ContentType: contentType,
-  };
-
-  const result = await s3.upload(uploadParams).promise();
+  const result = await uploadToBunny(fileContent, fileName, folder, contentType);
   return {
-    location: result.Location,
-    key: result.Key,
-    bucket: result.Bucket
+    location: result.url,
+    key: result.key,
+    cdnUrl: result.cdnUrl
   };
 }
 
 /**
- * Génère une clé S3 unique pour le fichier
+ * Génère un nom de fichier unique pour Bunny CDN
  */
-function generateS3Key(originalName, prefix = 'videos', forceExtension = null) {
+function generateBunnyFileName(originalName, forceExtension = null) {
   const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
   const extension = path.extname(originalName);
   const baseName = path.basename(originalName, extension);
@@ -132,13 +120,11 @@ function generateS3Key(originalName, prefix = 'videos', forceExtension = null) {
   let finalExtension;
   if (forceExtension) {
     finalExtension = forceExtension.startsWith('.') ? forceExtension : '.' + forceExtension;
-  } else if (prefix === 'videos') {
-    finalExtension = '.mp4'; // Force MP4 pour les vidéos
   } else {
-    finalExtension = extension; // Garde l'extension originale pour les autres fichiers
+    finalExtension = extension; // Garde l'extension originale
   }
   
-  return `${prefix}/${uniqueSuffix}-${baseName}${finalExtension}`;
+  return `${uniqueSuffix}-${baseName}${finalExtension}`;
 }
 
 /**
@@ -392,16 +378,16 @@ async function processVideoAsync(uploadTask, originalVideoFile, originalThumbnai
     } else {
       console.log(`[UPLOAD] Step 4: Using provided thumbnail: ${thumbnailPath}`);
     }
-    await uploadTask.updateProgress('UPLOADING_TO_S3', 75, '☁️ Uploading to cloud...');
-    console.log(`[UPLOAD] Step 5: Uploading to S3...`);
-    const videoS3Key = generateS3Key(originalVideoFile.originalname, 'videos');
-    const thumbnailS3Key = generateS3Key(path.basename(thumbnailPath), 'thumbnails', '.jpg');
-    console.log(`[UPLOAD] Step 5: Uploading video to S3 as ${videoS3Key}`);
-    const videoUploadResult = await uploadFileToS3(finalVideoPath, videoS3Key, 'video/mp4');
-    console.log(`[UPLOAD] Step 5: Video uploaded to S3:`, videoUploadResult);
-    console.log(`[UPLOAD] Step 5: Uploading thumbnail to S3 as ${thumbnailS3Key}`);
-    const thumbnailUploadResult = await uploadFileToS3(thumbnailPath, thumbnailS3Key, 'image/jpeg');
-    console.log(`[UPLOAD] Step 5: Thumbnail uploaded to S3:`, thumbnailUploadResult);
+    await uploadTask.updateProgress('UPLOADING_TO_BUNNY', 75, '🐰 Uploading to Bunny CDN...');
+    console.log(`[UPLOAD] Step 5: Uploading to Bunny CDN...`);
+    const videoFileName = generateBunnyFileName(originalVideoFile.originalname, '.mp4');
+    const thumbnailFileName = generateBunnyFileName(path.basename(thumbnailPath), '.jpg');
+    console.log(`[UPLOAD] Step 5: Uploading video to Bunny CDN as ${videoFileName}`);
+    const videoUploadResult = await uploadFileToBunny(finalVideoPath, videoFileName, 'videos', 'video/mp4');
+    console.log(`[UPLOAD] Step 5: Video uploaded to Bunny CDN:`, videoUploadResult);
+    console.log(`[UPLOAD] Step 5: Uploading thumbnail to Bunny CDN as ${thumbnailFileName}`);
+    const thumbnailUploadResult = await uploadFileToBunny(thumbnailPath, thumbnailFileName, 'thumbnails', 'image/jpeg');
+    console.log(`[UPLOAD] Step 5: Thumbnail uploaded to Bunny CDN:`, thumbnailUploadResult);
     uploadTask.videoUrl = videoUploadResult.location;
     uploadTask.videoKey = videoUploadResult.key;
     uploadTask.thumbnailUrl = thumbnailUploadResult.location;
@@ -580,9 +566,9 @@ router.post('/thumbnail/:videoId', protect, (req, res, next) => {
         });
       }
 
-      // Upload vers S3
-      const thumbnailS3Key = generateS3Key(req.file.originalname, 'thumbnails');
-      const uploadResult = await uploadFileToS3(req.file.path, thumbnailS3Key, req.file.mimetype);
+      // Upload vers Bunny CDN
+      const thumbnailFileName = generateBunnyFileName(req.file.originalname);
+      const uploadResult = await uploadFileToBunny(req.file.path, thumbnailFileName, 'thumbnails', req.file.mimetype);
 
       // Mettre à jour la vidéo
       video.thumbnailUrl = uploadResult.location;
@@ -644,6 +630,7 @@ router.get('/progress/:uploadId', protect, async (req, res) => {
       'CONVERTING': '🔄 Converting video',
       'GENERATING_THUMBNAIL': '🖼️ Generating thumbnail',
       'UPLOADING_TO_S3': '☁️ Uploading to cloud',
+      'UPLOADING_TO_BUNNY': '🐰 Uploading to Bunny CDN',
       'MODERATING': '🛡️ Content moderation',
       'SUCCEEDED': '✅ Upload completed',
       'FAILED': '❌ Upload failed'
@@ -786,17 +773,17 @@ router.post('/image', protect, (req, res, next) => {
 
       console.log(`🖼️ [BACKEND] Processing image upload: ${req.file.originalname}`);
 
-      // Generate S3 key for image
-      const imageS3Key = generateS3Key(req.file.originalname, 'images');
-      console.log('🖼️ [BACKEND] Generated S3 key:', imageS3Key);
+      // Generate file name for Bunny CDN
+      const imageFileName = generateBunnyFileName(req.file.originalname);
+      console.log('🖼️ [BACKEND] Generated Bunny CDN file name:', imageFileName);
 
-      // Upload image to S3 (make it public)
-      console.log('🖼️ [BACKEND] Starting S3 upload...');
-      const uploadResult = await uploadFileToS3(req.file.path, imageS3Key, req.file.mimetype);
-      console.log('🖼️ [BACKEND] S3 upload completed:', uploadResult);
+      // Upload image to Bunny CDN
+      console.log('🖼️ [BACKEND] Starting Bunny CDN upload...');
+      const uploadResult = await uploadFileToBunny(req.file.path, imageFileName, 'images', req.file.mimetype);
+      console.log('🖼️ [BACKEND] Bunny CDN upload completed:', uploadResult);
 
-      console.log(`🖼️ [BACKEND] Image S3 URL: ${uploadResult.location}`);
-      console.log(`🖼️ [BACKEND] Image S3 Key: ${uploadResult.key}`);
+      console.log(`🖼️ [BACKEND] Image Bunny CDN URL: ${uploadResult.location}`);
+      console.log(`🖼️ [BACKEND] Image Bunny CDN Key: ${uploadResult.key}`);
 
       // Get file stats
       const fileStats = await fs.stat(req.file.path);

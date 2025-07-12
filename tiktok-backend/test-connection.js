@@ -81,41 +81,39 @@ async function testUploadRoute() {
   }
 }
 
-async function testS3Configuration() {
+async function testBunnyCDNConfiguration() {
   try {
-    // Test if AWS SDK is properly configured
-    const AWS = require('aws-sdk');
+    // Test if Bunny CDN is properly configured
+    const { bunnyConfig } = require('./src/config/bunny');
     
     // Check if environment variables are set
     const requiredEnvVars = [
-      'AWS_ACCESS_KEY_ID',
-      'AWS_SECRET_ACCESS_KEY',
-      'AWS_REGION',
-      'AWS_S3_BUCKET_NAME'
+      'BUNNY_STORAGE_ACCESS_KEY',
+      'BUNNY_STORAGE_ZONE_NAME',
+      'BUNNY_CDN_URL'
     ];
     
     const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
     
     if (missingVars.length > 0) {
-      log('⚠️  S3 Configuration: INCOMPLETE', 'yellow');
+      log('⚠️  Bunny CDN Configuration: INCOMPLETE', 'yellow');
       log(`   Missing variables: ${missingVars.join(', ')}`, 'yellow');
       return false;
     }
     
-    // Test S3 connection
-    const s3 = new AWS.S3({
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      region: process.env.AWS_REGION,
-    });
+    // Test basic configuration
+    if (!bunnyConfig.accessKey || !bunnyConfig.storageZoneName) {
+      log('❌ Bunny CDN Configuration: INVALID', 'red');
+      return false;
+    }
     
-    await s3.headBucket({ Bucket: process.env.AWS_S3_BUCKET_NAME }).promise();
-    log('✅ S3 Configuration: CONNECTED', 'green');
-    log(`   Bucket: ${process.env.AWS_S3_BUCKET_NAME}`, 'blue');
-    log(`   Region: ${process.env.AWS_REGION}`, 'blue');
+    log('✅ Bunny CDN Configuration: CONFIGURED', 'green');
+    log(`   Storage Zone: ${bunnyConfig.storageZoneName}`, 'blue');
+    log(`   CDN URL: ${bunnyConfig.cdnUrl}`, 'blue');
+    log(`   Region: ${bunnyConfig.region || 'Frankfurt (default)'}`, 'blue');
     return true;
   } catch (error) {
-    log('❌ S3 Configuration: FAILED', 'red');
+    log('❌ Bunny CDN Configuration: FAILED', 'red');
     log(`   Error: ${error.message}`, 'red');
     return false;
   }
@@ -153,7 +151,7 @@ async function runAllTests() {
     { name: 'Video Routes', fn: testVideoRoutes },
     { name: 'Upload Routes', fn: testUploadRoute },
     { name: 'Database Connection', fn: testDatabaseConnection },
-    { name: 'S3 Configuration', fn: testS3Configuration }
+    { name: 'Bunny CDN Configuration', fn: testBunnyCDNConfiguration }
   ];
   
   const results = [];

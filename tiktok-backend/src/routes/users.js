@@ -11,7 +11,6 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { Readable } = require('stream');
-const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 
 const router = express.Router();
 

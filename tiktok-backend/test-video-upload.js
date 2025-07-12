@@ -275,10 +275,10 @@ try {
   console.log('- ✅ Intégration avec l\'éditeur vidéo');
   
   console.log('\n🔧 Configuration requise:');
-  console.log('- AWS_ACCESS_KEY_ID dans .env');
-  console.log('- AWS_SECRET_ACCESS_KEY dans .env');
-  console.log('- AWS_REGION dans .env');
-  console.log('- AWS_S3_BUCKET dans .env');
+          console.log('- BUNNY_STORAGE_ACCESS_KEY dans .env');
+        console.log('- BUNNY_STORAGE_ZONE_NAME dans .env');
+        console.log('- BUNNY_CDN_URL dans .env');
+        console.log('- BUNNY_STORAGE_REGION dans .env (optionnel)');
   
   console.log('\n📱 Frontend mis à jour:');
   console.log('- SimpleVideoEditor.jsx utilise les vrais endpoints');

@@ -1,16 +1,9 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const AWS = require('aws-sdk');
 const ffmpeg = require('fluent-ffmpeg');
 const path = require('path');
 const fs = require('fs').promises;
-
-// Configuration AWS S3
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION,
-});
+const { uploadToBunny, deleteFromBunny } = require('./src/config/bunny');
 
 async function regenerateThumbnails() {
   try {
@@ -68,36 +61,26 @@ async function regenerateThumbnails() {
         console.log(`   🖼️  Generating optimized thumbnail...`);
         await generateOptimizedThumbnail(tempVideoPath, tempThumbnailPath);
 
-        // Upload vers S3
-        const newThumbnailKey = `thumbnails/optimized_${Date.now()}_${video._id}.jpg`;
-        console.log(`   ☁️  Uploading to S3...`);
+        // Upload vers Bunny CDN
+        const newThumbnailFileName = `optimized_${Date.now()}_${video._id}.jpg`;
+        console.log(`   🐰  Uploading to Bunny CDN...`);
         
         const fileContent = await fs.readFile(tempThumbnailPath);
-        const uploadParams = {
-          Bucket: process.env.AWS_S3_BUCKET_NAME,
-          Key: newThumbnailKey,
-          Body: fileContent,
-          ContentType: 'image/jpeg',
-        };
+        const uploadResult = await uploadToBunny(fileContent, newThumbnailFileName, 'thumbnails', 'image/jpeg');
 
-        const uploadResult = await s3.upload(uploadParams).promise();
-
-        // Supprimer l'ancienne thumbnail de S3
+        // Supprimer l'ancienne thumbnail de Bunny CDN
         if (video.thumbnailKey) {
           console.log(`   🗑️  Deleting old thumbnail...`);
-          await s3.deleteObject({
-            Bucket: process.env.AWS_S3_BUCKET_NAME,
-            Key: video.thumbnailKey
-          }).promise();
+          await deleteFromBunny(video.thumbnailKey);
         }
 
         // Mettre à jour la base de données
         await Video.findByIdAndUpdate(video._id, {
-          thumbnailUrl: uploadResult.Location,
-          thumbnailKey: uploadResult.Key
+          thumbnailUrl: uploadResult.url,
+          thumbnailKey: uploadResult.key
         });
 
-        console.log(`   ✅ Updated with optimized thumbnail: ${uploadResult.Location}`);
+        console.log(`   ✅ Updated with optimized thumbnail: ${uploadResult.url}`);
 
         // Nettoyer les fichiers temporaires
         await fs.unlink(tempVideoPath);

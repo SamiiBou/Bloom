@@ -11,8 +11,10 @@ class ContentModerationService {
       try {
         // Initialiser le client Google Cloud Video Intelligence
         this.client = new video.VideoIntelligenceServiceClient({
-          // Les credentials peuvent être définies via la variable d'environnement GOOGLE_APPLICATION_CREDENTIALS
-          // ou directement via keyFilename si vous avez un fichier de clés
+          // Configuration des credentials Google Cloud
+          ...(process.env.GOOGLE_APPLICATION_CREDENTIALS && {
+            keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS
+          }),
           ...(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON && {
             credentials: JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON)
           }),

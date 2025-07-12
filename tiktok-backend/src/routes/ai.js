@@ -5,12 +5,12 @@ const veoService = require('../services/veoService');
 const AITask = require('../models/AITask');
 const Video = require('../models/Video');
 const User = require('../models/User');
-const AWS = require('aws-sdk');
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs').promises;
 const dns = require('dns');
 const imageModerationService = require('../services/imageModerationService');
+const { uploadToBunny } = require('../config/bunny');
 
 const fluxService = require('../services/fluxService');
 const AIImage = require('../models/AIImages');
@@ -25,15 +25,7 @@ dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1', '1.0.0.1']);
 axios.defaults.timeout = 30000;
 axios.defaults.headers.common['User-Agent'] = 'Mozilla/5.0 (compatible; AIImageDownloader/1.0)';
 
-// Import AWS SDK v2 (suppress migration warning for now)
-process.env.AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE = '1';
-
-// Configuration AWS S3
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION,
-});
+// Configuration is now handled by Bunny CDN service
 
 /**
  * Schedule a background retry for failed downloads
@@ -57,8 +49,8 @@ async function scheduleDownloadRetry(taskId, imageUrl, retryCount = 0) {
         return;
       }
       
-      const imageS3Key = generateS3Key('flux-generated-image.jpg', 'ai-images');
-      const uploadResult = await downloadAndUploadToS3(imageUrl, imageS3Key, 'image/jpeg', 2); // Less retries for background tasks
+      const imageFileName = generateBunnyFileName('flux-generated-image.jpg');
+      const uploadResult = await downloadAndUploadToBunny(imageUrl, imageFileName, 'ai-images', 'image/jpeg', 2); // Less retries for background tasks
       
       aiImage.imageUrl = uploadResult.location;
       aiImage.imageKey = uploadResult.key;
@@ -93,9 +85,9 @@ async function testConnectivity(url) {
 }
 
 /**
- * Download file from URL and upload to S3
+ * Download file from URL and upload to Bunny CDN
  */
-async function downloadAndUploadToS3(fileUrl, s3Key, contentType, maxRetries = 3) {
+async function downloadAndUploadToBunny(fileUrl, fileName, folder = 'ai-generated', contentType = 'application/octet-stream', maxRetries = 3) {
   let lastError;
   
   // Test connectivity first
@@ -113,30 +105,24 @@ async function downloadAndUploadToS3(fileUrl, s3Key, contentType, maxRetries = 3
       const response = await axios({
         method: 'GET',
         url: fileUrl,
-        responseType: 'stream',
+        responseType: 'arraybuffer',
         timeout: 30000, // 30 seconds timeout
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; AIImageDownloader/1.0)'
         }
       });
 
-      console.log(`✅ File downloaded successfully, uploading to S3...`);
+      console.log(`✅ File downloaded successfully, uploading to Bunny CDN...`);
 
-      // Upload to S3
-      const uploadParams = {
-        Bucket: process.env.AWS_S3_BUCKET_NAME,
-        Key: s3Key,
-        Body: response.data,
-        ContentType: contentType,
-      };
-
-      const result = await s3.upload(uploadParams).promise();
-      console.log(`✅ File uploaded to S3: ${result.Location}`);
+      // Upload to Bunny CDN
+      const fileBuffer = Buffer.from(response.data);
+      const result = await uploadToBunny(fileBuffer, fileName, folder, contentType);
+      console.log(`✅ File uploaded to Bunny CDN: ${result.url}`);
       
       return {
-        location: result.Location,
-        key: result.Key,
-        bucket: result.Bucket
+        location: result.url,
+        key: result.key,
+        cdnUrl: result.cdnUrl
       };
     } catch (error) {
       lastError = error;
@@ -162,13 +148,14 @@ async function downloadAndUploadToS3(fileUrl, s3Key, contentType, maxRetries = 3
 }
 
 /**
- * Generate S3 key for AI generated content
+ * Generate file name for Bunny CDN AI generated content
  */
-function generateS3Key(originalName, folder = 'ai-generated') {
+function generateBunnyFileName(originalName, extension = null) {
   const timestamp = Date.now();
   const randomSuffix = Math.round(Math.random() * 1E9);
-  const extension = path.extname(originalName) || '.mp4';
-  return `${folder}/${timestamp}-${randomSuffix}${extension}`;
+  const fileExtension = extension || path.extname(originalName) || '.mp4';
+  const baseName = path.basename(originalName, path.extname(originalName)) || 'ai-generated';
+  return `${timestamp}-${randomSuffix}-${baseName}${fileExtension}`;
 }
 
 /**
@@ -378,9 +365,9 @@ router.get('/task/:taskId', protect, async (req, res) => {
       try {
         const videoUrl = runwayTask.output[0];
         
-        // Download video and upload to our S3
-        const videoS3Key = generateS3Key('ai-generated-video.mp4', 'ai-videos');
-        const uploadResult = await downloadAndUploadToS3(videoUrl, videoS3Key, 'video/mp4');
+        // Download video and upload to our Bunny CDN
+        const videoFileName = generateBunnyFileName('ai-generated-video.mp4');
+        const uploadResult = await downloadAndUploadToBunny(videoUrl, videoFileName, 'ai-videos', 'video/mp4');
 
         // Store video URL in AI task for preview (don't create Video record yet)
         aiTask.videoUrl = uploadResult.location;
@@ -1153,9 +1140,9 @@ router.get('/veo/task/:taskId', protect, async (req, res) => {
           const firstSample = generatedSamples[0];
           const videoUri = firstSample.video.uri;
           
-          // Download video and upload to our S3
-          const videoS3Key = generateS3Key('veo-generated-video.mp4', 'veo-videos');
-          const uploadResult = await downloadAndUploadToS3(videoUri, videoS3Key, 'video/mp4');
+          // Download video and upload to our Bunny CDN
+          const videoFileName = generateBunnyFileName('veo-generated-video.mp4');
+          const uploadResult = await downloadAndUploadToBunny(videoUri, videoFileName, 'veo-videos', 'video/mp4');
 
           // Create video record
           const video = new Video({
@@ -1598,11 +1585,11 @@ router.get('/flux/task/:taskId', protect, async (req, res) => {
       try {
         const imageUrl = fluxTask.output[0];
         
-        // Download image and upload to our S3
-        const imageS3Key = generateS3Key('flux-generated-image.jpg', 'ai-images');
-        const uploadResult = await downloadAndUploadToS3(imageUrl, imageS3Key, 'image/jpeg');
+        // Download image and upload to our Bunny CDN
+        const imageFileName = generateBunnyFileName('flux-generated-image.jpg');
+        const uploadResult = await downloadAndUploadToBunny(imageUrl, imageFileName, 'ai-images', 'image/jpeg');
 
-        // Update AI image with S3 info
+        // Update AI image with Bunny CDN info
         aiImage.imageUrl = uploadResult.location;
         aiImage.imageKey = uploadResult.key;
         await aiImage.save();
@@ -2081,19 +2068,8 @@ router.post('/flux/task/:taskId/download', protect, async (req, res) => {
     }
 
     try {
-      // Get image from S3
-      const s3Params = {
-        Bucket: process.env.AWS_S3_BUCKET_NAME,
-        Key: aiImage.imageKey
-      };
-
-      // Generate a pre-signed URL for download
-      const downloadUrl = s3.getSignedUrl('getObject', {
-        ...s3Params,
-        Expires: 300, // 5 minutes
-        ResponseContentDisposition: `attachment; filename="flux-generated-${taskId}.jpg"`,
-        ResponseContentType: 'image/jpeg'
-      });
+      // Get image from Bunny CDN - files are publicly accessible
+      const downloadUrl = aiImage.imageUrl;
 
       console.log(`✅ Download URL generated for task: ${taskId}`);
 
@@ -2109,13 +2085,13 @@ router.post('/flux/task/:taskId/download', protect, async (req, res) => {
         data: {
           downloadUrl: downloadUrl,
           filename: `flux-generated-${taskId}.jpg`,
-          expiresIn: 300, // seconds
+          expiresIn: null, // Bunny CDN files don't expire
           taskId: taskId
         }
       });
 
-    } catch (s3Error) {
-      console.error('❌ Error generating download URL:', s3Error);
+    } catch (error) {
+      console.error('❌ Error generating download URL:', error);
       res.status(500).json({
         status: 'error',
         message: 'Failed to generate download URL'
@@ -2158,21 +2134,16 @@ router.get('/flux/task/:taskId/info', protect, async (req, res) => {
     let fileInfo = null;
     if (aiImage.status === 'SUCCEEDED' && aiImage.imageKey) {
       try {
-        const s3Params = {
-          Bucket: process.env.AWS_S3_BUCKET_NAME,
-          Key: aiImage.imageKey
-        };
-
-        const s3Object = await s3.headObject(s3Params).promise();
+        // For Bunny CDN, we can provide basic file info
         fileInfo = {
-          size: s3Object.ContentLength,
-          sizeFormatted: formatFileSize(s3Object.ContentLength),
-          contentType: s3Object.ContentType,
-          lastModified: s3Object.LastModified,
-          etag: s3Object.ETag
+          size: null, // File size not easily available from Bunny CDN without additional request
+          sizeFormatted: 'Unknown',
+          contentType: 'image/jpeg',
+          lastModified: aiImage.updatedAt,
+          etag: null
         };
-      } catch (s3Error) {
-        console.log('⚠️ Could not get S3 file info:', s3Error.message);
+      } catch (error) {
+        console.log('⚠️ Could not get Bunny CDN file info:', error.message);
       }
     }
 
@@ -2257,48 +2228,29 @@ router.get('/flux/task/:taskId/download-direct', protect, async (req, res) => {
     }
 
     try {
-      // Stream the image directly from S3
-      const s3Params = {
-        Bucket: process.env.AWS_S3_BUCKET_NAME,
-        Key: aiImage.imageKey
-      };
-
-      const s3Stream = s3.getObject(s3Params).createReadStream();
+      // For Bunny CDN, redirect to the public CDN URL for direct download
+      const downloadUrl = aiImage.imageUrl;
       
-      // Set response headers for download
-      res.setHeader('Content-Type', 'image/jpeg');
+      // Set response headers for download and redirect
       res.setHeader('Content-Disposition', `attachment; filename="flux-generated-${taskId}.jpg"`);
-      res.setHeader('Cache-Control', 'no-cache');
+      
+      // Record the download
+      try {
+        await aiImage.recordDownload(
+          req.ip || req.connection.remoteAddress,
+          req.get('User-Agent')
+        );
+      } catch (recordError) {
+        console.log('⚠️ Could not record download:', recordError.message);
+      }
 
-      // Pipe the S3 stream to response
-      s3Stream.pipe(res);
+      console.log(`✅ Direct download redirect for task: ${taskId}`);
+      
+      // Redirect to the Bunny CDN URL
+      res.redirect(downloadUrl);
 
-      // Record the download when stream starts successfully
-      s3Stream.on('readable', async () => {
-        try {
-          await aiImage.recordDownload(
-            req.ip || req.connection.remoteAddress,
-            req.get('User-Agent')
-          );
-        } catch (recordError) {
-          console.log('⚠️ Could not record download:', recordError.message);
-        }
-      });
-
-      s3Stream.on('error', (error) => {
-        console.error('❌ S3 stream error:', error);
-        if (!res.headersSent) {
-          res.status(500).json({
-            status: 'error',
-            message: 'Failed to stream image'
-          });
-        }
-      });
-
-      console.log(`✅ Direct download started for task: ${taskId}`);
-
-    } catch (s3Error) {
-      console.error('❌ Error streaming from S3:', s3Error);
+    } catch (error) {
+      console.error('❌ Error processing direct download:', error);
       res.status(500).json({
         status: 'error',
         message: 'Failed to download image'
@@ -2360,17 +2312,8 @@ router.post('/flux/download-multiple', protect, async (req, res) => {
 
     for (const aiImage of aiImages) {
       try {
-        const s3Params = {
-          Bucket: process.env.AWS_S3_BUCKET_NAME,
-          Key: aiImage.imageKey
-        };
-
-        const downloadUrl = s3.getSignedUrl('getObject', {
-          ...s3Params,
-          Expires: 600, // 10 minutes for bulk download
-          ResponseContentDisposition: `attachment; filename="flux-generated-${aiImage.taskId}.jpg"`,
-          ResponseContentType: 'image/jpeg'
-        });
+        // For Bunny CDN, use the direct image URL
+        const downloadUrl = aiImage.imageUrl;
 
         downloadData.push({
           taskId: aiImage.taskId,
@@ -2397,7 +2340,7 @@ router.post('/flux/download-multiple', protect, async (req, res) => {
       data: {
         downloads: downloadData,
         errors: errors,
-        expiresIn: 600, // seconds
+        expiresIn: null, // Bunny CDN files don't expire
         totalCount: downloadData.length
       }
     });

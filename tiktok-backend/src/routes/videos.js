@@ -4,18 +4,11 @@ const User = require('../models/User');
 const ModerationResult = require('../models/ModerationResult');
 const { protect, optionalAuth } = require('../middleware/auth');
 const multer = require('multer');
-const AWS = require('aws-sdk');
 const path = require('path');
 const contentModerationService = require('../services/contentModerationService');
+const { uploadToBunny } = require('../config/bunny');
 
 const router = express.Router();
-
-// Configuration AWS S3
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION
-});
 
 // Configuration Multer pour l'upload de fichiers
 const storage = multer.memoryStorage();
@@ -33,24 +26,12 @@ const upload = multer({
   }
 });
 
-// Helper function to upload to S3
-const uploadToS3 = async (file, folder = 'videos') => {
-  const fileExtension = path.extname(file.originalname);
-  const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}${fileExtension}`;
-  const key = `${folder}/${fileName}`;
-
-  const params = {
-    Bucket: process.env.AWS_S3_BUCKET,
-    Key: key,
-    Body: file.buffer,
-    ContentType: file.mimetype,
-    ACL: 'public-read'
-  };
-
-  const result = await s3.upload(params).promise();
+// Helper function to upload to Bunny CDN
+const uploadToBunnyCDN = async (file, folder = 'videos') => {
+  const result = await uploadToBunny(file.buffer, file.originalname, folder, file.mimetype);
   return {
-    url: result.Location,
-    key: result.Key
+    url: result.url,
+    key: result.key
   };
 };
 
@@ -648,9 +629,9 @@ router.post('/upload', protect, upload.single('video'), async (req, res, next) =
       });
     }
 
-    // Upload vers S3
-    console.log('☁️ Upload vers S3...');
-    const uploadResult = await uploadToS3(req.file, 'videos');
+    // Upload vers Bunny CDN
+    console.log('🐰 Upload vers Bunny CDN...');
+    const uploadResult = await uploadToBunnyCDN(req.file, 'videos');
 
     // Récupérer les métadonnées depuis le body
     const description = req.body.description || 'Nouvelle vidéo uploadée';

@@ -21,8 +21,10 @@ console.log('\n🗄️ Autres variables importantes:');
 console.log('NODE_ENV:', process.env.NODE_ENV || '❌ Non défini');
 console.log('PORT:', process.env.PORT || '❌ Non défini');
 console.log('MONGODB_URI:', process.env.MONGODB_URI ? '✅ Défini' : '❌ Non défini');
-console.log('AWS_REGION:', process.env.AWS_REGION || '❌ Non défini');
-console.log('AWS_S3_BUCKET_NAME:', process.env.AWS_S3_BUCKET_NAME || '❌ Non défini');
+console.log('BUNNY_STORAGE_ZONE_NAME:', process.env.BUNNY_STORAGE_ZONE_NAME || '❌ Non défini');
+console.log('BUNNY_STORAGE_ACCESS_KEY:', process.env.BUNNY_STORAGE_ACCESS_KEY ? '✅ Défini' : '❌ Non défini');
+console.log('BUNNY_CDN_URL:', process.env.BUNNY_CDN_URL || '❌ Non défini');
+console.log('BUNNY_STORAGE_REGION:', process.env.BUNNY_STORAGE_REGION || 'Frankfurt (default)');
 
 // Vérifier si le fichier .env existe
 const fs = require('fs');

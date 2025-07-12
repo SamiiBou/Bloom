@@ -45,7 +45,7 @@ async function monitorTx(userId, txId, nonce) {
   for (;;) {
     try {
       const wcUrl = `https://developer.worldcoin.org/api/v2/minikit/transaction/${txId}` +
-                    `?app_id=${process.env.APP_ID}&type=transaction`;
+                    `?app_id=${process.env.WORLD_APP_ID}&type=transaction`;
       console.log(`[monitorTx] ⏳ Fetching Worldcoin status from ${wcUrl}`);
       const wcResp = await fetch(wcUrl);
       console.log(`[monitorTx] 🌐 Worldcoin response ok=${wcResp.ok}`);
@@ -328,7 +328,7 @@ router.post('/confirm', protect, async (req, res) => {
 
     // Quick Worldcoin status check
     const checkUrl = `https://developer.worldcoin.org/api/v2/minikit/transaction/${txId}` +
-                     `?app_id=${process.env.APP_ID}&type=transaction`;
+                     `?app_id=${process.env.WORLD_APP_ID}&type=transaction`;
     console.log('[AIRDROP/confirm] Checking Worldcoin status at', checkUrl);
     
     try {

@@ -1,14 +1,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const AWS = require('aws-sdk');
 const path = require('path');
-
-// Configuration AWS S3
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION,
-});
+const { uploadToBunny, deleteFromBunny, bunnyConfig, downloadFromBunny } = require('./src/config/bunny');
 
 async function fixThumbnails() {
   try {
@@ -42,40 +35,32 @@ async function fixThumbnails() {
       console.log(`   Current key: ${video.thumbnailKey}`);
 
       try {
-        // Générer une nouvelle clé S3 avec l'extension .jpg
+        // Générer une nouvelle clé Bunny CDN avec l'extension .jpg
         const oldKey = video.thumbnailKey;
         const newKey = oldKey.replace(/\.mp4$/, '.jpg');
         
         console.log(`   New key: ${newKey}`);
 
-        // Copier l'objet S3 avec la nouvelle clé
-        const copyParams = {
-          Bucket: process.env.AWS_S3_BUCKET_NAME,
-          CopySource: `${process.env.AWS_S3_BUCKET_NAME}/${oldKey}`,
-          Key: newKey,
-          ContentType: 'image/jpeg',
-          MetadataDirective: 'REPLACE'
-        };
+        // Télécharger l'ancien fichier depuis Bunny CDN
+        console.log(`   📥 Downloading from Bunny CDN...`);
+        const fileBuffer = await downloadFromBunny(oldKey);
 
-        console.log(`   📋 Copying S3 object...`);
-        await s3.copyObject(copyParams).promise();
+        // Uploader avec la nouvelle clé
+        console.log(`   📤 Uploading with new key...`);
+        const newFileName = path.basename(newKey);
+        const uploadResult = await uploadToBunny(fileBuffer, newFileName, 'thumbnails', 'image/jpeg');
 
-        // Supprimer l'ancien objet
-        console.log(`   🗑️  Deleting old S3 object...`);
-        await s3.deleteObject({
-          Bucket: process.env.AWS_S3_BUCKET_NAME,
-          Key: oldKey
-        }).promise();
+        // Supprimer l'ancien fichier
+        console.log(`   🗑️  Deleting old file...`);
+        await deleteFromBunny(oldKey);
 
         // Mettre à jour la base de données
-        const newThumbnailUrl = video.thumbnailUrl.replace(/\.mp4$/, '.jpg');
-        
         await Video.findByIdAndUpdate(video._id, {
-          thumbnailUrl: newThumbnailUrl,
-          thumbnailKey: newKey
+          thumbnailUrl: uploadResult.url,
+          thumbnailKey: uploadResult.key
         });
 
-        console.log(`   ✅ Updated: ${newThumbnailUrl}`);
+        console.log(`   ✅ Updated: ${uploadResult.url}`);
 
       } catch (error) {
         console.error(`   ❌ Error processing video ${video._id}:`, error.message);

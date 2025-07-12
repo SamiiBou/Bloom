@@ -1,29 +1,12 @@
-const AWS = require('aws-sdk');
 const multer = require('multer');
-const multerS3 = require('multer-s3');
+const { uploadToBunny, deleteFromBunny, bunnyConfig } = require('./bunny');
 
-// Configure AWS
-AWS.config.update({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION,
-});
+// Configuration Multer pour stockage en mémoire avant upload vers Bunny CDN
+const memoryStorage = multer.memoryStorage();
 
-const s3 = new AWS.S3();
-
-// Multer S3 configuration for video uploads
+// Multer configuration pour les vidéos
 const uploadVideo = multer({
-  storage: multerS3({
-    s3: s3,
-    bucket: process.env.AWS_S3_BUCKET_NAME,
-    // acl: 'public-read', // Removed: Bucket does not allow ACLs
-    key: function (req, file, cb) {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const fileName = `videos/${uniqueSuffix}-${file.originalname}`;
-      cb(null, fileName);
-    },
-    contentType: multerS3.AUTO_CONTENT_TYPE,
-  }),
+  storage: memoryStorage,
   limits: {
     fileSize: parseInt(process.env.MAX_FILE_SIZE) || 100 * 1024 * 1024, // 100MB default
   },
@@ -65,19 +48,9 @@ const uploadVideo = multer({
   },
 });
 
-// Multer S3 configuration for thumbnail uploads
+// Multer configuration pour les thumbnails
 const uploadThumbnail = multer({
-  storage: multerS3({
-    s3: s3,
-    bucket: process.env.AWS_S3_BUCKET_NAME,
-    // acl: 'public-read', // Removed: Bucket does not allow ACLs
-    key: function (req, file, cb) {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const fileName = `thumbnails/${uniqueSuffix}-${file.originalname}`;
-      cb(null, fileName);
-    },
-    contentType: multerS3.AUTO_CONTENT_TYPE,
-  }),
+  storage: memoryStorage,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB for thumbnails
   },
@@ -97,38 +70,118 @@ const uploadThumbnail = multer({
   },
 });
 
-// Function to delete file from S3
-const deleteFromS3 = async (fileKey) => {
-  try {
-    const params = {
-      Bucket: process.env.AWS_S3_BUCKET_NAME,
-      Key: fileKey,
-    };
+// Configuration Multer pour les images
+const uploadImage = multer({
+  storage: memoryStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB for images
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+    console.log('--- Image Filter Debug ---');
+    console.log('Detected file.mimetype:', file.mimetype);
+    console.log('Allowed image types:', allowedTypes);
+    console.log('Is image mimetype allowed?', allowedTypes.includes(file.mimetype));
+    console.log('-------------------------');
     
-    await s3.deleteObject(params).promise();
-    console.log(`✅ File deleted from S3: ${fileKey}`);
-    return true;
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only image files are allowed.'), false);
+    }
+  },
+});
+
+/**
+ * Upload a video file to Bunny CDN
+ * @param {Object} file - Multer file object
+ * @returns {Promise<{url: string, key: string}>}
+ */
+async function uploadVideoToBunny(file) {
+  return await uploadToBunny(file.buffer, file.originalname, 'videos', file.mimetype);
+}
+
+/**
+ * Upload a thumbnail file to Bunny CDN
+ * @param {Object} file - Multer file object
+ * @returns {Promise<{url: string, key: string}>}
+ */
+async function uploadThumbnailToBunny(file) {
+  return await uploadToBunny(file.buffer, file.originalname, 'thumbnails', file.mimetype);
+}
+
+/**
+ * Upload an image file to Bunny CDN
+ * @param {Object} file - Multer file object
+ * @returns {Promise<{url: string, key: string}>}
+ */
+async function uploadImageToBunny(file) {
+  return await uploadToBunny(file.buffer, file.originalname, 'images', file.mimetype);
+}
+
+/**
+ * Upload a file from file system to Bunny CDN
+ * @param {string} filePath - Path to the file on filesystem
+ * @param {string} fileName - Name for the file
+ * @param {string} folder - Folder to upload to
+ * @param {string} contentType - MIME type
+ * @returns {Promise<{url: string, key: string}>}
+ */
+async function uploadFileToBunny(filePath, fileName, folder = 'files', contentType = 'application/octet-stream') {
+  const fs = require('fs').promises;
+  const fileBuffer = await fs.readFile(filePath);
+  return await uploadToBunny(fileBuffer, fileName, folder, contentType);
+}
+
+/**
+ * Delete a file from Bunny CDN (replacement for deleteFromS3)
+ * @param {string} fileKey - Key/path of the file to delete
+ * @returns {Promise<boolean>}
+ */
+async function deleteFromBunnyWrapper(fileKey) {
+  try {
+    const result = await deleteFromBunny(fileKey);
+    console.log(`✅ File deleted from Bunny CDN: ${fileKey}`);
+    return result;
   } catch (error) {
-    console.error('❌ Error deleting file from S3:', error);
+    console.error('❌ Error deleting file from Bunny CDN:', error);
     return false;
   }
-};
+}
 
-// Function to generate signed URL for private access
-const generateSignedUrl = (fileKey, expiresIn = 3600) => {
-  const params = {
-    Bucket: process.env.AWS_S3_BUCKET_NAME,
-    Key: fileKey,
-    Expires: expiresIn, // URL expires in 1 hour by default
-  };
-  
-  return s3.getSignedUrl('getObject', params);
-};
+/**
+ * Generate a public URL for a file (replacement for generateSignedUrl)
+ * Since Bunny CDN files are public via CDN, we just return the CDN URL
+ * @param {string} fileKey - Key/path of the file
+ * @param {number} expiresIn - Not used for Bunny CDN (files are public)
+ * @returns {string}
+ */
+function generatePublicUrl(fileKey, expiresIn = 3600) {
+  // For Bunny CDN, files are publicly accessible via CDN
+  // The expiresIn parameter is ignored as files are public
+  return bunnyConfig.getCdnUrl(fileKey);
+}
 
 module.exports = {
-  s3,
+  // Multer configurations
   uploadVideo,
   uploadThumbnail,
-  deleteFromS3,
-  generateSignedUrl,
+  uploadImage,
+  
+  // Upload functions
+  uploadVideoToBunny,
+  uploadThumbnailToBunny,
+  uploadImageToBunny,
+  uploadFileToBunny,
+  
+  // Management functions
+  deleteFromBunny: deleteFromBunnyWrapper,
+  generatePublicUrl,
+  
+  // Legacy compatibility (for gradual migration)
+  deleteFromS3: deleteFromBunnyWrapper, // Alias for backward compatibility
+  generateSignedUrl: generatePublicUrl, // Alias for backward compatibility
+  
+  // Bunny CDN configuration
+  bunnyConfig
 };

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://bloom-m284.onrender.com/api';
 
 class ApiService {
   constructor() {
@@ -322,11 +322,7 @@ class ApiService {
 
   // Get current user profile
   async getUserProfile() {
-    const token = localStorage.getItem('authToken');
-    const response = await axios.get(`${this.baseURL}/users/profile`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
+    return await this.request('/users/profile');
   }
 
   async followUser(username) {

@@ -70,7 +70,7 @@ const WalletAuth = ({ onAuthSuccess, onAuthError }) => {
   const testBackendConnection = async () => {
     try {
       console.log('🔍 Testing backend connectivity...');
-      const backendUrl = import.meta.env.VITE_REACT_APP_BACKEND_URL;
+      const backendUrl = import.meta.env.VITE_API_BASE_URL || 'https://bloom-m284.onrender.com/api';
       console.log('Backend URL:', backendUrl);
       
       // Test health endpoint
@@ -110,7 +110,7 @@ const WalletAuth = ({ onAuthSuccess, onAuthError }) => {
       username: MiniKit.user?.username || 'N/A',
       
       // Environment info
-      backendUrl: import.meta.env.VITE_REACT_APP_BACKEND_URL,
+      backendUrl: import.meta.env.VITE_API_BASE_URL || 'https://bloom-m284.onrender.com/api',
       worldcoinAppId: import.meta.env.VITE_REACT_APP_WORLDCOIN_APP_ID,
       
       // Browser info
@@ -154,7 +154,7 @@ const WalletAuth = ({ onAuthSuccess, onAuthError }) => {
     try {
       // 1. Get a nonce from backend
       console.log('📡 Retrieving nonce...');
-      const backendUrl = import.meta.env.VITE_REACT_APP_BACKEND_URL;
+      const backendUrl = import.meta.env.VITE_API_BASE_URL || 'https://bloom-m284.onrender.com/api';
       console.log('Backend URL:', backendUrl);
       
       let nonceResponse;
