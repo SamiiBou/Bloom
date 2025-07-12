@@ -12,8 +12,10 @@ class ApiService {
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
     
+    console.log(`🌐 [API] =================================`);
     console.log(`🌐 [API] Making request to: ${url}`);
     console.log(`🌐 [API] Method: ${options.method || 'GET'}`);
+    console.log(`🌐 [API] Timestamp: ${new Date().toISOString()}`);
     console.log(`🌐 [API] Has body: ${!!options.body}`);
     console.log(`🌐 [API] Body type: ${options.body ? (options.body instanceof FormData ? 'FormData' : typeof options.body) : 'none'}`);
     
@@ -26,19 +28,26 @@ class ApiService {
 
     // Add authorization header if token exists
     const storedToken = localStorage.getItem('authToken');
+    console.log(`🌐 [API] Instance token: ${this.token ? this.token.substring(0, 20) + '...' : 'null'}`);
+    console.log(`🌐 [API] LocalStorage token: ${storedToken ? storedToken.substring(0, 20) + '...' : 'null'}`);
+    console.log(`🌐 [API] Tokens match: ${storedToken === this.token}`);
+    
     if (storedToken) {
       // Update the instance token if it differs from the stored one
       if (storedToken !== this.token) {
+        console.log(`🌐 [API] Updating instance token from localStorage`);
         this.token = storedToken;
       }
       headers.Authorization = `Bearer ${storedToken}`;
-      console.log(`🌐 [API] Added auth header: Bearer ${storedToken.substring(0, 20)}...`);
+      console.log(`🌐 [API] ✅ Added auth header: Bearer ${storedToken.substring(0, 20)}...`);
+      console.log(`🌐 [API] Full token length: ${storedToken.length}`);
     } else {
       this.token = null;
-      console.log(`🌐 [API] No auth token available`);
+      console.log(`🌐 [API] ❌ No auth token available`);
     }
 
-    console.log(`🌐 [API] Headers:`, headers);
+    console.log(`🌐 [API] Final headers:`, headers);
+    console.log(`🌐 [API] =================================`);
 
     const config = {
       ...options, // Spread options first

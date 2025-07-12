@@ -3,16 +3,28 @@ const User = require('../models/User');
 
 // Protect routes - require authentication
 const protect = async (req, res, next) => {
+  console.log('🔐 [AUTH MIDDLEWARE] =================================');
+  console.log('🔐 [AUTH MIDDLEWARE] Request URL:', req.originalUrl);
+  console.log('🔐 [AUTH MIDDLEWARE] Method:', req.method);
+  console.log('🔐 [AUTH MIDDLEWARE] Headers:', req.headers);
+  console.log('🔐 [AUTH MIDDLEWARE] =================================');
+  
   try {
     let token;
 
     // Get token from header
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
+      console.log('🔐 [AUTH MIDDLEWARE] ✅ Token found in Authorization header');
+      console.log('🔐 [AUTH MIDDLEWARE] Token preview:', token.substring(0, 30) + '...');
+    } else {
+      console.log('🔐 [AUTH MIDDLEWARE] ❌ No Authorization header or Bearer token found');
+      console.log('🔐 [AUTH MIDDLEWARE] Authorization header:', req.headers.authorization);
     }
 
     // Check if token exists
     if (!token) {
+      console.log('🔐 [AUTH MIDDLEWARE] ❌ No token provided');
       return res.status(401).json({
         status: 'error',
         message: 'Access denied. No token provided.',
@@ -21,19 +33,33 @@ const protect = async (req, res, next) => {
 
     try {
       // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
+      console.log('🔐 [AUTH MIDDLEWARE] JWT_SECRET configured:', !!process.env.JWT_SECRET);
+      console.log('🔐 [AUTH MIDDLEWARE] JWT_SECRET preview:', jwtSecret.substring(0, 10) + '...');
+      console.log('🔐 [AUTH MIDDLEWARE] JWT_SECRET length:', jwtSecret.length);
+      console.log('🔐 [AUTH MIDDLEWARE] Attempting to verify token...');
+      
+      const decoded = jwt.verify(token, jwtSecret);
+      console.log('🔐 [AUTH MIDDLEWARE] ✅ Token verified successfully');
+      console.log('🔐 [AUTH MIDDLEWARE] Decoded payload:', decoded);
 
       // Get user from token
+      console.log('🔐 [AUTH MIDDLEWARE] Looking for user with ID:', decoded.id);
       const user = await User.findById(decoded.id);
 
       if (!user) {
+        console.log('🔐 [AUTH MIDDLEWARE] ❌ User not found in database');
         return res.status(401).json({
           status: 'error',
           message: 'Token is valid but user no longer exists.',
         });
       }
 
+      console.log('🔐 [AUTH MIDDLEWARE] ✅ User found:', user._id, user.username);
+      console.log('🔐 [AUTH MIDDLEWARE] User isActive:', user.isActive);
+
       if (!user.isActive) {
+        console.log('🔐 [AUTH MIDDLEWARE] ❌ User account is deactivated');
         return res.status(401).json({
           status: 'error',
           message: 'User account is deactivated.',
@@ -42,14 +68,28 @@ const protect = async (req, res, next) => {
 
       // Add user to request object
       req.user = user;
+      console.log('🔐 [AUTH MIDDLEWARE] ✅ Authentication successful, proceeding to next middleware');
       next();
     } catch (error) {
+      console.log('🔐 [AUTH MIDDLEWARE] ❌ Token verification failed');
+      console.log('🔐 [AUTH MIDDLEWARE] Error name:', error.name);
+      console.log('🔐 [AUTH MIDDLEWARE] Error message:', error.message);
+      console.log('🔐 [AUTH MIDDLEWARE] Error stack:', error.stack);
+      
       return res.status(401).json({
         status: 'error',
         message: 'Invalid token.',
+        debug: {
+          errorName: error.name,
+          errorMessage: error.message,
+          tokenPreview: token ? token.substring(0, 30) + '...' : 'no token',
+          jwtSecretConfigured: !!process.env.JWT_SECRET
+        }
       });
     }
   } catch (error) {
+    console.log('🔐 [AUTH MIDDLEWARE] ❌ Server error in authentication middleware');
+    console.log('🔐 [AUTH MIDDLEWARE] Server error:', error);
     res.status(500).json({
       status: 'error',
       message: 'Server error in authentication middleware.',

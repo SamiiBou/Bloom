@@ -231,11 +231,20 @@ router.post('/video', protect, tempUpload.fields([
   { name: 'video', maxCount: 1 },
   { name: 'thumbnail', maxCount: 1 }
 ]), async (req, res) => {
-  console.log('[UPLOAD] POST /upload/video hit');
-  console.log('[UPLOAD] User:', req.user ? req.user._id : 'No user');
-  console.log('[UPLOAD] Headers:', req.headers);
-  console.log('[UPLOAD] Body keys:', Object.keys(req.body));
-  console.log('[UPLOAD] Files:', req.files);
+  console.log('🎬 [VIDEO UPLOAD] =================================');
+  console.log('🎬 [VIDEO UPLOAD] POST /upload/video hit');
+  console.log('🎬 [VIDEO UPLOAD] Timestamp:', new Date().toISOString());
+  console.log('🎬 [VIDEO UPLOAD] User authenticated:', !!req.user);
+  if (req.user) {
+    console.log('🎬 [VIDEO UPLOAD] User ID:', req.user._id);
+    console.log('🎬 [VIDEO UPLOAD] User username:', req.user.username);
+    console.log('🎬 [VIDEO UPLOAD] User isActive:', req.user.isActive);
+  }
+  console.log('🎬 [VIDEO UPLOAD] Headers:', req.headers);
+  console.log('🎬 [VIDEO UPLOAD] Body keys:', Object.keys(req.body));
+  console.log('🎬 [VIDEO UPLOAD] Files:', req.files);
+  console.log('🎬 [VIDEO UPLOAD] Content-Type:', req.headers['content-type']);
+  console.log('🎬 [VIDEO UPLOAD] =================================');
   try {
     const originalVideoFile = req.files?.video?.[0];
     const originalThumbnailFile = req.files?.thumbnail?.[0];
