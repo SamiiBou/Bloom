@@ -98,13 +98,10 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    
-    // Assuming response.data.token based on backend structure from test script
+    // Always replace the token with the new one from backend
     if (response.data && response.data.token) {
-      this.token = response.data.token;
-      localStorage.setItem('authToken', response.data.token);
+      this.setToken(response.data.token);
     }
-    
     return response;
   }
 
@@ -113,13 +110,30 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(userData),
     });
-    
-    // Assuming response.data.token based on backend structure from test script
+    // Always replace the token with the new one from backend
     if (response.data && response.data.token) {
-      this.token = response.data.token;
-      localStorage.setItem('authToken', response.data.token);
+      this.setToken(response.data.token);
     }
-    
+    return response;
+  }
+
+  // Add a method to force-refresh the token (e.g., after login or wallet auth)
+  async forceRefreshToken(loginPayload, isWallet = false) {
+    let response;
+    if (isWallet) {
+      response = await this.request('/wallet/complete-siwe', {
+        method: 'POST',
+        body: JSON.stringify(loginPayload),
+      });
+    } else {
+      response = await this.request('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(loginPayload),
+      });
+    }
+    if (response.data && response.data.token) {
+      this.setToken(response.data.token);
+    }
     return response;
   }
 

@@ -262,16 +262,22 @@ const WalletAuth = ({ onAuthSuccess, onAuthError }) => {
 
       if (verifyResult.isValid) {
         // Extract token from the response
-         const token =
-               verifyResult.token ||               
-               verifyResult.data?.token ||         
-               verifyResult.data?.accessToken
+        const token =
+          verifyResult.token ||
+          verifyResult.data?.token ||
+          verifyResult.data?.accessToken;
 
-        console.log('🔑 JWT token received:', token);       
+        console.log('🔑 JWT token received:', token);
 
         if (token) {
-        localStorage.setItem('authToken', token);        
-      }       
+          // Always replace the token in localStorage and apiService
+          localStorage.setItem('authToken', token);
+          const apiService = (await import('../services/api')).default;
+          apiService.setToken(token);
+          console.log('✅ JWT token stored and configured in apiService');
+        } else {
+          console.warn('⚠️ No JWT token received from backend');
+        }
         
         const userData = {
           id: verifyResult.data.user.id,
