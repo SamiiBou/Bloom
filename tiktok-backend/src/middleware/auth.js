@@ -1,12 +1,17 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { verifyToken, getJWTConfig } = require('../utils/tokenManager');
 
-// Enhanced protect middleware with better error handling
+// Enhanced protect middleware with centralized token management
 const protect = async (req, res, next) => {
   console.log('🔐 [AUTH MIDDLEWARE] =================================');
   console.log('🔐 [AUTH MIDDLEWARE] Request URL:', req.originalUrl);
   console.log('🔐 [AUTH MIDDLEWARE] Method:', req.method);
   console.log('🔐 [AUTH MIDDLEWARE] Headers:', req.headers);
+  
+  // Log JWT configuration for debugging
+  const jwtConfig = getJWTConfig();
+  console.log('🔐 [AUTH MIDDLEWARE] JWT Config:', jwtConfig);
   console.log('🔐 [AUTH MIDDLEWARE] =================================');
   
   try {
@@ -33,26 +38,11 @@ const protect = async (req, res, next) => {
     }
 
     try {
-      // Verify token
-      const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
-      console.log('🔐 [AUTH MIDDLEWARE] JWT_SECRET configured:', !!process.env.JWT_SECRET);
-      console.log('🔐 [AUTH MIDDLEWARE] JWT_SECRET preview:', jwtSecret.substring(0, 10) + '...');
-      console.log('🔐 [AUTH MIDDLEWARE] JWT_SECRET length:', jwtSecret.length);
-      console.log('🔐 [AUTH MIDDLEWARE] Attempting to verify token...');
-      
-      const decoded = jwt.verify(token, jwtSecret);
+      // Use centralized token verification
+      console.log('🔐 [AUTH MIDDLEWARE] Attempting to verify token with centralized manager...');
+      const decoded = verifyToken(token, 'access');
       console.log('🔐 [AUTH MIDDLEWARE] ✅ Token verified successfully');
       console.log('🔐 [AUTH MIDDLEWARE] Decoded payload:', decoded);
-
-      // Check if this is a refresh token being used as access token
-      if (decoded.type === 'refresh') {
-        console.log('🔐 [AUTH MIDDLEWARE] ❌ Refresh token used as access token');
-        return res.status(401).json({
-          status: 'error',
-          message: 'Invalid token type. Use access token for API calls.',
-          code: 'WRONG_TOKEN_TYPE'
-        });
-      }
 
       // Get user from token
       console.log('🔐 [AUTH MIDDLEWARE] Looking for user with ID:', decoded.id);
@@ -101,7 +91,7 @@ const protect = async (req, res, next) => {
         case 'JsonWebTokenError':
           if (error.message.includes('invalid signature')) {
             errorCode = 'INVALID_SIGNATURE';
-            errorMessage = 'Token signature is invalid. Please login again.';
+            errorMessage = 'Token signature is invalid. Please login again to get a new token.';
           } else if (error.message.includes('malformed')) {
             errorCode = 'MALFORMED_TOKEN';
             errorMessage = 'Token is malformed. Please login again.';
@@ -113,7 +103,7 @@ const protect = async (req, res, next) => {
           break;
         default:
           errorCode = 'INVALID_TOKEN';
-          errorMessage = 'Invalid token.';
+          errorMessage = 'Invalid token. Please login again.';
       }
       
       return res.status(401).json({
@@ -124,8 +114,9 @@ const protect = async (req, res, next) => {
           errorName: error.name,
           errorMessage: error.message,
           tokenPreview: token ? token.substring(0, 30) + '...' : 'no token',
-          jwtSecretConfigured: !!process.env.JWT_SECRET,
-          timestamp: new Date().toISOString()
+          jwtConfig: getJWTConfig(),
+          timestamp: new Date().toISOString(),
+          suggestion: 'Please login again to get a fresh token'
         }
       });
     }
@@ -140,7 +131,7 @@ const protect = async (req, res, next) => {
   }
 };
 
-// Enhanced optional authentication with better error handling
+// Enhanced optional authentication with centralized token management
 const optionalAuth = async (req, res, next) => {
   try {
     let token;
@@ -157,15 +148,8 @@ const optionalAuth = async (req, res, next) => {
     }
 
     try {
-      // Verify token
-      const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
-      const decoded = jwt.verify(token, jwtSecret);
-
-      // Skip refresh tokens
-      if (decoded.type === 'refresh') {
-        req.user = null;
-        return next();
-      }
+      // Use centralized token verification
+      const decoded = verifyToken(token, 'access');
 
       // Get user from token
       const user = await User.findById(decoded.id);
@@ -302,5 +286,5 @@ module.exports = {
   optionalAuth,
   adminOnly,
   ownerOrAdmin,
-  userRateLimit,
+  userRateLimit
 };

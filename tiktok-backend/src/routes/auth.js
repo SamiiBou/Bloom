@@ -2,22 +2,9 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
+const { generateTokenPair, verifyToken, refreshTokenPair } = require('../utils/tokenManager');
 
 const router = express.Router();
-
-// Generate JWT Token with enhanced security
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'your-secret-key', {
-    expiresIn: '30d',
-  });
-};
-
-// Generate Refresh Token
-const generateRefreshToken = (id) => {
-  return jwt.sign({ id, type: 'refresh' }, process.env.JWT_SECRET || 'your-secret-key', {
-    expiresIn: '90d',
-  });
-};
 
 // Register user
 router.post('/register', async (req, res, next) => {
@@ -47,22 +34,24 @@ router.post('/register', async (req, res, next) => {
       displayName: displayName || username,
     });
 
-    // Generate both tokens
-    const token = generateToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
+    // Generate token pair with centralized manager
+    const tokenPair = generateTokenPair(user._id);
 
     // Save refresh token to user (optional, for token revocation)
-    user.refreshToken = refreshToken;
+    user.refreshToken = tokenPair.refreshToken;
     await user.save();
 
     console.log('✅ New user registered and tokens generated:', user.username);
+    console.log('🔑 [REGISTER] Token pair generated for user:', user._id);
 
     res.status(201).json({
       status: 'success',
       message: 'User registered successfully',
       data: {
-        token,
-        refreshToken,
+        token: tokenPair.accessToken,
+        refreshToken: tokenPair.refreshToken,
+        tokenType: tokenPair.tokenType,
+        expiresIn: tokenPair.expiresIn,
         user: user.getPublicProfile(),
       },
     });
@@ -110,23 +99,25 @@ router.post('/login', async (req, res, next) => {
     // Update last login
     user.lastLogin = new Date();
     
-    // ALWAYS generate NEW tokens on login
-    const token = generateToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
+    // ALWAYS generate NEW tokens on login using centralized manager
+    const tokenPair = generateTokenPair(user._id);
     
     // Save new refresh token to user
-    user.refreshToken = refreshToken;
+    user.refreshToken = tokenPair.refreshToken;
     await user.save();
 
     console.log('✅ User login successful with NEW tokens:', user.username);
-    console.log('🔄 New JWT Token generated for user:', user._id);
+    console.log('🔑 [LOGIN] Fresh token pair generated for user:', user._id);
+    console.log('🔑 [LOGIN] Token will be valid for:', tokenPair.expiresIn);
 
     res.status(200).json({
       status: 'success',
-      message: 'Login successful - New tokens generated',
+      message: 'Login successful - Fresh tokens generated',
       data: {
-        token,
-        refreshToken,
+        token: tokenPair.accessToken,
+        refreshToken: tokenPair.refreshToken,
+        tokenType: tokenPair.tokenType,
+        expiresIn: tokenPair.expiresIn,
         user: user.getPublicProfile(),
       },
     });
@@ -149,15 +140,8 @@ router.post('/refresh-token', async (req, res, next) => {
     }
 
     try {
-      // Verify refresh token
-      const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET || 'your-secret-key');
-      
-      if (decoded.type !== 'refresh') {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Invalid refresh token type',
-        });
-      }
+      // Verify refresh token using centralized manager
+      const decoded = verifyToken(refreshToken, 'refresh');
 
       // Find user
       const user = await User.findById(decoded.id);
@@ -172,26 +156,28 @@ router.post('/refresh-token', async (req, res, next) => {
       if (user.refreshToken !== refreshToken) {
         return res.status(401).json({
           status: 'error',
-          message: 'Invalid refresh token',
+          message: 'Invalid refresh token - token mismatch',
         });
       }
 
-      // Generate new tokens
-      const newToken = generateToken(user._id);
-      const newRefreshToken = generateRefreshToken(user._id);
+      // Generate new token pair using centralized manager
+      const newTokenPair = generateTokenPair(user._id);
 
       // Update refresh token
-      user.refreshToken = newRefreshToken;
+      user.refreshToken = newTokenPair.refreshToken;
       await user.save();
 
       console.log('✅ Tokens refreshed successfully for user:', user.username);
+      console.log('🔑 [REFRESH] New token pair generated for user:', user._id);
 
       res.status(200).json({
         status: 'success',
         message: 'Tokens refreshed successfully',
         data: {
-          token: newToken,
-          refreshToken: newRefreshToken,
+          token: newTokenPair.accessToken,
+          refreshToken: newTokenPair.refreshToken,
+          tokenType: newTokenPair.tokenType,
+          expiresIn: newTokenPair.expiresIn,
           user: user.getPublicProfile(),
         },
       });
@@ -200,6 +186,12 @@ router.post('/refresh-token', async (req, res, next) => {
       return res.status(401).json({
         status: 'error',
         message: 'Invalid or expired refresh token',
+        code: 'INVALID_REFRESH_TOKEN',
+        debug: {
+          errorName: error.name,
+          errorMessage: error.message,
+          suggestion: 'Please login again to get new tokens'
+        }
       });
     }
   } catch (error) {
@@ -284,21 +276,23 @@ router.put('/change-password', protect, async (req, res, next) => {
 
     user.password = newPassword;
     
-    // Generate new tokens after password change
-    const token = generateToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
-    user.refreshToken = refreshToken;
+    // Generate new token pair after password change using centralized manager
+    const tokenPair = generateTokenPair(user._id);
+    user.refreshToken = tokenPair.refreshToken;
     
     await user.save();
 
     console.log('✅ Password changed and new tokens generated for user:', user.username);
+    console.log('🔑 [PASSWORD_CHANGE] Fresh token pair generated for user:', user._id);
 
     res.status(200).json({
       status: 'success',
-      message: 'Password changed successfully - New tokens generated',
+      message: 'Password changed successfully - Fresh tokens generated',
       data: {
-        token,
-        refreshToken,
+        token: tokenPair.accessToken,
+        refreshToken: tokenPair.refreshToken,
+        tokenType: tokenPair.tokenType,
+        expiresIn: tokenPair.expiresIn,
       },
     });
   } catch (error) {
@@ -461,6 +455,146 @@ router.post('/update-human-verification', protect, async (req, res, next) => {
   } catch (error) {
     console.error('Update human verification error:', error);
     next(error);
+  }
+});
+
+// DEBUG: Token configuration info
+router.get('/debug/token-config', (req, res) => {
+  try {
+    const { getJWTConfig } = require('../utils/tokenManager');
+    const config = getJWTConfig();
+    
+    res.json({
+      status: 'success',
+      message: 'JWT configuration info',
+      data: {
+        ...config,
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Error getting JWT config',
+      error: error.message
+    });
+  }
+});
+
+// DEBUG: Test token flow
+router.get('/debug/test-token-flow', (req, res) => {
+  try {
+    const { testTokenFlow } = require('../utils/tokenManager');
+    const testResult = testTokenFlow();
+    
+    res.json({
+      status: 'success',
+      message: 'Token flow test completed',
+      data: testResult
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Error testing token flow',
+      error: error.message
+    });
+  }
+});
+
+// EMERGENCY: Force token refresh for authenticated users
+router.post('/emergency-refresh', protect, async (req, res) => {
+  try {
+    console.log('🚨 [EMERGENCY_REFRESH] Emergency token refresh requested by user:', req.user._id);
+    
+    // Generate completely new token pair
+    const tokenPair = generateTokenPair(req.user._id);
+    
+    // Update refresh token in database
+    const user = await User.findById(req.user._id);
+    user.refreshToken = tokenPair.refreshToken;
+    user.lastLogin = new Date(); // Update last login
+    await user.save();
+    
+    console.log('🚨 [EMERGENCY_REFRESH] Emergency tokens generated successfully for user:', req.user.username);
+    
+    res.status(200).json({
+      status: 'success',
+      message: 'Emergency token refresh completed - Use these new tokens immediately',
+      data: {
+        token: tokenPair.accessToken,
+        refreshToken: tokenPair.refreshToken,
+        tokenType: tokenPair.tokenType,
+        expiresIn: tokenPair.expiresIn,
+        user: user.getPublicProfile(),
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('🚨 [EMERGENCY_REFRESH] Error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Emergency token refresh failed',
+      error: error.message
+    });
+  }
+});
+
+// EMERGENCY: Force token refresh without authentication (using refresh token)
+router.post('/emergency-refresh-with-refresh-token', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    
+    if (!refreshToken) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Refresh token is required'
+      });
+    }
+    
+    console.log('🚨 [EMERGENCY_REFRESH_RT] Emergency refresh with refresh token requested');
+    
+    // Use the existing refresh token logic
+    const decoded = verifyToken(refreshToken, 'refresh');
+    
+    // Find user
+    const user = await User.findById(decoded.id);
+    if (!user || !user.isActive) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'User not found or inactive'
+      });
+    }
+    
+    // Generate new token pair
+    const tokenPair = generateTokenPair(user._id);
+    
+    // Update refresh token
+    user.refreshToken = tokenPair.refreshToken;
+    user.lastLogin = new Date();
+    await user.save();
+    
+    console.log('🚨 [EMERGENCY_REFRESH_RT] Emergency tokens generated successfully for user:', user.username);
+    
+    res.status(200).json({
+      status: 'success',
+      message: 'Emergency token refresh completed with refresh token',
+      data: {
+        token: tokenPair.accessToken,
+        refreshToken: tokenPair.refreshToken,
+        tokenType: tokenPair.tokenType,
+        expiresIn: tokenPair.expiresIn,
+        user: user.getPublicProfile(),
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('🚨 [EMERGENCY_REFRESH_RT] Error:', error);
+    res.status(401).json({
+      status: 'error',
+      message: 'Emergency token refresh failed',
+      error: error.message,
+      suggestion: 'Please login again to get fresh tokens'
+    });
   }
 });
 

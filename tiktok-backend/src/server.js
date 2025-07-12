@@ -117,6 +117,7 @@ app.use('/api/video', require('./routes/video'));
 app.use('/api/images', require('./routes/images')); // Nouvelle route pour les images
 app.use('/api/airdrop', require('./routes/airdrop').router); // Routes airdrop
 app.use('/api/moderation', require('./routes/moderation')); // Routes de modération de contenu
+app.use('/api/debug', require('./routes/debug'));         // Routes de debug JWT
 
 // Middleware de gestion d'erreurs
 app.use((err, req, res, next) => {

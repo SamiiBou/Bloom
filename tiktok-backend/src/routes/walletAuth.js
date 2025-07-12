@@ -18,38 +18,7 @@ setInterval(() => {
   }
 }, 60 * 1000); // Nettoyer chaque minute
 
-// Generate JWT Token
-const generateToken = (id) => {
-  console.log('🎫 [TOKEN GENERATION] =================================');
-  console.log('🎫 [TOKEN GENERATION] Generating token for user ID:', id);
-  
-  const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
-  const expiresIn = process.env.JWT_EXPIRES_IN || '30d';
-  
-  console.log('🎫 [TOKEN GENERATION] JWT_SECRET configured:', !!process.env.JWT_SECRET);
-  console.log('🎫 [TOKEN GENERATION] JWT_SECRET preview:', jwtSecret.substring(0, 10) + '...');
-  console.log('🎫 [TOKEN GENERATION] JWT_SECRET length:', jwtSecret.length);
-  console.log('🎫 [TOKEN GENERATION] Expires in:', expiresIn);
-  
-  const token = jwt.sign({ id }, jwtSecret, { expiresIn });
-  
-  console.log('🎫 [TOKEN GENERATION] ✅ Token generated successfully');
-  console.log('🎫 [TOKEN GENERATION] Token preview:', token.substring(0, 30) + '...');
-  console.log('🎫 [TOKEN GENERATION] Token length:', token.length);
-  
-  // Test verification immediately
-  try {
-    const decoded = jwt.verify(token, jwtSecret);
-    console.log('🎫 [TOKEN GENERATION] ✅ Token verification test passed');
-    console.log('🎫 [TOKEN GENERATION] Decoded payload:', decoded);
-  } catch (error) {
-    console.log('🎫 [TOKEN GENERATION] ❌ Token verification test failed');
-    console.log('🎫 [TOKEN GENERATION] Error:', error.message);
-  }
-  
-  console.log('🎫 [TOKEN GENERATION] =================================');
-  return token;
-};
+const { generateTokenPair } = require('../utils/tokenManager');
 
 // Fonction pour nettoyer le nom d'utilisateur
 const sanitizeUsername = (username) => {
@@ -252,17 +221,24 @@ router.post('/complete-siwe', async (req, res) => {
           await user.save();
           console.log('✅ Utilisateur mis à jour avec succès');
           
-          // Generate JWT token for API authentication
-          console.log('🔑 [COMPLETE-SIWE] Generating JWT token for existing user:', user._id);
-          const token = generateToken(user._id);
-          console.log('🔑 [COMPLETE-SIWE] JWT token generated successfully for existing user');
-          console.log('🔑 [COMPLETE-SIWE] Token preview:', token.substring(0, 30) + '...');
+          // Generate JWT token pair for API authentication
+          console.log('🔑 [COMPLETE-SIWE] Generating JWT token pair for existing user:', user._id);
+          const tokenPair = generateTokenPair(user._id);
+          console.log('🔑 [COMPLETE-SIWE] JWT token pair generated successfully for existing user');
+          console.log('🔑 [COMPLETE-SIWE] Token preview:', tokenPair.accessToken.substring(0, 30) + '...');
+          
+          // Update refresh token in user document
+          user.refreshToken = tokenPair.refreshToken;
+          await user.save();
           
           const responseData = {
             status: 'success',
             isValid: true,
             data: {
-              token,
+              token: tokenPair.accessToken,
+              refreshToken: tokenPair.refreshToken,
+              tokenType: tokenPair.tokenType,
+              expiresIn: tokenPair.expiresIn,
               user: {
                 id: user._id,
                 username: user.username,
@@ -277,7 +253,7 @@ router.post('/complete-siwe', async (req, res) => {
             }
           };
           
-          console.log('🔑 [COMPLETE-SIWE] Sending response with token for existing user');
+          console.log('🔑 [COMPLETE-SIWE] Sending response with token pair for existing user');
           console.log('🔑 [COMPLETE-SIWE] Response data structure:', Object.keys(responseData));
           
           res.json(responseData);
@@ -288,17 +264,24 @@ router.post('/complete-siwe', async (req, res) => {
           await user.save();
           console.log('✅ Nouvel utilisateur créé avec succès');
           
-          // Generate JWT token for API authentication
-          console.log('🔑 [COMPLETE-SIWE] Generating JWT token for new user:', user._id);
-          const token = generateToken(user._id);
-          console.log('🔑 [COMPLETE-SIWE] JWT token generated successfully for new user');
-          console.log('🔑 [COMPLETE-SIWE] Token preview:', token.substring(0, 30) + '...');
+          // Generate JWT token pair for API authentication
+          console.log('🔑 [COMPLETE-SIWE] Generating JWT token pair for new user:', user._id);
+          const tokenPair = generateTokenPair(user._id);
+          console.log('🔑 [COMPLETE-SIWE] JWT token pair generated successfully for new user');
+          console.log('🔑 [COMPLETE-SIWE] Token preview:', tokenPair.accessToken.substring(0, 30) + '...');
+          
+          // Update refresh token in user document
+          user.refreshToken = tokenPair.refreshToken;
+          await user.save();
           
           const responseData = {
             status: 'success',
             isValid: true,
             data: {
-              token,
+              token: tokenPair.accessToken,
+              refreshToken: tokenPair.refreshToken,
+              tokenType: tokenPair.tokenType,
+              expiresIn: tokenPair.expiresIn,
               user: {
                 id: user._id,
                 username: user.username,
@@ -313,7 +296,7 @@ router.post('/complete-siwe', async (req, res) => {
             }
           };
           
-          console.log('🔑 [COMPLETE-SIWE] Sending response with token for new user');
+          console.log('🔑 [COMPLETE-SIWE] Sending response with token pair for new user');
           console.log('🔑 [COMPLETE-SIWE] Response data structure:', Object.keys(responseData));
           
           res.json(responseData);
@@ -329,17 +312,24 @@ router.post('/complete-siwe', async (req, res) => {
           if (existingUser) {
             console.log('✅ Utilisateur existant récupéré');
             
-            // Generate JWT token for API authentication
-            console.log('🔑 [COMPLETE-SIWE] Generating JWT token for recovered user:', existingUser._id);
-            const token = generateToken(existingUser._id);
-            console.log('🔑 [COMPLETE-SIWE] JWT token generated successfully for recovered user');
-            console.log('🔑 [COMPLETE-SIWE] Token preview:', token.substring(0, 30) + '...');
+            // Generate JWT token pair for API authentication
+            console.log('🔑 [COMPLETE-SIWE] Generating JWT token pair for recovered user:', existingUser._id);
+            const tokenPair = generateTokenPair(existingUser._id);
+            console.log('🔑 [COMPLETE-SIWE] JWT token pair generated successfully for recovered user');
+            console.log('🔑 [COMPLETE-SIWE] Token preview:', tokenPair.accessToken.substring(0, 30) + '...');
+            
+            // Update refresh token in user document
+            existingUser.refreshToken = tokenPair.refreshToken;
+            await existingUser.save();
             
             const responseData = {
               status: 'success',
               isValid: true,
               data: {
-                token,
+                token: tokenPair.accessToken,
+                refreshToken: tokenPair.refreshToken,
+                tokenType: tokenPair.tokenType,
+                expiresIn: tokenPair.expiresIn,
                 user: {
                   id: existingUser._id,
                   username: existingUser.username,
@@ -354,7 +344,7 @@ router.post('/complete-siwe', async (req, res) => {
               }
             };
             
-            console.log('🔑 [COMPLETE-SIWE] Sending response with token for recovered user');
+            console.log('🔑 [COMPLETE-SIWE] Sending response with token pair for recovered user');
             console.log('🔑 [COMPLETE-SIWE] Response data structure:', Object.keys(responseData));
             
             res.json(responseData);
