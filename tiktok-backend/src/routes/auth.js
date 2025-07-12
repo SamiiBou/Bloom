@@ -143,8 +143,8 @@ router.post('/refresh-token', async (req, res, next) => {
       // Verify refresh token using centralized manager
       const decoded = verifyToken(refreshToken, 'refresh');
 
-      // Find user
-      const user = await User.findById(decoded.id);
+      // Find user and explicitly select refreshToken field
+      const user = await User.findById(decoded.id).select('+refreshToken');
       if (!user || !user.isActive) {
         return res.status(401).json({
           status: 'error',
@@ -154,6 +154,9 @@ router.post('/refresh-token', async (req, res, next) => {
 
       // Verify this is the current refresh token
       if (user.refreshToken !== refreshToken) {
+        console.log('🔐 [REFRESH] Refresh token mismatch');
+        console.log('🔐 [REFRESH] Expected:', user.refreshToken?.substring(0, 30) + '...');
+        console.log('🔐 [REFRESH] Received:', refreshToken.substring(0, 30) + '...');
         return res.status(401).json({
           status: 'error',
           message: 'Invalid refresh token - token mismatch',
@@ -556,8 +559,8 @@ router.post('/emergency-refresh-with-refresh-token', async (req, res) => {
     // Use the existing refresh token logic
     const decoded = verifyToken(refreshToken, 'refresh');
     
-    // Find user
-    const user = await User.findById(decoded.id);
+    // Find user and explicitly select refreshToken field
+    const user = await User.findById(decoded.id).select('+refreshToken');
     if (!user || !user.isActive) {
       return res.status(401).json({
         status: 'error',
