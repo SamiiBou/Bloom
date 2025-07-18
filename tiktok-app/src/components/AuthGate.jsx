@@ -10,7 +10,7 @@ import './AuthGate.css';
 const FORCE_SHOW_LOGIN_FOR_DEV = false;
 
 const AuthGate = ({ children }) => {
-  const { isAuthenticated, isLoading, login, user } = useAuth();
+  const { isAuthenticated, isLoading, login, user, logout } = useAuth();
   const [showHumanVerification, setShowHumanVerification] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -29,6 +29,10 @@ const AuthGate = ({ children }) => {
           }
         } catch (error) {
           console.error('Error loading user profile:', error);
+          if (error.response && error.response.data && error.response.data.code === 'INVALID_SIGNATURE') {
+            logout();
+            alert('Your session token is invalid. Please login again to continue.');
+          }
         } finally {
           setProfileLoading(false);
         }
@@ -36,7 +40,7 @@ const AuthGate = ({ children }) => {
     };
 
     loadUserProfile();
-  }, [isAuthenticated, user, userProfile, profileLoading]);
+  }, [isAuthenticated, user, userProfile, profileLoading, logout]);
 
   const handleHumanVerificationSuccess = (verificationData) => {
     console.log('🎉 Human verification successful:', verificationData);
