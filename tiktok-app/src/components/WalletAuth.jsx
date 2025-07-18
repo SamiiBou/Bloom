@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MiniKit, verifySiweMessage, getIsUserVerified } from '@worldcoin/minikit-js';
 import './WalletAuth.css';
+import axios from 'axios';
 
 const WalletAuth = ({ onAuthSuccess, onAuthError }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -148,22 +149,17 @@ const WalletAuth = ({ onAuthSuccess, onAuthError }) => {
         console.log(`📡 [FETCH NONCE] Attempt ${attempt}/${retries}`);
         console.log(`📡 [FETCH NONCE] URL: ${BACKEND_URL}/wallet/nonce`);
         
-        const response = await fetch(`${BACKEND_URL}/wallet/nonce`, {
-          method: 'GET',
-          credentials: 'include', // Important pour les cookies cross-origin
+        const response = await axios.get(`${BACKEND_URL}/wallet/nonce`, {
+          withCredentials: true,
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Origin': window.location.origin // Explicitement set pour CORS debug
-          },
+            'Origin': window.location.origin
+          }
         });
         
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(`Server error: ${errorData.message || response.statusText}`);
-        }
-        
-        const data = await response.json();
+        console.log('✅ Nonce response:', response);
+        const data = response.data;
         console.log('✅ Nonce fetched:', data);
         setNonce(data.nonce);
         setDebugInfo({
@@ -174,6 +170,15 @@ const WalletAuth = ({ onAuthSuccess, onAuthError }) => {
         return data.nonce;
       } catch (err) {
         console.error(`❌ Nonce fetch error (attempt ${attempt}):`, err);
+        if (err.response) {
+          console.error('   Status:', err.response.status);
+          console.error('   Data:', err.response.data);
+          console.error('   Headers:', err.response.headers);
+        } else if (err.request) {
+          console.error('   No response received:', err.request);
+        } else {
+          console.error('   Error details:', err.message);
+        }
         if (attempt === retries) {
           setError(`Network error while retrieving nonce: ${err.message}. Please check your connection, VPN, or try again later.`);
           throw err;

@@ -45,6 +45,15 @@ allowedOrigins.forEach((origin, index) => {
 console.log(`📝 FRONTEND_URL depuis .env: ${process.env.FRONTEND_URL || 'non défini'}`);
 console.log('---');
 
+app.use((req, res, next) => {
+  console.log(`📡 [INCOMING REQUEST] ${req.method} ${req.url}`);
+  console.log(`   Origin: ${req.headers.origin || 'none'}`);
+  console.log(`   Headers:`, req.headers);
+  console.log(`   IP: ${req.ip}`);
+  console.log(`   Timestamp: ${new Date().toISOString()}`);
+  next();
+});
+
 // Configuration CORS radicale : autorise toutes les origines, méthodes et headers
 app.use(cors({
   origin: '*', // Radical : tout autorisé (changez en ['https://bloom-3n1v.vercel.app', 'http://localhost:*'] en prod)
