@@ -45,35 +45,15 @@ allowedOrigins.forEach((origin, index) => {
 console.log(`📝 FRONTEND_URL depuis .env: ${process.env.FRONTEND_URL || 'non défini'}`);
 console.log('---');
 
-// Configuration CORS pour ngrok
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Permettre les requêtes sans origin (mobile apps, etc.)
-    if (!origin) return callback(null, true);
-    
-    const isAllowed = allowedOrigins.some(allowedOrigin => {
-      if (typeof allowedOrigin === 'string') {
-        return origin === allowedOrigin;
-      } else if (allowedOrigin instanceof RegExp) {
-        return allowedOrigin.test(origin);
-      }
-      return false;
-    });
-
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      console.log('❌ Origin non autorisée:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true, // Important pour les cookies
+// Configuration CORS radicale : autorise toutes les origines, méthodes et headers
+app.use(cors({
+  origin: '*', // Radical : tout autorisé (changez en ['https://bloom-3n1v.vercel.app', 'http://localhost:*'] en prod)
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
-};
-
-// Middlewares
-app.use(cors(corsOptions));
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true, // Autorise les cookies/credentials
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

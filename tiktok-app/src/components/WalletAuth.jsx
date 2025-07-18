@@ -136,6 +136,54 @@ const WalletAuth = ({ onAuthSuccess, onAuthError }) => {
     console.log('🔍 Complete debug info:', debug);
   };
 
+  const [nonce, setNonce] = useState(null);
+  const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'https://bloom-m284.onrender.com/api';
+
+  const fetchNonce = async (retries = 3) => {
+    setError(null);
+    setDebugInfo(null);
+    
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        console.log(`📡 [FETCH NONCE] Attempt ${attempt}/${retries}`);
+        console.log(`📡 [FETCH NONCE] URL: ${BACKEND_URL}/wallet/nonce`);
+        
+        const response = await fetch(`${BACKEND_URL}/wallet/nonce`, {
+          method: 'GET',
+          credentials: 'include', // Important pour les cookies cross-origin
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Origin': window.location.origin // Explicitement set pour CORS debug
+          },
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Server error: ${errorData.message || response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('✅ Nonce fetched:', data);
+        setNonce(data.nonce);
+        setDebugInfo({
+          nonce: data.nonce,
+          timestamp: new Date().toISOString(),
+          attempt: attempt
+        });
+        return data.nonce;
+      } catch (err) {
+        console.error(`❌ Nonce fetch error (attempt ${attempt}):`, err);
+        if (attempt === retries) {
+          setError(`Network error while retrieving nonce: ${err.message}. Please check your connection, VPN, or try again later.`);
+          throw err;
+        }
+        // Wait 1s before retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+  };
+
   const signInWithWallet = async () => {
     console.log('🔍 Checking MiniKit...');
     console.log('MiniKit.isInstalled():', MiniKit.isInstalled());
@@ -152,42 +200,11 @@ const WalletAuth = ({ onAuthSuccess, onAuthError }) => {
     setError(null);
 
     try {
-      // 1. Get a nonce from backend
+      // 1. Get a nonce from backend with retry
       console.log('📡 Retrieving nonce...');
-      const backendUrl = import.meta.env.VITE_API_BASE_URL || 'https://bloom-m284.onrender.com/api';
-      console.log('Backend URL:', backendUrl);
-      
-      let nonceResponse;
-      try {
-        nonceResponse = await fetch(`${backendUrl}/wallet/nonce`, {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        console.log('📡 Nonce response status:', nonceResponse.status);
-        console.log('📡 Nonce response headers:', Object.fromEntries(nonceResponse.headers.entries()));
-        
-      } catch (fetchError) {
-        console.error('❌ Nonce fetch error:', fetchError);
-        throw new Error(`Network error while retrieving nonce: ${fetchError.message}`);
-      }
-      
-      if (!nonceResponse.ok) {
-        const errorText = await nonceResponse.text();
-        console.error('❌ Non-OK nonce response:', errorText);
-        throw new Error(`Server error (${nonceResponse.status}): ${errorText}`);
-      }
-      
-      const nonceData = await nonceResponse.json();
-      console.log('📡 Complete nonce data:', nonceData);
-      
-      const { nonce } = nonceData;
+      const nonce = await fetchNonce();
       if (!nonce) {
-        throw new Error('Missing nonce in server response');
+        throw new Error('Failed to retrieve nonce after multiple attempts.');
       }
       
       console.log('✅ Nonce received:', nonce);
@@ -238,7 +255,7 @@ const WalletAuth = ({ onAuthSuccess, onAuthError }) => {
       
       console.log('📤 Sending for verification:', verifyPayload);
       
-      const verifyResponse = await fetch(`${backendUrl}/wallet/complete-siwe`, {
+      const verifyResponse = await fetch(`${BACKEND_URL}/wallet/complete-siwe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
