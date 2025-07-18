@@ -88,6 +88,20 @@ class ApiService {
         message: error.message,
         stack: error.stack
       });
+      // Radical handling for invalid signature
+      if (error.message.includes('HTTP error! status: 401')) {
+        try {
+          const errorData = JSON.parse(error.message.split('HTTP error! status: 401')[1] || '{}');
+          if (errorData.code === 'INVALID_SIGNATURE') {
+            console.warn('🌐 [API] Invalid token signature detected - clearing session');
+            localStorage.removeItem('authToken');
+            this.token = null;
+            throw new Error('SessionInvalidated: Token signature invalid - please relogin');
+          }
+        } catch (parseError) {
+          console.error('🌐 [API] Error parsing 401 response:', parseError);
+        }
+      }
       throw error;
     }
   }

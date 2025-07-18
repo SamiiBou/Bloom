@@ -97,6 +97,13 @@ export const AuthProvider = ({ children }) => {
     console.log('🔐 [AuthContext] isAuthenticated:', isAuthenticated);
     console.log('🔐 [AuthContext] isLoading:', isLoading);
     
+    // Radical: Always clear existing token to force fresh login
+    console.warn('🔐 [AuthContext] Radical mode: Clearing existing session for fresh start');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    setUser(null);
+    setIsAuthenticated(false);
+    
     if (!isAuthenticated && !isLoading) {
       try {
         const savedUser = localStorage.getItem('user');
