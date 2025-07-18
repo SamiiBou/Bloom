@@ -56,11 +56,13 @@ app.use((req, res, next) => {
 
 // Configuration CORS radicale : autorise toutes les origines, méthodes et headers
 app.use(cors({
-  origin: '*', // Radical : tout autorisé (changez en ['https://bloom-3n1v.vercel.app', 'http://localhost:*'] en prod)
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true, // Autorise les cookies/credentials
-  preflightContinue: false,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    callback(null, origin);
+  },
+  credentials: true,
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
   optionsSuccessStatus: 204
 }));
 app.use(express.json({ limit: '10mb' }));

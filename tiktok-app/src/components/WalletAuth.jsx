@@ -150,11 +150,8 @@ const WalletAuth = ({ onAuthSuccess, onAuthError }) => {
         console.log(`📡 [FETCH NONCE] URL: ${BACKEND_URL}/wallet/nonce`);
         
         const response = await axios.get(`${BACKEND_URL}/wallet/nonce`, {
-          withCredentials: true,
           headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Origin': window.location.origin
+            'Accept': 'application/json'
           }
         });
         
