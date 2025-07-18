@@ -97,55 +97,50 @@ export const AuthProvider = ({ children }) => {
     console.log('🔐 [AuthContext] isAuthenticated:', isAuthenticated);
     console.log('🔐 [AuthContext] isLoading:', isLoading);
     
-    // Radical: Always clear existing token to force fresh login
-    console.warn('🔐 [AuthContext] Radical mode: Clearing existing session for fresh start');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-    setUser(null);
-    setIsAuthenticated(false);
+    // If already authenticated we skip localStorage restoration
+    if (isAuthenticated || isLoading) {
+      console.log('🔐 [AuthContext] Skipping localStorage restoration (authenticated or loading)');
+      return;
+    }
     
-    if (!isAuthenticated && !isLoading) {
-      try {
-        const savedUser = localStorage.getItem('user');
-        const savedToken = localStorage.getItem('authToken');
+    try {
+      const savedUser = localStorage.getItem('user');
+      const savedToken = localStorage.getItem('authToken');
+      
+      console.log('🔐 [AuthContext] savedUser:', savedUser ? 'present' : 'null');
+      console.log('🔐 [AuthContext] savedToken:', savedToken ? 'present' : 'null');
+      
+      if (savedUser) {
+        const userData = JSON.parse(savedUser);
+        console.log('🔐 [AuthContext] Parsed user data:', userData);
         
-        console.log('🔐 [AuthContext] savedUser:', savedUser ? 'present' : 'null');
-        console.log('🔐 [AuthContext] savedToken:', savedToken ? 'present' : 'null');
-        
-        if (savedUser) {
-          const userData = JSON.parse(savedUser);
-          console.log('🔐 [AuthContext] Parsed user data:', userData);
+        // Vérifier que les données sont valides
+        if (userData.walletAddress) {
+          console.log('🔐 [AuthContext] Valid user data found, logging in...');
+          setUser(userData);
+          setIsAuthenticated(true);
           
-          // Vérifier que les données sont valides
-          if (userData.walletAddress) {
-            console.log('🔐 [AuthContext] Valid user data found, logging in...');
-            setUser(userData);
-            setIsAuthenticated(true);
-            
-            // Restore JWT token if available
-            if (savedToken) {
-              console.log('🔐 [AuthContext] Restoring JWT token...');
-              import('../services/api').then(({ default: apiService }) => {
-                apiService.setToken(savedToken);
-                console.log('✅ [AuthContext] Token JWT restauré dans apiService');
-                console.log('🔑 [AuthContext] Token preview:', savedToken.substring(0, 20) + '...');
-              });
-            } else {
-              console.warn('⚠️ [AuthContext] User found but no JWT token saved');
-            }
+          // Restore JWT token if available
+          if (savedToken) {
+            console.log('🔐 [AuthContext] Restoring JWT token...');
+            import('../services/api').then(({ default: apiService }) => {
+              apiService.setToken(savedToken);
+              console.log('✅ [AuthContext] Token JWT restauré dans apiService');
+              console.log('🔑 [AuthContext] Token preview:', savedToken.substring(0, 20) + '...');
+            });
           } else {
-            console.warn('⚠️ [AuthContext] Invalid user data - missing walletAddress');
+            console.warn('⚠️ [AuthContext] User found but no JWT token saved');
           }
         } else {
-          console.log('ℹ️ [AuthContext] No saved user found in localStorage');
+          console.warn('⚠️ [AuthContext] Invalid user data - missing walletAddress');
         }
-      } catch (error) {
-        console.error('❌ [AuthContext] Error restoring user from localStorage:', error);
-        localStorage.removeItem('user'); // Nettoyer les données corrompues
-        localStorage.removeItem('authToken'); // Nettoyer aussi le token
+      } else {
+        console.log('ℹ️ [AuthContext] No saved user found in localStorage');
       }
-    } else {
-      console.log('🔐 [AuthContext] Skipping localStorage check (already authenticated or still loading)');
+    } catch (error) {
+      console.error('❌ [AuthContext] Error restoring user from localStorage:', error);
+      localStorage.removeItem('user'); // Nettoyer les données corrompues
+      localStorage.removeItem('authToken'); // Nettoyer aussi le token
     }
   }, [isAuthenticated, isLoading]);
 
