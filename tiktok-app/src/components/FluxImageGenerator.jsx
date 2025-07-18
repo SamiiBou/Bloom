@@ -965,25 +965,7 @@ const FluxImageGenerator = () => {
 
                 {/* Generate Button */}
                 <div className="form-footer">
-                  <motion.button
-                    onClick={generateImage}
-                    disabled={loading || !prompt.trim()}
-                    className="generate-button"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {loading ? (
-                      <>
-                        <RefreshCw size={20} className="spinning" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={20} />
-                        Generate image
-                      </>
-                    )}
-                  </motion.button>
+                  {/* Bouton génération IA masqué */}
                 </div>
               </div>
             </motion.div>

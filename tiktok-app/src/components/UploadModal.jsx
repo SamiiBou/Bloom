@@ -570,7 +570,7 @@ const UploadModal = ({
                 <h2 className="modal-title-apple" style={{ margin: 0 }}>
                   {!selectedOption ? 'Create a video' : 
                     selectedOption === 'upload' ? 'Upload a video' : 
-                    'Generate with AI'}
+                    ''}
                 </h2>
               </div>
               <div style={{ width: 48, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
@@ -743,6 +743,7 @@ const UploadModal = ({
                   </div>
 
                   {/* Generation button - Apple style */}
+                  {/* Bouton génération IA masqué */}
                   <motion.button 
                     className={`generate-button-refined ${!aiPrompt.trim() || isGenerating || credits < getGenerationCost(selectedDuration) ? 'disabled' : ''}`}
                     onClick={handleAIGenerate}
@@ -802,7 +803,7 @@ const UploadModal = ({
               )}
             </AnimatePresence>
 
-            {/* Credit Purchase Card Modal */}
+            {/* Achat de crédits masqué */}
             <CreditPurchaseCard
               isOpen={showCreditPurchase}
               onClose={() => setShowCreditPurchase(false)}

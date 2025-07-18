@@ -60,6 +60,7 @@ const GenerationTracker = ({
     }
   };
 
+  // Masquer tout affichage ou bouton lié à la génération IA ou à l'achat de crédits
   if (!isGenerating && !generatedVideo) return null;
 
   return (
